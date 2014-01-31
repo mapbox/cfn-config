@@ -4,7 +4,7 @@ var _ = require('underscore');
 var path = require('path');
 var fs = require('fs');
 var argv = require('optimist').argv;
-var config = require('../lib/config');
+var config = require('..');
 
 var inquirer = require('inquirer');
 
