@@ -42,7 +42,7 @@ config.readTemplate(argv.template, function(err, template) {
                 Parameters: _(configuration.Parameters).map(function(value, key) {
                     return {
                         ParameterKey: key,
-                        ParameterValue: value,
+                        ParameterValue: value.toString(),
                     };
                 })
             }, function(err) {
