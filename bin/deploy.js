@@ -21,6 +21,8 @@ var argv = require('optimist')
         demand: true,
         alias: 'n'
     })
+    .boolean('iam')
+    .describe('iam', 'Set to allow stack to create IAM resources')
     .argv;
 
 var cfn = new AWS.CloudFormation(_(env).extend({
@@ -42,9 +44,10 @@ config.readTemplate(argv.template, function(err, template) {
                 Parameters: _(configuration.Parameters).map(function(value, key) {
                     return {
                         ParameterKey: key,
-                        ParameterValue: value,
+                        ParameterValue: value.toString(),
                     };
-                })
+                }),
+                Capabilities: argv.iam ? [ 'CAPABILITY_IAM' ] : []
             }, function(err) {
                 if (err) throw err;
             });
