@@ -5,5 +5,5 @@ WIP
 ```
 clone
 npm install -g .
-cfn-config <path to cloudformation template>
+cfn-deploy -t <path to cloudformation template> -n <stackname> -r <awsregion>
 ```
