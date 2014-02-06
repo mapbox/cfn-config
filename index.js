@@ -2,7 +2,8 @@ var _ = require('underscore');
 var inquirer = require('inquirer');
 var fs = require('fs');
 var path = require('path');
-
+var env = require('superenv')('cfn');
+var AWS = require('aws-sdk');
 
 function readJsonFile(filelabel, filepath, callback) {
     if (!filepath) return callback(new Error(filelabel + ' file is required'));
@@ -24,10 +25,15 @@ function readJsonFile(filelabel, filepath, callback) {
 
 var config = module.exports;
 
-// Property that can be overriden to provide your own defaults.
+// `defaults` property that can be overriden to provide your own defaults.
 // Keys should be the parameter's name, values either a string or function
 // If finding the default value is asychronous, then the funciton has to
 // declare itself as such. See https://github.com/SBoudrias/Inquirer.js#question
+// Prioritization of defaults written by multiple processes follows:
+// 1. Values set by parameters in an existing Cloudformation stack
+// 2. Values set by higher-level libs (i.e. var config = require('cfn-config'); config.defaults = ...)
+// 3. Values set by a configuration file
+// 4. Values set by the Cloudformation template
 config.defaults = {};
 
 // Run configuration wizard on a CFN template.
@@ -63,15 +69,35 @@ config.question = function(parameter, key) {
     return question;
 };
 
-module.exports.readTemplate = function(filepath, callback) {
+config.readTemplate = function(filepath, callback) {
     readJsonFile('template', filepath, callback);
 }
 
-module.exports.readConfiguration = function (filepath, callback) {
-    readJsonFile('configuration', filepath, callback);
+config.readConfiguration = function (filepath, callback) {
+    readJsonFile('configuration', filepath, function (err, configuration) {
+        if (err) return callback(err);
+        // Config file defaults lose to everything else
+        config.defaults = _(configuration.Parameters).extend(config.defaults);
+        callback(null, configuration);
+    });
 }
 
-module.exports.writeConfiguration = function(filepath, config, callback) {
+config.readStackParameters = function (stackname, region, callback) {
+    var cfn = new AWS.CloudFormation(_(env).extend({
+        region: region
+    }));
+
+    cfn.descibeStacks({StackName: stackname}, function (err, data) {
+        if (err) return callback(err);
+        if (data.Stacks.length < 1) return callback(new Error('Stack ' + stackname + ' not found'));
+        var params = data.Stacks[0].Parameters;
+        // Stack params take precedence over all other defaults
+        config.defaults = _(config.defaults).extend(params);
+        callback(null, params);
+    });
+}
+
+config.writeConfiguration = function(filepath, config, callback) {
     var filepath = path.resolve(path.join(filepath, config.StackName + '.cfn.json'));
     var json = JSON.stringify(config, null, 4);
 

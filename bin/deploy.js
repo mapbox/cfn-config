@@ -62,7 +62,6 @@ config.readTemplate(argv.template, function(err, template) {
         config.readConfiguration(argv.config, function (err, configuration) {
             if (err) throw err;
 
-            config.defaults = configuration.Parameters;
             config.configure(template, argv.name, argv.region, configured);
         });
     } else {
