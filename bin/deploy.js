@@ -44,7 +44,7 @@ config.readTemplate(argv.template, function(err, template) {
                 Parameters: _(configuration.Parameters).map(function(value, key) {
                     return {
                         ParameterKey: key,
-                        ParameterValue: value.toString(),
+                        ParameterValue: value
                     };
                 }),
                 Capabilities: argv.iam ? [ 'CAPABILITY_IAM' ] : []

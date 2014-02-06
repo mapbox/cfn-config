@@ -21,7 +21,8 @@ config.configure = function(template, stackname, region, callback) {
 config.question = function(parameter, key) {
     var question = {
         name: key,
-        message: key + '. ' + parameter.Description || key
+        message: key + '. ' + parameter.Description || key,
+        filter: function(value) { return value.toString() }
     };
     if ('Default' in parameter) question.default = parameter.Default;
 
