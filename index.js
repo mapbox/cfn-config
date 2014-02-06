@@ -211,8 +211,8 @@ config.updateStack = function (options, callback) {
 
 config.deleteStack = function (options, callback) {
     // `options` object should include
-    // - region: Defaults to 'us-east-1'. The AWS region to deploy into
     // - name: Required. Name of the Cloudformation stack
+    // - region: Defaults to 'us-east-1'. The AWS region to deploy into
     var cfn = new AWS.CloudFormation(_(env).extend({
         region: options.region || 'us-east-1'
     }));
@@ -221,3 +221,30 @@ config.deleteStack = function (options, callback) {
         StackName: options.name
     }, callback);
 };
+
+config.stackInfo = function (options, callback) {
+    // `options` object should include
+    // - name: Required. Name of the Cloudformation stack
+    // - region: Defaults to 'us-east-1'. The AWS region to deploy into
+    var cfn = new AWS.CloudFormation(_(env).extend({
+        region: options.region || 'us-east-1'
+    }));
+
+    cfn.describeStacks({ StackName: options.name }, function (err, data) {
+        if (err) return callback(err);
+        if (data.Stacks.length < 1) return callback(new Error('Stack ' + stackname + ' not found'));
+        var stackInfo = data.Stacks[0];
+
+        stackInfo.Parameters = stackInfo.Parameters.reduce(function (memo, param) {
+            memo[param.ParameterKey] = param.ParameterValue;
+            return memo;
+        }, {});
+
+        stackInfo.Outputs = stackInfo.Outputs.reduce(function (memo, output) {
+            memo[output.OutputKey] = output.OutputValue;
+            return memo;
+        }, {});
+
+        callback(null, stackInfo);
+    });
+}
