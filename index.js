@@ -88,10 +88,15 @@ config.readStackParameters = function (stackname, region, callback) {
         region: region
     }));
 
-    cfn.descibeStacks({StackName: stackname}, function (err, data) {
+    cfn.describeStacks({StackName: stackname}, function (err, data) {
         if (err) return callback(err);
         if (data.Stacks.length < 1) return callback(new Error('Stack ' + stackname + ' not found'));
-        var params = data.Stacks[0].Parameters;
+        
+        var params = data.Stacks[0].Parameters.reduce(function (memo, param) {
+            memo[param.ParameterKey] = param.ParameterValue;
+            return memo;
+        }, {});
+
         // Stack params take precedence over all other defaults
         config.defaults = _(config.defaults).extend(params);
         callback(null, params);
@@ -122,6 +127,7 @@ config.stackSetup = function (options, callback) {
     // - region: Defaults to 'us-east-1'. The AWS region to deploy into
     // - name: Required. Name of the Cloudformation stack
     // - config: Optional. Path to a configuration file to use
+    // - update: Defaults to false. Reads existing stack parameters.
     config.readTemplate(options.template, function (err, template) {
         if (err) return callback(err);
 
@@ -129,6 +135,11 @@ config.stackSetup = function (options, callback) {
         if (options.config) {
             beforeWrite.push(function (callback) {
                 config.readConfiguration(options.config, callback);
+            });
+        }
+        if (options.update) {
+            beforeWrite.push(function (callback) {
+                config.readStackParameters(options.name, options.region, callback);
             });
         }
 
@@ -142,7 +153,7 @@ config.stackSetup = function (options, callback) {
             });
         });
     });
-}
+};
 
 config.createStack = function (options, callback) {
     // `options` object should include
@@ -160,6 +171,31 @@ config.createStack = function (options, callback) {
         if (err) return callback(err);
 
         cfn.createStack({
+            StackName: options.name,
+            TemplateBody: JSON.stringify(configDetails.template, null, 4),
+            Parameters: _(configDetails.configuration.Parameters).map(function(value, key) {
+                return {
+                    ParameterKey: key,
+                    ParameterValue: value
+                };
+            }),
+            Capabilities: options.iam ? [ 'CAPABILITY_IAM' ] : []
+        }, callback);
+    });
+};
+
+config.updateStack = function (options, callback) {
+    // Same options as createStack above.
+
+    var cfn = new AWS.CloudFormation(_(env).extend({
+        region: options.region
+    }));
+
+    options.update = true;
+    config.stackSetup(options, function(err, configDetails) {
+        if (err) return callback(err);
+
+        cfn.updateStack({
             StackName: options.name,
             TemplateBody: JSON.stringify(configDetails.template, null, 4),
             Parameters: _(configDetails.configuration.Parameters).map(function(value, key) {
