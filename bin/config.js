@@ -25,27 +25,6 @@ var argv = require('optimist')
     })
     .argv;
 
-function gotTemplate(err, template) {
-    if (err) throw err;
-
-    if (argv.config) {
-        config.readConfiguration(argv.config, function (err, configuration) {
-            if (err) throw err;
-
-            config.defaults = configuration.Parameters;
-            config.configure(template, argv.name, argv.region, configured);
-        });
-    } else {
-        config.configure(template, argv.name, argv.region, configured);
-    }
-}
-
-function configured(err, configuration) {
-    if (err) throw err;
-
-    config.writeConfiguration('', configuration, function(err, aborted) {
-        if (err) throw err;
-    });
-}
-
-config.readTemplate(argv.template, gotTemplate);
+config.stackSetup(argv, function (err) {
+    console.log(err ? err : 'Created config file!');
+});

@@ -18,6 +18,7 @@
     "inquirer": "~0.4.0",
     "underscore": "~1.5.2",
     "aws-sdk": "~2.0.0-rc9",
-    "superenv": "0.0.1"
+    "superenv": "0.0.1",
+    "async": "~0.2.10"
   }
 }

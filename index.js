@@ -4,6 +4,7 @@ var fs = require('fs');
 var path = require('path');
 var env = require('superenv')('cfn');
 var AWS = require('aws-sdk');
+var async = require('async');
 
 function readJsonFile(filelabel, filepath, callback) {
     if (!filepath) return callback(new Error(filelabel + ' file is required'));
@@ -113,3 +114,61 @@ config.writeConfiguration = function(filepath, config, callback) {
         fs.writeFile(filepath, json, callback);
     });
 };
+
+// Reusable function for determining configuration
+config.stackSetup = function (options, callback) {
+    // `options` object should include
+    // - template: Required. Path to the Cloudformation template
+    // - region: Defaults to 'us-east-1'. The AWS region to deploy into
+    // - name: Required. Name of the Cloudformation stack
+    // - config: Optional. Path to a configuration file to use
+    config.readTemplate(options.template, function (err, template) {
+        if (err) return callback(err);
+
+        var beforeWrite = [];
+        if (options.config) {
+            beforeWrite.push(function (callback) {
+                config.readConfiguration(options.config, callback);
+            });
+        }
+
+        async.series(beforeWrite, function (err) {
+            config.configure(template, options.name, options.region, function (err, configuration) {
+                if (err) return callback(err);
+                config.writeConfiguration('', configuration, function (err, aborted) {
+                    if (err) return callback(err);
+                    callback(null, {template: template, configuration: configuration});
+                });
+            });
+        });
+    });
+}
+
+config.createStack = function (options, callback) {
+    // `options` object should include
+    // - template: Required. Path to the Cloudformation template
+    // - region: Defaults to 'us-east-1'. The AWS region to deploy into
+    // - name: Required. Name of the Cloudformation stack
+    // - config: Optional. Path to a configuration file to use
+    // - iam: Defaults to false. Allows stack to create IAM resources
+
+    var cfn = new AWS.CloudFormation(_(env).extend({
+        region: options.region
+    }));
+
+    config.stackSetup(options, function (err, configDetails) {
+        if (err) return callback(err);
+
+        cfn.createStack({
+            StackName: options.name,
+            TemplateBody: JSON.stringify(configDetails.template, null, 4),
+            Parameters: _(configDetails.configuration.Parameters).map(function(value, key) {
+                return {
+                    ParameterKey: key,
+                    ParameterValue: value
+                };
+            }),
+            Capabilities: options.iam ? [ 'CAPABILITY_IAM' ] : []
+        }, callback);
+    });
+}
