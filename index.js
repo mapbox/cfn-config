@@ -3,7 +3,32 @@ var inquirer = require('inquirer');
 var fs = require('fs');
 var path = require('path');
 
+
+function readJsonFile(filelabel, filepath, callback) {
+    if (!filepath) return callback(new Error(filelabel + ' file is required'));
+
+    fs.readFile(path.resolve(filepath), function(err, data) {
+        if (err) {
+            if (err.code === 'ENOENT') return callback(new Error('No such ' + filelabel + ' file'));
+            return callback(err);
+        }
+        try {
+            var jsonData = JSON.parse(data);
+        } catch(e) {
+            if (e.name === 'SyntaxError') return callback(new Error('Unable to parse ' + filelabel + ' file'));
+            return callback(e);
+        }
+        callback(null, jsonData);
+    });
+}
+
 var config = module.exports;
+
+// Property that can be overriden to provide your own defaults.
+// Keys should be the parameter's name, values either a string or function
+// If finding the default value is asychronous, then the funciton has to
+// declare itself as such. See https://github.com/SBoudrias/Inquirer.js#question
+config.defaults = {};
 
 // Run configuration wizard on a CFN template.
 config.configure = function(template, stackname, region, callback) {
@@ -25,6 +50,7 @@ config.question = function(parameter, key) {
         filter: function(value) { return value.toString() }
     };
     if ('Default' in parameter) question.default = parameter.Default;
+    if (key in config.defaults) question.default = config.defaults[key];
 
     question.type = (function() {
         if (parameter.NoEcho === 'true') return 'password';
@@ -38,22 +64,12 @@ config.question = function(parameter, key) {
 };
 
 module.exports.readTemplate = function(filepath, callback) {
-    if (!filepath) return callback(new Error('Template file is required'));
+    readJsonFile('template', filepath, callback);
+}
 
-    fs.readFile(path.resolve(filepath), function(err, data) {
-        if (err) {
-            if (err.code === 'ENOENT') return callback(new Error('No such template file'));
-            return callback(err);
-        }
-        try {
-            var template = JSON.parse(data);
-        } catch(e) {
-            if (e.name === 'SyntaxError') return callback(new Error('Unable to parse template file'));
-            return callback(e);
-        }
-        callback(null, template);
-    });
-};
+module.exports.readConfiguration = function (filepath, callback) {
+    readJsonFile('configuration', filepath, callback);
+}
 
 module.exports.writeConfiguration = function(filepath, config, callback) {
     var filepath = path.resolve(path.join(filepath, config.StackName + '.cfn.json'));
