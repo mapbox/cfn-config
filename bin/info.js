@@ -15,6 +15,6 @@ var argv = require('optimist')
     })
     .argv;
 
-config.stackInfo(argv, function (err, result) {
+config.stackInfo(argv, function(err, result) {
     console.log(err ? err : result);
 });

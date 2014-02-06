@@ -24,6 +24,6 @@ var argv = require('optimist')
     })
     .argv;
 
-config.stackSetup(argv, function (err) {
+config.configStack(argv, function(err) {
     console.log(err ? err : 'Created config file!');
 });

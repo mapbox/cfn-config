@@ -15,6 +15,6 @@ var argv = require('optimist')
     })
     .argv;
 
-config.deleteStack(argv, function (err) {
+config.deleteStack(argv, function(err) {
     console.log(err ? err : 'Deleted stack: ' + argv.name);
 });

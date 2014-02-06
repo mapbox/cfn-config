@@ -26,6 +26,6 @@ var argv = require('optimist')
     .describe('iam', 'Set to allow stack to create IAM resources')
     .argv;
 
-config.updateStack(argv, function (err) {
+config.updateStack(argv, function(err) {
     console.log(err ? err : 'Updated stack: ' + argv.name);
 });

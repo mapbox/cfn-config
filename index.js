@@ -6,24 +6,6 @@ var env = require('superenv')('cfn');
 var AWS = require('aws-sdk');
 var async = require('async');
 
-function readJsonFile(filelabel, filepath, callback) {
-    if (!filepath) return callback(new Error(filelabel + ' file is required'));
-
-    fs.readFile(path.resolve(filepath), function(err, data) {
-        if (err) {
-            if (err.code === 'ENOENT') return callback(new Error('No such ' + filelabel + ' file'));
-            return callback(err);
-        }
-        try {
-            var jsonData = JSON.parse(data);
-        } catch(e) {
-            if (e.name === 'SyntaxError') return callback(new Error('Unable to parse ' + filelabel + ' file'));
-            return callback(e);
-        }
-        callback(null, jsonData);
-    });
-}
-
 var config = module.exports;
 
 // `defaults` property that can be overriden to provide your own defaults.
@@ -83,7 +65,7 @@ config.readConfiguration = function (filepath, callback) {
     });
 }
 
-config.readStackParameters = function (stackname, region, callback) {
+config.readStackParameters = function(stackname, region, callback) {
     var cfn = new AWS.CloudFormation(_(env).extend({
         region: region
     }));
@@ -91,7 +73,7 @@ config.readStackParameters = function (stackname, region, callback) {
     cfn.describeStacks({StackName: stackname}, function (err, data) {
         if (err) return callback(err);
         if (data.Stacks.length < 1) return callback(new Error('Stack ' + stackname + ' not found'));
-        
+
         var params = data.Stacks[0].Parameters.reduce(function (memo, param) {
             memo[param.ParameterKey] = param.ParameterValue;
             return memo;
@@ -121,32 +103,32 @@ config.writeConfiguration = function(filepath, config, callback) {
 };
 
 // Reusable function for determining configuration
-config.stackSetup = function (options, callback) {
+config.configStack = function(options, callback) {
     // `options` object should include
     // - template: Required. Path to the Cloudformation template
     // - region: Defaults to 'us-east-1'. The AWS region to deploy into
     // - name: Required. Name of the Cloudformation stack
     // - config: Optional. Path to a configuration file to use
     // - update: Defaults to false. Reads existing stack parameters.
-    config.readTemplate(options.template, function (err, template) {
+    config.readTemplate(options.template, function(err, template) {
         if (err) return callback(err);
 
         var beforeWrite = [];
         if (options.config) {
-            beforeWrite.push(function (callback) {
+            beforeWrite.push(function(callback) {
                 config.readConfiguration(options.config, callback);
             });
         }
         if (options.update) {
-            beforeWrite.push(function (callback) {
+            beforeWrite.push(function(callback) {
                 config.readStackParameters(options.name, options.region, callback);
             });
         }
 
-        async.series(beforeWrite, function (err) {
-            config.configure(template, options.name, options.region, function (err, configuration) {
+        async.series(beforeWrite, function(err) {
+            config.configure(template, options.name, options.region, function(err, configuration) {
                 if (err) return callback(err);
-                config.writeConfiguration('', configuration, function (err, aborted) {
+                config.writeConfiguration('', configuration, function(err, aborted) {
                     if (err) return callback(err);
                     callback(null, {template: template, configuration: configuration});
                 });
@@ -155,7 +137,7 @@ config.stackSetup = function (options, callback) {
     });
 };
 
-config.createStack = function (options, callback) {
+config.createStack = function(options, callback) {
     // `options` object should include
     // - template: Required. Path to the Cloudformation template
     // - region: Defaults to 'us-east-1'. The AWS region to deploy into
@@ -184,7 +166,7 @@ config.createStack = function (options, callback) {
     });
 };
 
-config.updateStack = function (options, callback) {
+config.updateStack = function(options, callback) {
     // Same options as createStack above.
 
     var cfn = new AWS.CloudFormation(_(env).extend({
@@ -209,7 +191,7 @@ config.updateStack = function (options, callback) {
     });
 }
 
-config.deleteStack = function (options, callback) {
+config.deleteStack = function(options, callback) {
     // `options` object should include
     // - name: Required. Name of the Cloudformation stack
     // - region: Defaults to 'us-east-1'. The AWS region to deploy into
@@ -222,7 +204,7 @@ config.deleteStack = function (options, callback) {
     }, callback);
 };
 
-config.stackInfo = function (options, callback) {
+config.stackInfo = function(options, callback) {
     // `options` object should include
     // - name: Required. Name of the Cloudformation stack
     // - region: Defaults to 'us-east-1'. The AWS region to deploy into
@@ -230,21 +212,39 @@ config.stackInfo = function (options, callback) {
         region: options.region || 'us-east-1'
     }));
 
-    cfn.describeStacks({ StackName: options.name }, function (err, data) {
+    cfn.describeStacks({ StackName: options.name }, function(err, data) {
         if (err) return callback(err);
         if (data.Stacks.length < 1) return callback(new Error('Stack ' + stackname + ' not found'));
         var stackInfo = data.Stacks[0];
 
-        stackInfo.Parameters = stackInfo.Parameters.reduce(function (memo, param) {
+        stackInfo.Parameters = stackInfo.Parameters.reduce(function(memo, param) {
             memo[param.ParameterKey] = param.ParameterValue;
             return memo;
         }, {});
 
-        stackInfo.Outputs = stackInfo.Outputs.reduce(function (memo, output) {
+        stackInfo.Outputs = stackInfo.Outputs.reduce(function(memo, output) {
             memo[output.OutputKey] = output.OutputValue;
             return memo;
         }, {});
 
         callback(null, stackInfo);
+    });
+}
+
+function readJsonFile(filelabel, filepath, callback) {
+    if (!filepath) return callback(new Error(filelabel + ' file is required'));
+
+    fs.readFile(path.resolve(filepath), function(err, data) {
+        if (err) {
+            if (err.code === 'ENOENT') return callback(new Error('No such ' + filelabel + ' file'));
+            return callback(err);
+        }
+        try {
+            var jsonData = JSON.parse(data);
+        } catch(e) {
+            if (e.name === 'SyntaxError') return callback(new Error('Unable to parse ' + filelabel + ' file'));
+            return callback(e);
+        }
+        callback(null, jsonData);
     });
 }
