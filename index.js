@@ -4,7 +4,6 @@ var fs = require('fs');
 var path = require('path');
 var env = require('superenv')('cfn');
 var AWS = require('aws-sdk');
-var async = require('async');
 
 var config = module.exports;
 
@@ -113,19 +112,21 @@ config.configStack = function(options, callback) {
     config.readTemplate(options.template, function(err, template) {
         if (err) return callback(err);
 
-        var beforeWrite = [];
-        if (options.config) {
-            beforeWrite.push(function(callback) {
-                config.readConfiguration(options.config, callback);
-            });
-        }
-        if (options.update) {
-            beforeWrite.push(function(callback) {
-                config.readStackParameters(options.name, options.region, callback);
+        if (!options.config) return afterStackLoad();
+        config.readConfiguration(options.config, function(err, configuration) {
+            if (err) return callback(err);
+            afterFileLoad(configuration.Parameters);
+        });
+
+        function afterFileLoad(fileParameters) {
+            if (!options.update) return afterStackLoad(fileParameters);
+            config.readStackParameters(options.name, options.region, function(err, stackParameters) {
+                if (err) return callback(err);
+                afterStackLoad(fileParameters, stackParameters);
             });
         }
 
-        async.series(beforeWrite, function(err) {
+        function afterStackLoad(fileParameters, stackParameters) {
             config.configure(template, options.name, options.region, function(err, configuration) {
                 if (err) return callback(err);
                 config.writeConfiguration('', configuration, function(err, aborted) {
@@ -133,7 +134,8 @@ config.configStack = function(options, callback) {
                     callback(null, {template: template, configuration: configuration});
                 });
             });
-        });
+        }
+
     });
 };
 
