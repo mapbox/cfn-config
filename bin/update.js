@@ -11,6 +11,7 @@ var argv = require('optimist')
     })
     .options('region', {
         describe: 'AWS region deployed the stack',
+        demand: true,
         alias: 'r'
     })
     .options('name', {

@@ -148,7 +148,7 @@ config.createStack = function(options, callback) {
     // - iam: Defaults to false. Allows stack to create IAM resources
 
     var cfn = new AWS.CloudFormation(_(env).extend({
-        region: options.region || 'us-east-1'
+        region: options.region
     }));
 
     config.configStack(options, function (err, configDetails) {
@@ -172,7 +172,7 @@ config.updateStack = function(options, callback) {
     // Same options as createStack above.
 
     var cfn = new AWS.CloudFormation(_(env).extend({
-        region: options.region || 'us-east-1'
+        region: options.region
     }));
 
     options.update = true;
@@ -198,7 +198,7 @@ config.deleteStack = function(options, callback) {
     // - name: Required. Name of the Cloudformation stack
     // - region: Defaults to 'us-east-1'. The AWS region to deploy into
     var cfn = new AWS.CloudFormation(_(env).extend({
-        region: options.region || 'us-east-1'
+        region: options.region
     }));
 
     cfn.deleteStack({
@@ -211,7 +211,7 @@ config.stackInfo = function(options, callback) {
     // - name: Required. Name of the Cloudformation stack
     // - region: Defaults to 'us-east-1'. The AWS region to deploy into
     var cfn = new AWS.CloudFormation(_(env).extend({
-        region: options.region || 'us-east-1'
+        region: options.region
     }));
 
     cfn.describeStacks({ StackName: options.name }, function(err, data) {
