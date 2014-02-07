@@ -6,27 +6,19 @@ Quickly configure and start AWS CloudFormation stacks.
 - Persists parameters in local config files for easy reuse and version control
 - Library functions to include functionality into other projects
 
-# Install
+## CLI
 
-Install globally with `npm` to use CLI commands or include in your project's
-package.json to use as a library.
+cfn-config includes CLI commands for working with CloudFormation stacks.
 
-# CLI
+### Installation
 
-cfn-config includes the follow CLI commands for working with CloudFormation
-stacks.
+Install globally with `npm` to use CLI commands:
 
-- `cfn-config` - Configures a stack's parameters based on a CFN template file.
-  Writes the configuration to disk, but does not start the stack.
-- `cfn-create` - Configures a stack's parameters based on a CFN template file.
-  Write the configuration to disk and starts the given stack.
-- `cfn-delete` - Delete the given stack.
-- `cfn-info` - Returns parameters and output for the given stack.
-- `cfn-update` - Configures a stack's parameters based on a CFN template file.
-  Writes the configuration to disk and updates the given stack to use the new
-  parameters and template.
+```
+$ npm install -g cfn-config
+```
 
-## Configuration
+### Configuration
 
 cfn-config commands need access to the CloudFormation API to read, create,
 update, and delete stacks. Add `~/.cfnrc` with the following properties:
@@ -38,11 +30,37 @@ update, and delete stacks. Add `~/.cfnrc` with the following properties:
 }
 ```
 
-# Library
+### Usage
+
+The following commands are available. Run each with `--help` for specific
+instructions.
+
+- `cfn-config` - Configures a stack's parameters based on a CFN template file.
+  Writes the configuration to disk, but does not start the stack.
+- `cfn-create` - Configures a stack's parameters based on a CFN template file.
+  Write the configuration to disk and starts the given stack.
+- `cfn-delete` - Delete the given stack.
+- `cfn-info` - Returns parameters and output for the given stack.
+- `cfn-update` - Configures a stack's parameters based on a CFN template file.
+  Writes the configuration to disk and updates the given stack to use the new
+  parameters and template.
+
+## Library
 
 Include cfn-config into your project to incorporate/extend its functionality.
 
-## `config.configStack(options, callback)`
+### Installation
+
+Add to your project's package.json by running the following from your project's
+directory:
+
+```
+$ npm install --save cfn-config
+```
+
+### Usage
+
+#### `config.configStack(options, callback)`
 
 Reusable function for determining configuration.
 
@@ -57,7 +75,7 @@ Reusable function for determining configuration.
   If finding the default value is asychronous, then the funciton has to
   declare itself as such. See https://github.com/SBoudrias/Inquirer.js#question
 
-# Defaults
+## How defaults behave
 
 The configuration process prompts you for each parameter in the given template.
 For each value, cfn-config will determine a default value using the following
