@@ -109,7 +109,7 @@ config.configStack = function(options, callback) {
     config.readTemplate(options.template, function(err, template) {
         if (err) return callback(err);
 
-        if (!options.config) return afterStackLoad({});
+        if (!options.config) return afterFileLoad({});
         config.readConfiguration(options.config, function(err, configuration) {
             if (err) return callback(err);
             afterFileLoad(configuration.Parameters);
