@@ -149,7 +149,7 @@ config.createStack = function(options, callback) {
         region: options.region || 'us-east-1'
     }));
 
-    config.stackSetup(options, function (err, configDetails) {
+    config.configStack(options, function (err, configDetails) {
         if (err) return callback(err);
 
         cfn.createStack({
@@ -174,7 +174,7 @@ config.updateStack = function(options, callback) {
     }));
 
     options.update = true;
-    config.stackSetup(options, function(err, configDetails) {
+    config.configStack(options, function(err, configDetails) {
         if (err) return callback(err);
 
         cfn.updateStack({
