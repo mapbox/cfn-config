@@ -2,8 +2,6 @@
 
 var _ = require('underscore');
 var config = require('..');
-// var env = require('superenv')('cfn');
-// var AWS = require('aws-sdk');
 
 var argv = require('optimist')
     .options('template', {
