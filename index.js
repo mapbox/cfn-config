@@ -7,20 +7,9 @@ var AWS = require('aws-sdk');
 
 var config = module.exports;
 
-// `defaults` property that can be overriden to provide your own defaults.
-// Keys should be the parameter's name, values either a string or function
-// If finding the default value is asychronous, then the funciton has to
-// declare itself as such. See https://github.com/SBoudrias/Inquirer.js#question
-// Prioritization of defaults written by multiple processes follows:
-// 1. Values set by parameters in an existing Cloudformation stack
-// 2. Values set by higher-level libs (i.e. var config = require('cfn-config'); config.defaults = ...)
-// 3. Values set by a configuration file
-// 4. Values set by the Cloudformation template
-config.defaults = {};
-
 // Run configuration wizard on a CFN template.
-config.configure = function(template, stackname, region, callback) {
-    inquirer.prompt(_(template.Parameters).map(config.question), function(answers) {
+config.configure = function(template, stackname, region, defaults, callback) {
+    inquirer.prompt(_(template.Parameters).map(_(config.question).partial(defaults)), function(answers) {
         callback(null, {
             StackName: stackname,
             Region: region,
@@ -31,14 +20,14 @@ config.configure = function(template, stackname, region, callback) {
 
 // Return a inquirer-compatible question object for a given CFN template
 // parameter.
-config.question = function(parameter, key) {
+config.question = function(defaults, parameter, key) {
     var question = {
         name: key,
         message: key + '. ' + parameter.Description || key,
         filter: function(value) { return value.toString() }
     };
     if ('Default' in parameter) question.default = parameter.Default;
-    if (key in config.defaults) question.default = config.defaults[key];
+    if (key in defaults) question.default = defaults[key];
 
     question.type = (function() {
         if (parameter.NoEcho === 'true') return 'password';
@@ -58,8 +47,6 @@ config.readTemplate = function(filepath, callback) {
 config.readConfiguration = function (filepath, callback) {
     readJsonFile('configuration', filepath, function (err, configuration) {
         if (err) return callback(err);
-        // Config file defaults lose to everything else
-        config.defaults = _(configuration.Parameters).extend(config.defaults);
         callback(null, configuration);
     });
 }
@@ -78,8 +65,6 @@ config.readStackParameters = function(stackname, region, callback) {
             return memo;
         }, {});
 
-        // Stack params take precedence over all other defaults
-        config.defaults = _(config.defaults).extend(params);
         callback(null, params);
     });
 }
@@ -102,24 +87,36 @@ config.writeConfiguration = function(filepath, config, callback) {
 };
 
 // Reusable function for determining configuration
+//
+// `options` object should include:
+// - template: Required. Path to the Cloudformation template
+// - region: Defaults to 'us-east-1'. The AWS region to deploy into
+// - name: Required. Name of the Cloudformation stack
+// - config: Optional. Path to a configuration file to use
+// - update: Defaults to false. Reads existing stack parameters.
+// - defaults: Defaults to {}. Can be overriden to provide your own defaults.
+//   Keys should be the parameter's name, values either a string or function
+//   If finding the default value is asychronous, then the funciton has to
+//   declare itself as such. See https://github.com/SBoudrias/Inquirer.js#question
+//
+//   Prioritization of defaults written by multiple processes follows:
+//   1. Values set by parameters in an existing Cloudformation stack
+//   2. Values set by higher-level libs (i.e. passed into this function as options.defaults)
+//   3. Values set by a configuration file
+//   4. Values set by the Cloudformation template
 config.configStack = function(options, callback) {
-    // `options` object should include
-    // - template: Required. Path to the Cloudformation template
-    // - region: Defaults to 'us-east-1'. The AWS region to deploy into
-    // - name: Required. Name of the Cloudformation stack
-    // - config: Optional. Path to a configuration file to use
-    // - update: Defaults to false. Reads existing stack parameters.
+    options.defaults = options.defaults || {};
     config.readTemplate(options.template, function(err, template) {
         if (err) return callback(err);
 
-        if (!options.config) return afterStackLoad();
+        if (!options.config) return afterFileLoad({});
         config.readConfiguration(options.config, function(err, configuration) {
             if (err) return callback(err);
             afterFileLoad(configuration.Parameters);
         });
 
         function afterFileLoad(fileParameters) {
-            if (!options.update) return afterStackLoad(fileParameters);
+            if (!options.update) return afterStackLoad(fileParameters, {});
             config.readStackParameters(options.name, options.region, function(err, stackParameters) {
                 if (err) return callback(err);
                 afterStackLoad(fileParameters, stackParameters);
@@ -127,7 +124,17 @@ config.configStack = function(options, callback) {
         }
 
         function afterStackLoad(fileParameters, stackParameters) {
-            config.configure(template, options.name, options.region, function(err, configuration) {
+
+            var defaults = _(stackParameters)
+                .chain()
+                .defaults(fileParameters)
+                .defaults(options.defaults)
+                .defaults(_(template.Parameters).reduce(function(memo, value, key) {
+                    memo[key] = value.Default;
+                    return memo;
+                }, {})).value();
+
+            config.configure(template, options.name, options.region, defaults, function(err, configuration) {
                 if (err) return callback(err);
                 config.writeConfiguration('', configuration, function(err, aborted) {
                     if (err) return callback(err);
