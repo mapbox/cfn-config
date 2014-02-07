@@ -2,6 +2,8 @@
 
 var _ = require('underscore');
 var config = require('..');
+// var env = require('superenv')('cfn');
+// var AWS = require('aws-sdk');
 
 var argv = require('optimist')
     .options('template', {
@@ -23,8 +25,10 @@ var argv = require('optimist')
         describe: 'Path to a configuration file to read',
         alias: 'c'
     })
+    .boolean('iam')
+    .describe('iam', 'Set to allow stack to create IAM resources')
     .argv;
 
-config.configStack(argv, function(err) {
-    console.log(err ? err : 'Created config file!');
+config.createStack(argv, function(err) {
+    console.log(err ? err : 'Created stack: ' + argv.name);
 });

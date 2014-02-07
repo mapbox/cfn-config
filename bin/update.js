@@ -23,8 +23,10 @@ var argv = require('optimist')
         describe: 'Path to a configuration file to read',
         alias: 'c'
     })
+    .boolean('iam')
+    .describe('iam', 'Set to allow stack to create IAM resources')
     .argv;
 
-config.configStack(argv, function(err) {
-    console.log(err ? err : 'Created config file!');
+config.updateStack(argv, function(err) {
+    console.log(err ? err : 'Updated stack: ' + argv.name);
 });

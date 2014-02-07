@@ -4,11 +4,6 @@ var _ = require('underscore');
 var config = require('..');
 
 var argv = require('optimist')
-    .options('template', {
-        describe: 'AWS CloudFormation template to be deployed',
-        demand: true,
-        alias: 't'
-    })
     .options('region', {
         describe: 'AWS region deployed the stack',
         demand: true,
@@ -19,12 +14,8 @@ var argv = require('optimist')
         demand: true,
         alias: 'n'
     })
-    .options('config', {
-        describe: 'Path to a configuration file to read',
-        alias: 'c'
-    })
     .argv;
 
-config.configStack(argv, function(err) {
-    console.log(err ? err : 'Created config file!');
+config.stackInfo(argv, function(err, result) {
+    console.log(err ? err : result);
 });

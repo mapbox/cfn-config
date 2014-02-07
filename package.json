@@ -8,7 +8,10 @@
   },
   "bin": {
     "cfn-config": "./bin/config.js",
-    "cfn-deploy": "./bin/deploy.js"
+    "cfn-create": "./bin/create.js",
+    "cfn-delete": "./bin/delete.js",
+    "cfn-info": "./bin/info.js",
+    "cfn-update": "./bin/update.js"
   },
   "repository": "",
   "author": "",
