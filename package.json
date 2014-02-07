@@ -1,11 +1,8 @@
 {
   "name": "cfn-config",
   "version": "0.0.0",
-  "description": "ERROR: No README.md file found!",
+  "description": "Quickly configure and start AWS CloudFormation stacks",
   "main": "index.js",
-  "scripts": {
-    "test": "mocha"
-  },
   "bin": {
     "cfn-config": "./bin/config.js",
     "cfn-create": "./bin/create.js",
@@ -13,8 +10,11 @@
     "cfn-info": "./bin/info.js",
     "cfn-update": "./bin/update.js"
   },
-  "repository": "",
-  "author": "",
+  "repository": {
+    "type": "git",
+    "url":  "https://github.com/mapbox/cfn-config.git"
+  },
+  "author": "Mapbox",
   "license": "BSD",
   "dependencies": {
     "optimist": "~0.6.0",

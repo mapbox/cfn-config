@@ -13,7 +13,8 @@ package.json to use as a library.
 
 # CLI
 
-cfn-config includes the follow CLI commands for working
+cfn-config includes the follow CLI commands for working with CloudFormation
+stacks.
 
 - `cfn-config` - Configures a stack's parameters based on a CFN template file.
   Writes the configuration to disk, but does not start the stack.
@@ -24,6 +25,18 @@ cfn-config includes the follow CLI commands for working
 - `cfn-update` - Configures a stack's parameters based on a CFN template file.
   Writes the configuration to disk and updates the given stack to use the new
   parameters and template.
+
+## Configuration
+
+cfn-config commands need access to the CloudFormation API to read, create,
+update, and delete stacks. Add `~/.cfnrc` with the following properties:
+
+```
+{
+    "accessKeyId": "xxxx",
+    "secretAccessKey": "xxxx"
+}
+```
 
 # Library
 
