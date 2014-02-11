@@ -73,12 +73,12 @@ config.writeConfiguration = function(filepath, config, callback) {
     var filepath = path.resolve(path.join(filepath, config.StackName + '.cfn.json'));
     var json = JSON.stringify(config, null, 4);
 
-    console.log('About to write the following to %s:\n%s', filepath, json);
+    console.log('Stack configuration:\n%s', json);
 
     inquirer.prompt([{
         type: 'confirm',
         name: 'confirm',
-        message: 'Is this ok?',
+        message: 'Okay to write this configuration to ' + filepath + '?',
         default: true
     }], function(answers) {
         if (!answers.confirm) return callback();
