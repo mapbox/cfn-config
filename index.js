@@ -217,6 +217,7 @@ config.stackInfo = function(options, callback) {
     // `options` object should include
     // - name: Required. Name of the Cloudformation stack
     // - region: Defaults to 'us-east-1'. The AWS region to deploy into
+    // - resources: Defaults to false. Gets information about resources in the stack
     var cfn = new AWS.CloudFormation(_(env).extend({
         region: options.region
     }));
@@ -236,7 +237,12 @@ config.stackInfo = function(options, callback) {
             return memo;
         }, {});
 
-        callback(null, stackInfo);
+        if (!options.resources) return callback(null, stackInfo);
+
+        cfn.describeStackResources({ StackName: options.name }, function(err, data) {
+            data = data || {};
+            callback(err, _(stackInfo).extend(data));
+        });
     });
 }
 

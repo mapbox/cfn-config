@@ -86,3 +86,12 @@ priority:
 1. Value from a configuration file one exists for the stack with the given name
 1. `Default` property set on the parameter in the template
 
+#### `config.stackInfo(options, callback)`
+
+Finds details about a running Cloudformation stack
+
+`options` object should include:
+- name: Required. Name of the Cloudformation stack
+- region: The AWS region to deploy into
+- resources: Defaults to false. Gets information about resources in the stack
+

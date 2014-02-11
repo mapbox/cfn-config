@@ -10,9 +10,13 @@ var argv = require('optimist')
         alias: 'r'
     })
     .options('name', {
-        describe: 'Name of the AWS CloudFormation to deploy',
+        describe: 'Name of the AWS CloudFormation stack to inspect',
         demand: true,
         alias: 'n'
+    })
+    .options('resources', {
+        describe: 'Also fetch information about resources in the stack',
+        boolean: true
     })
     .argv;
 
