@@ -75,13 +75,8 @@ config.writeConfiguration = function(filepath, config, callback) {
 
     console.log('Stack configuration:\n%s', json);
 
-    inquirer.prompt([{
-        type: 'confirm',
-        name: 'confirm',
-        message: 'Okay to write this configuration to ' + filepath + '?',
-        default: true
-    }], function(answers) {
-        if (!answers.confirm) return callback();
+    confirmAction('Okay to write this configuration to ' + filepath + '?', function(confirm) {
+        if (!confirm) return callback();
         fs.writeFile(filepath, json, callback);
     });
 };
@@ -161,17 +156,20 @@ config.createStack = function(options, callback) {
     config.configStack(options, function (err, configDetails) {
         if (err) return callback(err);
 
-        cfn.createStack({
-            StackName: options.name,
-            TemplateBody: JSON.stringify(configDetails.template, null, 4),
-            Parameters: _(configDetails.configuration.Parameters).map(function(value, key) {
-                return {
-                    ParameterKey: key,
-                    ParameterValue: value
-                };
-            }),
-            Capabilities: options.iam ? [ 'CAPABILITY_IAM' ] : []
-        }, callback);
+        confirmAction('Ready to create this stack?', function (confirm) {
+            if (!confirm) return callback();
+            cfn.createStack({
+                StackName: options.name,
+                TemplateBody: JSON.stringify(configDetails.template, null, 4),
+                Parameters: _(configDetails.configuration.Parameters).map(function(value, key) {
+                    return {
+                        ParameterKey: key,
+                        ParameterValue: value
+                    };
+                }),
+                Capabilities: options.iam ? [ 'CAPABILITY_IAM' ] : []
+            }, callback);
+        });
     });
 };
 
@@ -186,17 +184,20 @@ config.updateStack = function(options, callback) {
     config.configStack(options, function(err, configDetails) {
         if (err) return callback(err);
 
-        cfn.updateStack({
-            StackName: options.name,
-            TemplateBody: JSON.stringify(configDetails.template, null, 4),
-            Parameters: _(configDetails.configuration.Parameters).map(function(value, key) {
-                return {
-                    ParameterKey: key,
-                    ParameterValue: value
-                };
-            }),
-            Capabilities: options.iam ? [ 'CAPABILITY_IAM' ] : []
-        }, callback);
+        confirmAction('Ready to update the stack?', function (confirm) {
+            if (!confirm) return callback();
+            cfn.updateStack({
+                StackName: options.name,
+                TemplateBody: JSON.stringify(configDetails.template, null, 4),
+                Parameters: _(configDetails.configuration.Parameters).map(function(value, key) {
+                    return {
+                        ParameterKey: key,
+                        ParameterValue: value
+                    };
+                }),
+                Capabilities: options.iam ? [ 'CAPABILITY_IAM' ] : []
+            }, callback);
+        });
     });
 }
 
@@ -208,9 +209,12 @@ config.deleteStack = function(options, callback) {
         region: options.region
     }));
 
-    cfn.deleteStack({
-        StackName: options.name
-    }, callback);
+    confirmAction('Ready to delete the stack ' + options.name + '?', function (confirm) {
+        if (!confirm) return callback();
+        cfn.deleteStack({
+            StackName: options.name
+        }, callback);
+    })
 };
 
 config.stackInfo = function(options, callback) {
@@ -261,5 +265,16 @@ function readJsonFile(filelabel, filepath, callback) {
             return callback(e);
         }
         callback(null, jsonData);
+    });
+}
+
+function confirmAction(message, callback) {
+    inquirer.prompt([{
+        type: 'confirm',
+        name: 'confirm',
+        message: message,
+        default: true
+    }], function(answers) {
+        callback(answers.confirm);
     });
 }
