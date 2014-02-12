@@ -209,6 +209,8 @@ config.deleteStack = function(options, callback) {
     }));
 
     cfn.listStacks({}, function (err, data) {
+        if (err) return callback(err);
+
         var stackNames = _(data.StackSummaries).chain()
             .reject(function (summary) {
                 return summary.StackStatus.indexOf('DELETE') === 0;
