@@ -4,6 +4,7 @@ var fs = require('fs');
 var path = require('path');
 var env = require('superenv')('cfn');
 var AWS = require('aws-sdk');
+var ursa = require('ursa');
 
 var config = module.exports;
 
@@ -47,6 +48,19 @@ config.readTemplate = function(filepath, callback) {
 config.readConfiguration = function (filepath, callback) {
     readJsonFile('configuration', filepath, function (err, configuration) {
         if (err) return callback(err);
+
+        if (env.secureKey) {
+            var secure = ursa.createPrivateKey(fs.readFileSync(env.secureKey));
+            configuration.Parameters = _(configuration.Parameters).reduce(function (memo, value, key) {
+                if (value.indexOf('secure::') === 0) {
+                    memo[key] = secure.decrypt(value.replace('secure::', ''), 'base64', 'utf8');
+                } else {
+                    memo[key] = value;
+                }
+                return memo;
+            }, {});
+        }
+
         callback(null, configuration);
     });
 }
