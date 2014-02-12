@@ -22,10 +22,16 @@ config.configure = function(template, stackname, region, defaults, callback) {
 // Return a inquirer-compatible question object for a given CFN template
 // parameter.
 config.question = function(defaults, parameter, key) {
+    function encryptInput(value) {
+        if (!env.secureKey) return value.toString();
+        var secure = ursa.createPrivateKey(fs.readFileSync(env.secureKey));
+        return ['secure', secure.encrypt(value, 'utf8', 'base64')].join('::');
+    }
+
     var question = {
         name: key,
         message: key + '. ' + parameter.Description || key,
-        filter: function(value) { return value.toString() }
+        filter: parameter.NoEcho === 'true' ? encryptInput : function(value) { return value.toString() }
     };
     if ('Default' in parameter) question.default = parameter.Default;
     if (key in defaults) question.default = defaults[key];
