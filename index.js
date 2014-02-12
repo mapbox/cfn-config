@@ -7,6 +7,12 @@ var AWS = require('aws-sdk');
 
 var config = module.exports;
 
+// Allow override of the default superenv credentials
+config.setCredentials = function (accessKeyId, secretAccessKey) {
+    env.accessKeyId = accessKeyId;
+    env.secretAccessKey = secretAccessKey;
+};
+
 // Run configuration wizard on a CFN template.
 config.configure = function(template, stackname, region, defaults, callback) {
     inquirer.prompt(_(template.Parameters).map(_(config.question).partial(defaults)), function(answers) {
