@@ -66,7 +66,7 @@ Reusable function for determining configuration.
 
 `options` object should include:
 - template: Required. Path to the Cloudformation template
-- region: Defaults to 'us-east-1'. The AWS region to deploy into
+- region: The AWS region to deploy into
 - name: Required. Name of the Cloudformation stack
 - config: Optional. Path to a configuration file to use
 - update: Defaults to false. Reads existing stack parameters.

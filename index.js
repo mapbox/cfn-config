@@ -90,7 +90,7 @@ config.writeConfiguration = function(filepath, config, callback) {
 //
 // `options` object should include:
 // - template: Required. Path to the Cloudformation template
-// - region: Defaults to 'us-east-1'. The AWS region to deploy into
+// - region: The AWS region to deploy into
 // - name: Required. Name of the Cloudformation stack
 // - config: Optional. Path to a configuration file to use
 // - update: Defaults to false. Reads existing stack parameters.
@@ -149,7 +149,7 @@ config.configStack = function(options, callback) {
 config.createStack = function(options, callback) {
     // `options` object should include
     // - template: Required. Path to the Cloudformation template
-    // - region: Defaults to 'us-east-1'. The AWS region to deploy into
+    // - region: The AWS region to deploy into
     // - name: Required. Name of the Cloudformation stack
     // - config: Optional. Path to a configuration file to use
     // - iam: Defaults to false. Allows stack to create IAM resources
@@ -203,7 +203,7 @@ config.updateStack = function(options, callback) {
 config.deleteStack = function(options, callback) {
     // `options` object should include
     // - name: Required. Name of the Cloudformation stack
-    // - region: Defaults to 'us-east-1'. The AWS region to deploy into
+    // - region: The AWS region to deploy into
     var cfn = new AWS.CloudFormation(_(env).extend({
         region: options.region
     }));
@@ -216,7 +216,7 @@ config.deleteStack = function(options, callback) {
 config.stackInfo = function(options, callback) {
     // `options` object should include
     // - name: Required. Name of the Cloudformation stack
-    // - region: Defaults to 'us-east-1'. The AWS region to deploy into
+    // - region: The AWS region to deploy into
     // - resources: Defaults to false. Gets information about resources in the stack
     var cfn = new AWS.CloudFormation(_(env).extend({
         region: options.region
