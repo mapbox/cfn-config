@@ -208,9 +208,20 @@ config.deleteStack = function(options, callback) {
         region: options.region
     }));
 
-    cfn.deleteStack({
-        StackName: options.name
-    }, callback);
+    cfn.listStacks({}, function (err, data) {
+        var stackNames = _(data.StackSummaries).chain()
+            .reject(function (summary) {
+                return summary.StackStatus.indexOf('DELETE') === 0;
+            }).pluck('StackName').value();
+
+        if (!_(stackNames).contains(options.name)) {
+            return callback(new Error('Stack ' + options.name + ' does not exist!'));
+        }
+
+        cfn.deleteStack({
+            StackName: options.name
+        }, callback);
+    });
 };
 
 config.stackInfo = function(options, callback) {
