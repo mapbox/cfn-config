@@ -70,10 +70,7 @@ Reusable function for determining configuration.
 - name: Required. Name of the Cloudformation stack
 - config: Optional. Path to a configuration file to use
 - update: Defaults to false. Reads existing stack parameters.
-- defaults: Defaults to {}. Can be overriden to provide your own defaults.
-  Keys should be the parameter's name, values either a string or function
-  If finding the default value is asychronous, then the funciton has to
-  declare itself as such. See https://github.com/SBoudrias/Inquirer.js#question
+- defaults, choices, messages, filters: Optional. Any of these properties can be set to an object where the keys are Cloudformation parameter names, and the values are as described by https://github.com/SBoudrias/Inquirer.js#question
 
 ## How defaults behave
 
