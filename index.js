@@ -8,8 +8,9 @@ var AWS = require('aws-sdk');
 var config = module.exports;
 
 // Run configuration wizard on a CFN template.
-config.configure = function(template, stackname, region, defaults, callback) {
-    inquirer.prompt(_(template.Parameters).map(_(config.question).partial(defaults)), function(answers) {
+config.configure = function(template, stackname, region, overrides, callback) {
+    var params = _(template.Parameters).map(_(config.question).partial(overrides));
+    inquirer.prompt(params, function(answers) {
         callback(null, {
             StackName: stackname,
             Region: region,
@@ -20,14 +21,17 @@ config.configure = function(template, stackname, region, defaults, callback) {
 
 // Return a inquirer-compatible question object for a given CFN template
 // parameter.
-config.question = function(defaults, parameter, key) {
+config.question = function(overrides, parameter, key) {
     var question = {
         name: key,
         message: key + '. ' + parameter.Description || key,
         filter: function(value) { return value.toString() }
     };
     if ('Default' in parameter) question.default = parameter.Default;
-    if (key in defaults) question.default = defaults[key];
+    if (key in overrides.defaults) question.default = overrides.defaults[key];
+    if (key in overrides.choices) question.choices = overrides.choices[key];
+    if (key in overrides.messages) question.message = overrides.messages[key];
+    if (key in overrides.filters) question.filter = overrides.filters[key];
 
     question.type = (function() {
         if (parameter.NoEcho === 'true') return 'password';
@@ -89,10 +93,9 @@ config.writeConfiguration = function(filepath, config, callback) {
 // - name: Required. Name of the Cloudformation stack
 // - config: Optional. Path to a configuration file to use
 // - update: Defaults to false. Reads existing stack parameters.
-// - defaults: Defaults to {}. Can be overriden to provide your own defaults.
-//   Keys should be the parameter's name, values either a string or function
-//   If finding the default value is asychronous, then the funciton has to
-//   declare itself as such. See https://github.com/SBoudrias/Inquirer.js#question
+// - defaults, choices, messages, filters: Optional. Any of these properties can be
+//   set to an object where the keys are Cloudformation parameter names, and the
+//   values are as described by https://github.com/SBoudrias/Inquirer.js#question
 //
 //   Prioritization of defaults written by multiple processes follows:
 //   1. Values set by parameters in an existing Cloudformation stack
@@ -120,16 +123,20 @@ config.configStack = function(options, callback) {
 
         function afterStackLoad(fileParameters, stackParameters) {
 
-            var defaults = _(stackParameters)
-                .chain()
-                .defaults(fileParameters)
-                .defaults(options.defaults)
-                .defaults(_(template.Parameters).reduce(function(memo, value, key) {
-                    memo[key] = value.Default;
-                    return memo;
-                }, {})).value();
+            var overrides = {
+                defaults: _(stackParameters).chain()
+                    .defaults(fileParameters)
+                    .defaults(options.defaults)
+                    .defaults(_(template.Parameters).reduce(function(memo, value, key) {
+                        memo[key] = value.Default;
+                        return memo;
+                    }, {})).value(),
+                choices: options.choices || {},
+                filters: options.filters || {},
+                messages: options.messages || {}
+            };
 
-            config.configure(template, options.name, options.region, defaults, function(err, configuration) {
+            config.configure(template, options.name, options.region, overrides, function(err, configuration) {
                 if (err) return callback(err);
                 config.writeConfiguration('', configuration, function(err, aborted) {
                     if (err) return callback(err);
