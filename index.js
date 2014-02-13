@@ -22,7 +22,7 @@ config.configure = function(template, stackname, region, overrides, callback) {
 
 // Return a inquirer-compatible question object for a given CFN template
 // parameter.
-config.question = function(defaults, parameter, key) {
+config.question = function(overrides, parameter, key) {
     function encryptInput(value) {
         if (!env.secureKey) return value.toString();
         var secure = ursa.createPrivateKey(fs.readFileSync(env.secureKey));
