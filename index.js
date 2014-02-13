@@ -2,8 +2,8 @@ var _ = require('underscore');
 var inquirer = require('inquirer');
 var fs = require('fs');
 var path = require('path');
-var env = require('superenv')('cfn');
 var AWS = require('aws-sdk');
+var env = {};
 
 var config = module.exports;
 

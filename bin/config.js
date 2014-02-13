@@ -2,6 +2,9 @@
 
 var _ = require('underscore');
 var config = require('..');
+var env = require('superenv')('cfn');
+
+config.setCredentials(env.accessKeyId, env.secretAccessKey);
 
 var argv = require('optimist')
     .options('template', {
