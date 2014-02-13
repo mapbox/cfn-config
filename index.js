@@ -7,6 +7,9 @@ var AWS = require('aws-sdk');
 
 var config = module.exports;
 
+// Override this function to adjust the template based on answers to parameters
+config.adjustTemplate = function (templateBody, parameters) { return templateBody; }
+
 // Run configuration wizard on a CFN template.
 config.configure = function(template, stackname, region, defaults, callback) {
     inquirer.prompt(_(template.Parameters).map(_(config.question).partial(defaults)), function(answers) {
@@ -161,9 +164,11 @@ config.createStack = function(options, callback) {
     config.configStack(options, function (err, configDetails) {
         if (err) return callback(err);
 
+        var templateBody = config.adjustTemplate(configDetails.template, configDetails.configuration.Parameters);
+
         cfn.createStack({
             StackName: options.name,
-            TemplateBody: JSON.stringify(configDetails.template, null, 4),
+            TemplateBody: JSON.stringify(templateBody, null, 4),
             Parameters: _(configDetails.configuration.Parameters).map(function(value, key) {
                 return {
                     ParameterKey: key,
@@ -186,9 +191,11 @@ config.updateStack = function(options, callback) {
     config.configStack(options, function(err, configDetails) {
         if (err) return callback(err);
 
+        var templateBody = config.adjustTemplate(configDetails.template, configDetails.configuration.Parameters);
+
         cfn.updateStack({
             StackName: options.name,
-            TemplateBody: JSON.stringify(configDetails.template, null, 4),
+            TemplateBody: JSON.stringify(templateBody, null, 4),
             Parameters: _(configDetails.configuration.Parameters).map(function(value, key) {
                 return {
                     ParameterKey: key,
