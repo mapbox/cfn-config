@@ -2,8 +2,9 @@
 
 var _ = require('underscore');
 var config = require('..');
+var optimist = require('optimist');
 
-var argv = require('optimist')
+var argv = optimist
     .options('template', {
         describe: 'AWS CloudFormation template to be deployed',
         demand: true,
@@ -24,6 +25,8 @@ var argv = require('optimist')
         alias: 'c'
     })
     .argv;
+
+if (argv.help) return optimist.showHelp();
 
 config.configStack(argv, function(err) {
     console.log(err ? err : 'Created config file!');
