@@ -117,6 +117,12 @@ config.configStack = function(options, callback) {
             if (!options.update) return afterStackLoad(fileParameters, {});
             config.readStackParameters(options.name, options.region, function(err, stackParameters) {
                 if (err) return callback(err);
+
+                // Exclude masked stack parameters that come from the CFN API.
+                stackParameters = _(stackParameters).reject(function(param, key) {
+                    return template.Parameters[key].NoEcho === 'true';
+                });
+
                 afterStackLoad(fileParameters, stackParameters);
             });
         }
