@@ -2,10 +2,16 @@ var _ = require('underscore');
 var inquirer = require('inquirer');
 var fs = require('fs');
 var path = require('path');
-var env = require('superenv')('cfn');
 var AWS = require('aws-sdk');
+var env = {};
 
 var config = module.exports;
+
+// Allow override of the default superenv credentials
+config.setCredentials = function (accessKeyId, secretAccessKey) {
+    env.accessKeyId = accessKeyId;
+    env.secretAccessKey = secretAccessKey;
+};
 
 // Run configuration wizard on a CFN template.
 config.configure = function(template, stackname, region, overrides, callback) {
@@ -117,6 +123,12 @@ config.configStack = function(options, callback) {
             if (!options.update) return afterStackLoad(fileParameters, {});
             config.readStackParameters(options.name, options.region, function(err, stackParameters) {
                 if (err) return callback(err);
+
+                // Exclude masked stack parameters that come from the CFN API.
+                stackParameters = _(stackParameters).reject(function(param, key) {
+                    return template.Parameters[key].NoEcho === 'true';
+                });
+
                 afterStackLoad(fileParameters, stackParameters);
             });
         }
