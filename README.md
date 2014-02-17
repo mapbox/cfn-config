@@ -60,6 +60,10 @@ $ npm install --save cfn-config
 
 ### Usage
 
+#### `config.setCredentials(accessKeyId, secretAccessKey)`
+
+Set the AWS credentails to be used by the library.
+
 #### `config.configStack(options, callback)`
 
 Reusable function for determining configuration.
@@ -72,7 +76,7 @@ Reusable function for determining configuration.
 - update: Defaults to false. Reads existing stack parameters.
 - defaults, choices, messages, filters: Optional. Any of these properties can be set to an object where the keys are Cloudformation parameter names, and the values are as described by https://github.com/SBoudrias/Inquirer.js#question
 
-## How defaults behave
+##### How defaults behave
 
 The configuration process prompts you for each parameter in the given template.
 For each value, cfn-config will determine a default value using the following

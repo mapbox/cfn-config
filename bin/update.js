@@ -2,8 +2,12 @@
 
 var _ = require('underscore');
 var config = require('..');
+var env = require('superenv')('cfn');
+var optimist = require('optimist');
 
-var argv = require('optimist')
+config.setCredentials(env.accessKeyId, env.secretAccessKey);
+
+var argv = optimist
     .options('template', {
         describe: 'AWS CloudFormation template to be deployed',
         demand: true,
@@ -26,6 +30,8 @@ var argv = require('optimist')
     .boolean('iam')
     .describe('iam', 'Set to allow stack to create IAM resources')
     .argv;
+
+if (argv.help) return optimist.showHelp();
 
 config.updateStack(argv, function(err) {
     console.log(err ? err : 'Updated stack: ' + argv.name);
