@@ -228,18 +228,12 @@ config.deleteStack = function(options, callback) {
         region: options.region
     }));
 
-    cfn.listStacks({}, function (err, data) {
+    cfn.describeStacks({ StackName: options.name }, function (err, data) {
         if (err) return callback(err);
-
-        var stackNames = _(data.StackSummaries).chain()
-            .reject(function (summary) {
-                return summary.StackStatus.indexOf('DELETE') === 0;
-            }).pluck('StackName').value();
-
-        if (!_(stackNames).contains(options.name)) {
-            return callback(new Error('Stack ' + options.name + ' does not exist!'));
+        if (data.Stacks[0].StackStatus.indexOf('DELETE_') === 0) {
+            return callback(new Error(options.name + ' is being deleted already'));
         }
-
+        
         confirmAction('Ready to delete the stack ' + options.name + '?', function (confirm) {
             if (!confirm) return callback();
             cfn.deleteStack({

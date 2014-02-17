@@ -22,6 +22,7 @@ var argv = optimist
 
 if (argv.help) return optimist.showHelp();
 
-config.deleteStack(argv, function(err) {
-    console.log(err ? err : 'Deleted stack: ' + argv.name);
+config.deleteStack(argv, function(err, data) {
+    if (err) throw err;
+    console.log(data ? 'Deleted stack: ' + argv.name : '');
 });
