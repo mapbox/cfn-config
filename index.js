@@ -9,14 +9,16 @@ var env = {};
 var config = module.exports;
 
 // Allow override of the default superenv credentials
-config.setCredentials = function (accessKeyId, secretAccessKey) {
+config.setCredentials = function (accessKeyId, secretAccessKey, secureKey) {
     env.accessKeyId = accessKeyId;
     env.secretAccessKey = secretAccessKey;
+    env.secureKey = secureKey;
 };
 
 // Run configuration wizard on a CFN template.
 config.configure = function(template, stackname, region, overrides, callback) {
     var params = _(template.Parameters).map(_(config.question).partial(overrides));
+    if (env.secureKey) console.log('Encrypting NoEcho params using ' + env.secureKey);
     inquirer.prompt(params, function(answers) {
         callback(null, {
             StackName: stackname,
