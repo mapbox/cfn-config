@@ -119,9 +119,11 @@ config.configStack = function(options, callback) {
                 if (err) return callback(err);
 
                 // Exclude masked stack parameters that come from the CFN API.
-                stackParameters = _(stackParameters).reject(function(param, key) {
-                    return template.Parameters[key].NoEcho === 'true';
-                });
+                stackParameters = _(stackParameters).reduce(function(memo, param, key) {
+                    if (template.Parameters[key].NoEcho === 'true') return memo;
+                    memo[key] = param;
+                    return memo;
+                }, {});
 
                 afterStackLoad(fileParameters, stackParameters);
             });
