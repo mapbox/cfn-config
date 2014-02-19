@@ -30,6 +30,22 @@ update, and delete stacks. Add `~/.cfnrc` with the following properties:
 }
 ```
 
+### Secure Parameters
+
+Optionally, you may provide the path to an RSA key in your `~/.cfnrc` file. If you do so, `NoEcho` parameters in your Cloudformation template will be encrypted using the key before being saves to a configuration file. 
+
+If you are using an existing config file to start or update a Cloudformation stack, and if that config file contains encrypted parameters, **you must** provide the path to the RSA private key capable of decrypting those parameters. Otherwise, the encrypted strings will be provided to Cloudformation directly.
+
+To ask cfn-config to use your private key, specify a `secureKey` property in your `~/.cfnrc` file. For example:
+
+```
+{
+    "accessKeyId": "xxxx",
+    "secretAccessKey": "xxxx",
+    "secureKey": "/home/user/.ssh/id_rsa"
+}
+```
+
 ### Usage
 
 The following commands are available. Run each with `--help` for specific
