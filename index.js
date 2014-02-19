@@ -4,6 +4,7 @@ var fs = require('fs');
 var path = require('path');
 var AWS = require('aws-sdk');
 var ursa = require('ursa');
+var gpg = require('gpg');
 var env = {};
 
 var config = module.exports;
@@ -31,16 +32,10 @@ config.configure = function(template, stackname, region, overrides, callback) {
 // Return a inquirer-compatible question object for a given CFN template
 // parameter.
 config.question = function(overrides, parameter, key) {
-    function encryptInput(value) {
-        if (!env.secureKey) return value.toString();
-        var secure = ursa.createPrivateKey(fs.readFileSync(env.secureKey));
-        return ['secure', secure.encrypt(value, 'utf8', 'base64')].join('::');
-    }
-
     var question = {
         name: key,
         message: key + '. ' + parameter.Description || key,
-        filter: parameter.NoEcho === 'true' ? encryptInput : function(value) { return value.toString() }
+        filter: parameter.NoEcho ? encryptedInput : function(value) { return value.toString() }
     };
     if ('Default' in parameter) question.default = parameter.Default;
     if (key in overrides.defaults) question.default = overrides.defaults[key];
@@ -70,11 +65,7 @@ config.readConfiguration = function (filepath, callback) {
         if (env.secureKey) {
             var secure = ursa.createPrivateKey(fs.readFileSync(env.secureKey));
             configuration.Parameters = _(configuration.Parameters).reduce(function (memo, value, key) {
-                if (value.indexOf('secure::') === 0) {
-                    memo[key] = secure.decrypt(value.replace('secure::', ''), 'base64', 'utf8');
-                } else {
-                    memo[key] = value;
-                }
+                memo[key] = value.indexOf('secure::') === 0 ? decryptedInput(value) : value;
                 return memo;
             }, {});
         }
@@ -205,7 +196,7 @@ config.createStack = function(options, callback) {
                 Parameters: _(configDetails.configuration.Parameters).map(function(value, key) {
                     return {
                         ParameterKey: key,
-                        ParameterValue: value
+                        ParameterValue: value.indexOf('secure::') === 0 ? decryptedInput(value) : value
                     };
                 }),
                 Capabilities: options.iam ? [ 'CAPABILITY_IAM' ] : []
@@ -233,7 +224,7 @@ config.updateStack = function(options, callback) {
                 Parameters: _(configDetails.configuration.Parameters).map(function(value, key) {
                     return {
                         ParameterKey: key,
-                        ParameterValue: value
+                        ParameterValue: value.indexOf('secure::') === 0 ? decryptedInput(value) : value
                     };
                 }),
                 Capabilities: options.iam ? [ 'CAPABILITY_IAM' ] : []
@@ -318,4 +309,16 @@ function confirmAction(message, callback) {
     }], function(answers) {
         callback(answers.confirm);
     });
+}
+
+function encryptedInput(value) {
+    if (!env.secureKey) return value.toString();
+    var secure = ursa.createPrivateKey(fs.readFileSync(env.secureKey));
+    return ['secure', secure.encrypt(value, 'utf8', 'base64')].join('::');
+}
+
+function decryptedInput(value) {
+    if (!env.secureKey) return value.toString();
+    var secure = ursa.createPrivateKey(fs.readFileSync(env.secureKey));
+    return secure.decrypt(value.split('::')[1], 'base64', 'utf8'); 
 }
