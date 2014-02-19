@@ -3,7 +3,6 @@ var inquirer = require('inquirer');
 var fs = require('fs');
 var path = require('path');
 var AWS = require('aws-sdk');
-var async = require('async');
 var env = {}, crypto;
 
 var config = module.exports;
@@ -73,19 +72,25 @@ config.readConfiguration = function(filepath, callback) {
         if (err) return callback(err);
 
         var pairs = _(configuration.Parameters).pairs();
-        async.reduce(pairs, configuration.Parameters, function(memo, pair, callback) {
+        var paramsProcessed = 0, paramsToProcess = pairs.length;
+
+        pairs.forEach(function(pair) {
             var key = pair[0], value = pair[1];
 
             if (crypto.prefix && value.indexOf(crypto.prefix) === 0) {
                 crypto.decrypt(value, function(err, result) {
-                    memo[key] = result;
-                    callback(err, memo);
+                    if (err) return afterProcess(err);
+                    configuration.Parameters[key] = result;
+                    afterProcess();
                 });
-            } else { callback(null, memo); }
-        }, function(err, result) {
-            configuration.Parameters = result;
-            callback(err, configuration);
+            } else { afterProcess(); }
         });
+
+        function afterProcess(err) {
+            if (err) return callback(err); // hmmm... don't want to throw this more than once
+            paramsProcessed++;
+            if (paramsProcessed === paramsToProcess) callback(null, configuration);
+        }
     });
 }
 
@@ -307,33 +312,35 @@ function deployPrep(options, callback) {
         confirmAction('Ready to push configuration to CloudFormation?', function(confirm) {
             if (!confirm) return callback();
 
-            var originalParams = configDetails.configuration.Parameters;
-            var pairs = _(originalParams).pairs();
-            async.reduce(pairs, originalParams, processParameter, afterProcessed);
+            var pairs = _(configDetails.configuration.Parameters).pairs();
+            var paramsProcessed = 0, paramsToProcess = pairs.length;
+            pairs.forEach(function(pair) {
+                var key = pair[0], value = pair[1];
+                if (!crypto.prefix || value.indexOf(crypto.prefix) !== 0) return afterProcessed(null);
+                
+                crypto.decrypt(value, function(err, result) {
+                    if (err) return callback(err);
+                    configDetails.configuration.Parameters[key] = result;
+                    afterProcessed(null);
+                });
+            });
+
+            function afterProcessed(err) {
+                if (err) return callback(err); // hmmm... again
+
+                paramsProcessed++;
+                if (paramsProcessed < paramsToProcess) return;
+
+                callback(null, cfn, {
+                    StackName: options.name,
+                    TemplateBody: JSON.stringify(configDetails.template, null, 4),
+                    Parameters: _(configDetails.configuration.Parameters).map(function(value, key) {
+                        return { ParameterKey: key, ParameterValue: value };
+                    }),
+                    Capabilities: options.iam ? [ 'CAPABILITY_IAM' ] : []
+                });
+            }
         });
-
-        function processParameter(memo, pair, callback) {
-            var key = pair[0], value = pair[1];
-            if (!crypto.prefix || value.indexOf(crypto.prefix) !== 0) return callback(null, memo);
-            
-            crypto.decrypt(value, function(err, result) {
-                memo[key] = result;
-                callback(err, memo);
-            });
-        }
-
-        function afterProcessed(err, result) {
-            if (err) return callback(err);
-
-            callback(null, cfn, {
-                StackName: options.name,
-                TemplateBody: JSON.stringify(configDetails.template, null, 4),
-                Parameters: _(result).map(function(value, key) {
-                    return { ParameterKey: key, ParameterValue: value };
-                }),
-                Capabilities: options.iam ? [ 'CAPABILITY_IAM' ] : []
-            });
-        }
     }
 }
 
