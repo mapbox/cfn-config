@@ -172,9 +172,11 @@ config.configStack = function(options, callback) {
                 if (err) return callback(err);
 
                 // Exclude masked stack parameters that come from the CFN API.
-                stackParameters = _(stackParameters).reject(function(param, key) {
-                    return template.Parameters[key].NoEcho === 'true';
-                });
+                stackParameters = _(stackParameters).reduce(function(memo, param, key) {
+                    if (template.Parameters[key].NoEcho === 'true') return memo;
+                    memo[key] = param;
+                    return memo;
+                }, {});
 
                 afterStackLoad(fileParameters, stackParameters);
             });
@@ -240,12 +242,20 @@ config.deleteStack = function(options, callback) {
         region: options.region
     }));
 
-    confirmAction('Ready to delete the stack ' + options.name + '?', function(confirm) {
-        if (!confirm) return callback();
-        cfn.deleteStack({
-            StackName: options.name
-        }, callback);
-    })
+    cfn.describeStacks({ StackName: options.name }, function (err, data) {
+        if (err) return callback(err);
+        var status = data.Stacks[0].StackStatus;
+        if (status === 'DELETE_COMPLETE' || status === 'DELETE_IN_PROGRESS') {
+            return callback(new Error([options.name, status].join(' ')));
+        }
+        
+        confirmAction('Ready to delete the stack ' + options.name + '?', function (confirm) {
+            if (!confirm) return callback();
+            cfn.deleteStack({
+                StackName: options.name
+            }, callback);
+        });
+    });
 };
 
 config.stackInfo = function(options, callback) {
