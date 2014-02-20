@@ -310,7 +310,7 @@ function deployPrep(options, callback) {
         if (err) return callback(err);
 
         confirmAction('Ready to push configuration to CloudFormation?', function(confirm) {
-            if (!confirm) return callback();
+            if (!confirm) return callback('Canceled');
 
             var pairs = _(configDetails.configuration.Parameters).pairs();
             var paramsProcessed = 0, paramsToProcess = pairs.length;
