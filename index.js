@@ -230,8 +230,9 @@ config.deleteStack = function(options, callback) {
 
     cfn.describeStacks({ StackName: options.name }, function (err, data) {
         if (err) return callback(err);
-        if (data.Stacks[0].StackStatus.indexOf('DELETE_') === 0) {
-            return callback(new Error(options.name + ' is being deleted already'));
+        var status = data.Stacks[0].StackStatus;
+        if (status === 'DELETE_COMPLETE' || status === 'DELETE_IN_PROGRESS') {
+            return callback(new Error([options.name, status].join(' ')));
         }
         
         confirmAction('Ready to delete the stack ' + options.name + '?', function (confirm) {
