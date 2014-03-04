@@ -62,7 +62,7 @@ $ npm install --save cfn-config
 
 #### `config.setCredentials(accessKeyId, secretAccessKey)`
 
-Set the AWS credentails to be used by the library.
+Set the AWS credentials to be used by the library.
 
 #### `config.configStack(options, callback)`
 
