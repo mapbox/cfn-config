@@ -27,5 +27,6 @@ var argv = optimist
 if (argv.help) return optimist.showHelp();
 
 config.stackInfo(argv, function(err, result) {
-    console.log(err ? err : result);
+    if (err) throw err;
+    console.log(result);
 });

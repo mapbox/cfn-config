@@ -69,7 +69,7 @@ Set the AWS credentials to be used by the library.
 Reusable function for determining configuration.
 
 `options` object should include:
-- template: Required. Path to the Cloudformation template
+- template: Required. Either the path to a Cloudformation template file on your computer, or the URI for a template file that has been uploaded to S3 (`s3://my-bucket/my-template.json`, for example). *Please note* that if your template is very large, it **must** be uploaded to S3 first. Also, the template file must reside in the same region as your stack.
 - region: The AWS region to deploy into
 - name: Required. Name of the Cloudformation stack
 - config: Optional. Path to a configuration file to use

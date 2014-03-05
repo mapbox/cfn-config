@@ -3,6 +3,7 @@ var inquirer = require('inquirer');
 var fs = require('fs');
 var path = require('path');
 var AWS = require('aws-sdk');
+var url = require('url');
 var env = {};
 
 var config = module.exports;
@@ -50,8 +51,27 @@ config.question = function(overrides, parameter, key) {
     return question;
 };
 
-config.readTemplate = function(filepath, callback) {
-    readJsonFile('template', filepath, callback);
+config.readTemplate = function(filepath, options, callback) {
+    if (typeof options === 'function') {
+        callback = options;
+        options = {};
+    }
+    
+    if (fs.existsSync(filepath)) return readJsonFile('template', filepath, callback);
+    
+    var uri = url.parse(filepath);
+    if (uri.protocol === 's3:' && options.region) {
+        var s3 = new AWS.S3(_(env).extend({ region: options.region }));
+        s3.getObject({
+            Bucket: uri.host,
+            Key: uri.path.substring(1)
+        }, function(err, data) {
+            if (err) return callback(err);
+            callback(null, JSON.parse(data.Body));
+        });
+    } else {
+        return callback(new Error('Invalid template reference'));
+    }
 }
 
 config.readConfiguration = function (filepath, callback) {
@@ -110,7 +130,7 @@ config.writeConfiguration = function(filepath, config, callback) {
 //   4. Values set by the Cloudformation template
 config.configStack = function(options, callback) {
     options.defaults = options.defaults || {};
-    config.readTemplate(options.template, function(err, template) {
+    config.readTemplate(options.template, options, function(err, template) {
         if (err) return callback(err);
 
         if (!options.config) return afterFileLoad({});
@@ -179,17 +199,7 @@ config.createStack = function(options, callback) {
 
         confirmAction('Ready to create this stack?', function (confirm) {
             if (!confirm) return callback();
-            cfn.createStack({
-                StackName: options.name,
-                TemplateBody: JSON.stringify(configDetails.template, null, 4),
-                Parameters: _(configDetails.configuration.Parameters).map(function(value, key) {
-                    return {
-                        ParameterKey: key,
-                        ParameterValue: value
-                    };
-                }),
-                Capabilities: options.iam ? [ 'CAPABILITY_IAM' ] : []
-            }, callback);
+            cfn.createStack(cfnParams(options, configDetails), callback);
         });
     });
 };
@@ -207,17 +217,7 @@ config.updateStack = function(options, callback) {
 
         confirmAction('Ready to update the stack?', function (confirm) {
             if (!confirm) return callback();
-            cfn.updateStack({
-                StackName: options.name,
-                TemplateBody: JSON.stringify(configDetails.template, null, 4),
-                Parameters: _(configDetails.configuration.Parameters).map(function(value, key) {
-                    return {
-                        ParameterKey: key,
-                        ParameterValue: value
-                    };
-                }),
-                Capabilities: options.iam ? [ 'CAPABILITY_IAM' ] : []
-            }, callback);
+            cfn.updateStack(cfnParams(options, configDetails), callback);
         });
     });
 }
@@ -306,4 +306,26 @@ function confirmAction(message, callback) {
     }], function(answers) {
         callback(answers.confirm);
     });
+}
+
+function cfnParams(options, configDetails) {
+    var params = {
+        StackName: options.name,
+        Capabilities: options.iam ? [ 'CAPABILITY_IAM' ] : [],
+        Parameters: _(configDetails.configuration.Parameters).map(function(value, key) {
+            return {
+                ParameterKey: key,
+                ParameterValue: value
+            };
+        })
+    };
+
+    if (options.template.indexOf('s3://') === 0) {
+        var uri = url.parse(options.template);
+        params.TemplateURL = 'https://s3.amazonaws.com/' + uri.host + uri.path;
+    } else {
+        params.TemplateBody = JSON.stringify(configDetails.template, null, 4);
+    }
+
+    return params;
 }
