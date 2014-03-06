@@ -86,7 +86,7 @@ config.writeConfiguration = function(filepath, config, callback) {
     console.log('Stack configuration:\n%s', json);
 
     confirmAction('Okay to write this configuration to ' + filepath + '?', function(confirm) {
-        if (!confirm) return callback();
+        if (!confirm) return callback(null, true);
         fs.writeFile(filepath, json, callback);
     });
 };
@@ -152,9 +152,13 @@ config.configStack = function(options, callback) {
 
             config.configure(template, options.name, options.region, overrides, function(err, configuration) {
                 if (err) return callback(err);
-                config.writeConfiguration('', configuration, function(err, aborted) {
+                config.writeConfiguration('', configuration, function(err, writeCanceled) {
                     if (err) return callback(err);
-                    callback(null, {template: template, configuration: configuration});
+                    callback(null, {
+                        template: template, 
+                        configuration: configuration, 
+                        wroteFile: !writeCanceled
+                    });
                 });
             });
         }

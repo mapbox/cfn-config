@@ -33,5 +33,5 @@ if (argv.help) return optimist.showHelp();
 
 config.configStack(argv, function(err, result) {
     if (err) throw err;
-    console.log(result ? 'Created config file!' : '');
+    console.log(result.wroteFile ? 'Created config file!' : '');
 });
