@@ -57,20 +57,40 @@ config.readTemplate = function(filepath, options, callback) {
         options = {};
     }
     
-    if (fs.existsSync(filepath)) return readJsonFile('template', filepath, callback);
+    if (!fs.existsSync(filepath)) return readS3Template(filepath);
+
+    var fileSize = fs.statSync(filepath).size;
+    if (fileSize < 51200) return readJsonFile('template', filepath, callback);
     
-    var uri = url.parse(filepath);
-    if (uri.protocol === 's3:' && options.region) {
-        var s3 = new AWS.S3(_(env).extend({ region: options.region }));
-        s3.getObject({
-            Bucket: uri.host,
-            Key: uri.path.substring(1)
+    var bucket = 'cfn-config';
+    var filename = path.basename(filepath);
+    var s3 = new AWS.S3(_(env).extend({ region: options.region }));
+    s3.createBucket({Bucket: bucket}, function(err, data) {
+        if (err) return callback(err);
+        s3.putObject({
+            Bucket: bucket,
+            Key: filename,
+            Body: fs.createReadStream(filepath)
         }, function(err, data) {
             if (err) return callback(err);
-            callback(null, JSON.parse(data.Body));
+            return readS3Template('s3://' + bucket + '/' + filename);
         });
-    } else {
-        return callback(new Error('Invalid template reference'));
+    });
+
+    function readS3Template(fileuri) {
+        var uri = url.parse(fileuri);
+        if (uri.protocol === 's3:' && options.region) {
+            var s3 = new AWS.S3(_(env).extend({ region: options.region }));
+            s3.getObject({
+                Bucket: uri.host,
+                Key: uri.path.substring(1)
+            }, function(err, data) {
+                if (err) return callback(err);
+                callback(null, JSON.parse(data.Body));
+            });
+        } else {
+            return callback(new Error('Invalid template reference'));
+        }
     }
 }
 
