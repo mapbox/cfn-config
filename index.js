@@ -79,14 +79,14 @@ config.readStackParameters = function(stackname, region, callback) {
     });
 }
 
-config.writeConfiguration = function(filepath, config, callback) {
-    var filepath = path.resolve(path.join(filepath, config.StackName + '.cfn.json'));
+config.writeConfiguration = function(config, callback) {
+    var filepath = path.resolve(config.StackName + '.cfn.json');
     var json = JSON.stringify(config, null, 4);
 
     console.log('Stack configuration:\n%s', json);
 
     confirmAction('Okay to write this configuration to ' + filepath + '?', function(confirm) {
-        if (!confirm) return callback(null, true);
+        if (!confirm) return callback();
         fs.writeFile(filepath, json, callback);
     });
 };
@@ -152,14 +152,7 @@ config.configStack = function(options, callback) {
 
             config.configure(template, options.name, options.region, overrides, function(err, configuration) {
                 if (err) return callback(err);
-                config.writeConfiguration('', configuration, function(err, writeCanceled) {
-                    if (err) return callback(err);
-                    callback(null, {
-                        template: template, 
-                        configuration: configuration, 
-                        wroteFile: !writeCanceled
-                    });
-                });
+                callback(null, {template: template, configuration: configuration});
             });
         }
 
@@ -185,7 +178,7 @@ config.createStack = function(options, callback) {
             if (!confirm) return callback();
             cfn.createStack({
                 StackName: options.name,
-                TemplateBody: JSON.stringify(configDetails.template, null, 4),
+                TemplateBody: JSON.stringify(configDetails.template),
                 Parameters: _(configDetails.configuration.Parameters).map(function(value, key) {
                     return {
                         ParameterKey: key,
