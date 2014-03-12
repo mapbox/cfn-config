@@ -79,8 +79,8 @@ config.readStackParameters = function(stackname, region, callback) {
     });
 }
 
-config.writeConfiguration = function(filepath, config, callback) {
-    var filepath = path.resolve(path.join(filepath, config.StackName + '.cfn.json'));
+config.writeConfiguration = function(config, callback) {
+    var filepath = path.resolve(config.StackName + '.cfn.json');
     var json = JSON.stringify(config, null, 4);
 
     console.log('Stack configuration:\n%s', json);
