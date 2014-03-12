@@ -305,8 +305,11 @@ function getTemplateUrl(templateName, templateBody, region, callback) {
     var s3 = new AWS.S3(_(env).extend({ region: region }));
     var iam = new AWS.IAM(_(env).extend({ region: region }));
     iam.getUser({}, function (err, userData) {
-        if (err) return callback(err);
-        
+        if (err && err.code !== 'AccessDenied') return callback(err);
+
+        // AccessDenied error messages still contain what we need
+        else if (err) userData = { Arn: /(arn:.+?) /.exec(err.message)[1] };
+
         var bucket = [
             'cfn-config-templates', 
             userData.Arn.split(':')[4],
