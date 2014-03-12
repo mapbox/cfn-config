@@ -181,7 +181,7 @@ config.createStack = function(options, callback) {
             if (!confirm) return callback();
             cfn.createStack({
                 StackName: options.name,
-                TemplateBody: JSON.stringify(configDetails.template, null, 4),
+                TemplateBody: JSON.stringify(configDetails.template),
                 Parameters: _(configDetails.configuration.Parameters).map(function(value, key) {
                     return {
                         ParameterKey: key,
