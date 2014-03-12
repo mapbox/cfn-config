@@ -3,6 +3,7 @@ var inquirer = require('inquirer');
 var fs = require('fs');
 var path = require('path');
 var AWS = require('aws-sdk');
+var url = require('url');
 var env = {};
 
 var config = module.exports;
@@ -268,11 +269,27 @@ config.stackInfo = function(options, callback) {
 function readFile(filepath, callback) {
     if (!filepath) return callback(new Error('file is required'));
 
-    fs.readFile(path.resolve(filepath), function(err, data) {
-        if (err) {
-            if (err.code === 'ENOENT') return callback(new Error('No such file'));
-            return callback(err);
-        }
+    var uri = url.parse(filepath);
+    if (uri.protocol === 's3:') {
+        var s3 = new AWS.S3(env);
+        s3.getObject({
+            Bucket: uri.host,
+            Key: uri.path.substring(1)
+        }, function(err, data) {
+            if (err) return callback(err);
+            ondata(data.Body.toString());
+        });
+    } else {
+        fs.readFile(path.resolve(filepath), function(err, data) {
+            if (err) {
+                if (err.code === 'ENOENT') return callback(new Error('No such file'));
+                return callback(err);
+            }
+            ondata(data);
+        });
+    }
+
+    function ondata(data) {
         try {
             var jsonData = JSON.parse(data);
         } catch(e) {
@@ -280,7 +297,7 @@ function readFile(filepath, callback) {
             return callback(e);
         }
         callback(null, jsonData);
-    });
+    }
 }
 
 function confirmAction(message, callback) {
