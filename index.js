@@ -56,12 +56,12 @@ config.readTemplate = function(filepath, options, callback) {
         callback = options;
         options = {};
     }
-    
+
     if (!fs.existsSync(filepath)) return readS3Template(filepath);
 
     var fileSize = fs.statSync(filepath).size;
     if (fileSize < 51200) return readJsonFile('template', filepath, callback);
-    
+
     var bucket = 'cfn-config';
     var filename = path.basename(filepath);
     var s3 = new AWS.S3(_(env).extend({ region: options.region }));
@@ -256,7 +256,7 @@ config.deleteStack = function(options, callback) {
         if (status === 'DELETE_COMPLETE' || status === 'DELETE_IN_PROGRESS') {
             return callback(new Error([options.name, status].join(' ')));
         }
-        
+
         confirmAction('Ready to delete the stack ' + options.name + '?', function (confirm) {
             if (!confirm) return callback();
             cfn.deleteStack({
