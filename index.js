@@ -190,6 +190,7 @@ config.updateStack = function(options, callback) {
 
         confirmAction('Ready to update the stack?', function (confirm) {
             if (!confirm) return callback();
+            var templateName = path.basename(options.template);
             getTemplateUrl(templateName, configDetails.template, options.region, function(err, url) {
                 if (err) return callback(err);
                 options.templateUrl = url;
@@ -324,7 +325,7 @@ function getTemplateUrl(templateName, templateBody, region, callback) {
                 Body: JSON.stringify(templateBody)
             }, function(err, data) {
                 if (err) return callback(err);
-                callback(null, 's3://' + bucket + '/' + templateName);
+                callback(null, 'https://s3.amazonaws.com/' + bucket + '/' + templateName);
             });
         });
     });
