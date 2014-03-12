@@ -331,9 +331,10 @@ function getTemplateUrl(templateName, templateBody, region, callback) {
 }
 
 function cfnParams(options, configDetails) {
-    var params = {
+    return {
         StackName: options.name,
         Capabilities: options.iam ? [ 'CAPABILITY_IAM' ] : [],
+        TemplateURL: options.templateUrl,
         Parameters: _(configDetails.configuration.Parameters).map(function(value, key) {
             return {
                 ParameterKey: key,
@@ -341,13 +342,4 @@ function cfnParams(options, configDetails) {
             };
         })
     };
-
-    if (options.template.indexOf('s3://') === 0) {
-        var uri = url.parse(options.template);
-        params.TemplateURL = 'https://s3.amazonaws.com/' + uri.host + uri.path;
-    } else {
-        params.TemplateBody = JSON.stringify(configDetails.template);
-    }
-
-    return params;
 }
