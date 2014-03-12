@@ -3,6 +3,7 @@ var inquirer = require('inquirer');
 var fs = require('fs');
 var path = require('path');
 var AWS = require('aws-sdk');
+var url = require('url');
 var env = {};
 
 var config = module.exports;
@@ -49,17 +50,6 @@ config.question = function(overrides, parameter, key) {
 
     return question;
 };
-
-config.readTemplate = function(filepath, callback) {
-    readJsonFile('template', filepath, callback);
-}
-
-config.readConfiguration = function (filepath, callback) {
-    readJsonFile('configuration', filepath, function (err, configuration) {
-        if (err) return callback(err);
-        callback(null, configuration);
-    });
-}
 
 config.readStackParameters = function(stackname, region, callback) {
     var cfn = new AWS.CloudFormation(_(env).extend({
@@ -110,12 +100,12 @@ config.writeConfiguration = function(config, callback) {
 //   4. Values set by the Cloudformation template
 config.configStack = function(options, callback) {
     options.defaults = options.defaults || {};
-    config.readTemplate(options.template, function(err, template) {
-        if (err) return callback(err);
+    readFile(options.template, function(err, template) {
+        if (err) return callback(new Error('Failed to read template file: ' + err.message));
 
         if (!options.config) return afterFileLoad({});
-        config.readConfiguration(options.config, function(err, configuration) {
-            if (err) return callback(err);
+        readFile(options.config, function(err, configuration) {
+            if (err) return callback(new Error('Failed to read configuration file: ' + err.message));
             afterFileLoad(configuration.Parameters);
         });
 
@@ -233,7 +223,7 @@ config.deleteStack = function(options, callback) {
         if (status === 'DELETE_COMPLETE' || status === 'DELETE_IN_PROGRESS') {
             return callback(new Error([options.name, status].join(' ')));
         }
-        
+
         confirmAction('Ready to delete the stack ' + options.name + '?', function (confirm) {
             if (!confirm) return callback();
             cfn.deleteStack({
@@ -276,22 +266,38 @@ config.stackInfo = function(options, callback) {
     });
 }
 
-function readJsonFile(filelabel, filepath, callback) {
-    if (!filepath) return callback(new Error(filelabel + ' file is required'));
+function readFile(filepath, callback) {
+    if (!filepath) return callback(new Error('file is required'));
 
-    fs.readFile(path.resolve(filepath), function(err, data) {
-        if (err) {
-            if (err.code === 'ENOENT') return callback(new Error('No such ' + filelabel + ' file'));
-            return callback(err);
-        }
+    var uri = url.parse(filepath);
+    if (uri.protocol === 's3:') {
+        var s3 = new AWS.S3(env);
+        s3.getObject({
+            Bucket: uri.host,
+            Key: uri.path.substring(1)
+        }, function(err, data) {
+            if (err) return callback(err);
+            ondata(data.Body.toString());
+        });
+    } else {
+        fs.readFile(path.resolve(filepath), function(err, data) {
+            if (err) {
+                if (err.code === 'ENOENT') return callback(new Error('No such file'));
+                return callback(err);
+            }
+            ondata(data);
+        });
+    }
+
+    function ondata(data) {
         try {
             var jsonData = JSON.parse(data);
         } catch(e) {
-            if (e.name === 'SyntaxError') return callback(new Error('Unable to parse ' + filelabel + ' file'));
+            if (e.name === 'SyntaxError') return callback(new Error('Unable to parse file'));
             return callback(e);
         }
         callback(null, jsonData);
-    });
+    }
 }
 
 function confirmAction(message, callback) {
