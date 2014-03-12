@@ -51,56 +51,6 @@ config.question = function(overrides, parameter, key) {
     return question;
 };
 
-config.readTemplate = function(filepath, options, callback) {
-    if (typeof options === 'function') {
-        callback = options;
-        options = {};
-    }
-    
-    if (!fs.existsSync(filepath)) return readS3Template(filepath);
-
-    var fileSize = fs.statSync(filepath).size;
-    if (fileSize < 51200) return readJsonFile('template', filepath, callback);
-    
-    var bucket = 'cfn-config';
-    var filename = path.basename(filepath);
-    var s3 = new AWS.S3(_(env).extend({ region: options.region }));
-    s3.createBucket({Bucket: bucket}, function(err, data) {
-        if (err) return callback(err);
-        s3.putObject({
-            Bucket: bucket,
-            Key: filename,
-            Body: fs.createReadStream(filepath)
-        }, function(err, data) {
-            if (err) return callback(err);
-            return readS3Template('s3://' + bucket + '/' + filename);
-        });
-    });
-
-    function readS3Template(fileuri) {
-        var uri = url.parse(fileuri);
-        if (uri.protocol === 's3:' && options.region) {
-            var s3 = new AWS.S3(_(env).extend({ region: options.region }));
-            s3.getObject({
-                Bucket: uri.host,
-                Key: uri.path.substring(1)
-            }, function(err, data) {
-                if (err) return callback(err);
-                callback(null, JSON.parse(data.Body));
-            });
-        } else {
-            return callback(new Error('Invalid template reference'));
-        }
-    }
-}
-
-config.readConfiguration = function (filepath, callback) {
-    readJsonFile('configuration', filepath, function (err, configuration) {
-        if (err) return callback(err);
-        callback(null, configuration);
-    });
-}
-
 config.readStackParameters = function(stackname, region, callback) {
     var cfn = new AWS.CloudFormation(_(env).extend({
         region: region
@@ -119,8 +69,8 @@ config.readStackParameters = function(stackname, region, callback) {
     });
 }
 
-config.writeConfiguration = function(filepath, config, callback) {
-    var filepath = path.resolve(path.join(filepath, config.StackName + '.cfn.json'));
+config.writeConfiguration = function(config, callback) {
+    var filepath = path.resolve(config.StackName + '.cfn.json');
     var json = JSON.stringify(config, null, 4);
 
     console.log('Stack configuration:\n%s', json);
@@ -150,12 +100,13 @@ config.writeConfiguration = function(filepath, config, callback) {
 //   4. Values set by the Cloudformation template
 config.configStack = function(options, callback) {
     options.defaults = options.defaults || {};
-    config.readTemplate(options.template, options, function(err, template) {
-        if (err) return callback(err);
+
+    readFile(options.template, function(err, template) {
+        if (err) return callback(new Error('Failed to read template file: ' + err.message));
 
         if (!options.config) return afterFileLoad({});
-        config.readConfiguration(options.config, function(err, configuration) {
-            if (err) return callback(err);
+        readFile(options.config, function(err, configuration) {
+            if (err) return callback(new Error('Failed to read configuration file: ' + err.message));
             afterFileLoad(configuration.Parameters);
         });
 
@@ -192,10 +143,7 @@ config.configStack = function(options, callback) {
 
             config.configure(template, options.name, options.region, overrides, function(err, configuration) {
                 if (err) return callback(err);
-                config.writeConfiguration('', configuration, function(err, aborted) {
-                    if (err) return callback(err);
-                    callback(null, {template: template, configuration: configuration});
-                });
+                callback(null, {template: template, configuration: configuration});
             });
         }
 
@@ -219,7 +167,12 @@ config.createStack = function(options, callback) {
 
         confirmAction('Ready to create this stack?', function (confirm) {
             if (!confirm) return callback();
-            cfn.createStack(cfnParams(options, configDetails), callback);
+            var templateName = path.basename(options.template);
+            getTemplateUrl(templateName, configDetails.template, options.region, function(err, url) {
+                if (err) return callback(err);
+                options.templateUrl = url;
+                cfn.createStack(cfnParams(options, configDetails), callback);
+            });
         });
     });
 };
@@ -237,7 +190,11 @@ config.updateStack = function(options, callback) {
 
         confirmAction('Ready to update the stack?', function (confirm) {
             if (!confirm) return callback();
-            cfn.updateStack(cfnParams(options, configDetails), callback);
+            getTemplateUrl(templateName, configDetails.template, options.region, function(err, url) {
+                if (err) return callback(err);
+                options.templateUrl = url;
+                cfn.updateStack(cfnParams(options, configDetails), callback);
+            });
         });
     });
 }
@@ -256,7 +213,7 @@ config.deleteStack = function(options, callback) {
         if (status === 'DELETE_COMPLETE' || status === 'DELETE_IN_PROGRESS') {
             return callback(new Error([options.name, status].join(' ')));
         }
-        
+
         confirmAction('Ready to delete the stack ' + options.name + '?', function (confirm) {
             if (!confirm) return callback();
             cfn.deleteStack({
@@ -299,22 +256,38 @@ config.stackInfo = function(options, callback) {
     });
 }
 
-function readJsonFile(filelabel, filepath, callback) {
-    if (!filepath) return callback(new Error(filelabel + ' file is required'));
+function readFile(filepath, callback) {
+    if (!filepath) return callback(new Error('file is required'));
 
-    fs.readFile(path.resolve(filepath), function(err, data) {
-        if (err) {
-            if (err.code === 'ENOENT') return callback(new Error('No such ' + filelabel + ' file'));
-            return callback(err);
-        }
+    var uri = url.parse(filepath);
+    if (uri.protocol === 's3:') {
+        var s3 = new AWS.S3(env);
+        s3.getObject({
+            Bucket: uri.host,
+            Key: uri.path.substring(1)
+        }, function(err, data) {
+            if (err) return callback(err);
+            ondata(data.Body.toString());
+        });
+    } else {
+        fs.readFile(path.resolve(filepath), function(err, data) {
+            if (err) {
+                if (err.code === 'ENOENT') return callback(new Error('No such file'));
+                return callback(err);
+            }
+            ondata(data);
+        });
+    }
+
+    function ondata(data) {
         try {
             var jsonData = JSON.parse(data);
         } catch(e) {
-            if (e.name === 'SyntaxError') return callback(new Error('Unable to parse ' + filelabel + ' file'));
+            if (e.name === 'SyntaxError') return callback(new Error('Unable to parse file'));
             return callback(e);
         }
         callback(null, jsonData);
-    });
+    }
 }
 
 function confirmAction(message, callback) {
@@ -325,6 +298,32 @@ function confirmAction(message, callback) {
         default: true
     }], function(answers) {
         callback(answers.confirm);
+    });
+}
+
+function getTemplateUrl(templateName, templateBody, region, callback) {
+    var s3 = new AWS.S3(_(env).extend({ region: region }));
+    var iam = new AWS.IAM(_(env).extend({ region: region }));
+    iam.getUser({}, function (err, userData) {
+        if (err) return callback(err);
+        
+        var bucket = [
+            'cfn-config-templates', 
+            userData.Arn.split(':')[4],
+            region
+        ].join('-');
+
+        s3.createBucket({Bucket: bucket}, function(err, data) {
+            if (err) return callback(err);
+            s3.putObject({
+                Bucket: bucket,
+                Key: templateName,
+                Body: JSON.stringify(templateBody)
+            }, function(err, data) {
+                if (err) return callback(err);
+                callback(null, 's3://' + bucket + '/' + templateName);
+            });
+        });
     });
 }
 
@@ -344,7 +343,7 @@ function cfnParams(options, configDetails) {
         var uri = url.parse(options.template);
         params.TemplateURL = 'https://s3.amazonaws.com/' + uri.host + uri.path;
     } else {
-        params.TemplateBody = JSON.stringify(configDetails.template, null, 4);
+        params.TemplateBody = JSON.stringify(configDetails.template);
     }
 
     return params;

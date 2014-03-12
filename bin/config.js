@@ -31,7 +31,9 @@ var argv = optimist
 
 if (argv.help) return optimist.showHelp();
 
-config.configStack(argv, function(err) {
+config.configStack(argv, function(err, stack) {
     if (err) throw err;
-    console.log('Created config file!');
+    config.writeConfiguration(stack.configuration, function(err) {
+        if (err) return console.error(err);
+    });
 });

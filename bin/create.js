@@ -33,7 +33,7 @@ var argv = optimist
 
 if (argv.help) return optimist.showHelp();
 
-config.createStack(argv, function(err) {
+config.createStack(argv, function(err, result) {
     if (err) throw err;
-    console.log('Created stack: ' + argv.name);
+    console.log(result ? 'Created stack: ' + argv.name : '');
 });
