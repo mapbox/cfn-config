@@ -33,7 +33,7 @@ var argv = optimist
     })
     .check(function(argv) {
         if (!argv.filepath) {
-            argv.filepath = path.resolve(argv.name) + '.cfn.json';
+            argv.filepath = path.resolve(argv.name + '.cfn.json');
         }
     })
     .argv;
