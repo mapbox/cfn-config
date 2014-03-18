@@ -69,15 +69,27 @@ config.readStackParameters = function(stackname, region, callback) {
     });
 }
 
-config.writeConfiguration = function(config, callback) {
-    var filepath = path.resolve(config.StackName + '.cfn.json');
+config.writeConfiguration = function(config, filepath, callback) {
     var json = JSON.stringify(config, null, 4);
 
     console.log('Stack configuration:\n%s', json);
 
     confirmAction('Okay to write this configuration to ' + filepath + '?', function(confirm) {
         if (!confirm) return callback();
-        fs.writeFile(filepath, json, callback);
+        var uri = url.parse(filepath);
+        if (uri.protocol === 's3:') {
+            var s3 = new AWS.S3(env);
+            s3.putObject({
+                Bucket: uri.host,
+                Key: uri.path.substring(1),
+                Body: json
+            }, callback);
+        } else {
+            var dir = path.resolve(path.dirname(filepath));
+            if (!fs.existsSync(dir)) return callback(new Error('The directory ' + dir + ' does not exist'));
+            fs.writeFile(filepath, json, callback);
+        }
+        
     });
 };
 
