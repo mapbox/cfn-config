@@ -309,12 +309,11 @@ function getTemplateUrl(templateName, templateBody, region, callback) {
         if (err && err.code !== 'AccessDenied') return callback(err);
 
         // AccessDenied error messages still contain what we need
-        else if (err) userData = { Arn: /(arn:.+?) /.exec(err.message)[1] };
+        var acct = err ? /(arn:.+?) /.exec(err.message)[1] :
+            userData.User.Arn.split(':')[4];
 
         var bucket = [
-            'cfn-config-templates', 
-            userData.Arn.split(':')[4],
-            region
+            'cfn-config-templates', acct, region
         ].join('-');
 
         s3.createBucket({Bucket: bucket}, function(err, data) {
