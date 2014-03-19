@@ -1,5 +1,7 @@
 Quickly configure and start AWS CloudFormation stacks.
 
+![](https://f.cloud.github.com/assets/83384/2457116/d9e31ce6-af2d-11e3-8150-97cf1e8a2385.gif)
+
 ## Features
 
 - CLI parameter prompting for easy configuration
