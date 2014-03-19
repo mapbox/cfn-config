@@ -31,7 +31,7 @@ config.configure = function(template, stackname, region, overrides, callback) {
 config.question = function(overrides, parameter, key) {
     var question = {
         name: key,
-        message: key + '. ' + parameter.Description || key,
+        message: parameter.Description ? key + '. ' + parameter.Description : key,
         filter: function(value) { return value.toString() }
     };
     if ('Default' in parameter) question.default = parameter.Default;
