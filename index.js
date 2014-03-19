@@ -4,6 +4,7 @@ var fs = require('fs');
 var path = require('path');
 var AWS = require('aws-sdk');
 var url = require('url');
+var hat = require('hat');
 var env = {};
 
 var config = module.exports;
@@ -116,7 +117,8 @@ config.writeConfiguration = function(template, config, callback) {
 //   4. Values set by the Cloudformation template
 config.configStack = function(options, callback) {
     options.defaults = options.defaults || {};
-    readFile(options.template, function(err, template) {
+
+    readFile(options.template, options.region, function(err, template) {
         if (err) return callback(new Error('Failed to read template file: ' + err.message));
 
         if (!options.config) return pickConfig(options.template, function(err, configuration) {
@@ -186,17 +188,12 @@ config.createStack = function(options, callback) {
 
         confirmAction('Ready to create this stack?', function (confirm) {
             if (!confirm) return callback();
-            cfn.createStack({
-                StackName: options.name,
-                TemplateBody: JSON.stringify(configDetails.template),
-                Parameters: _(configDetails.configuration.Parameters).map(function(value, key) {
-                    return {
-                        ParameterKey: key,
-                        ParameterValue: value
-                    };
-                }),
-                Capabilities: options.iam ? [ 'CAPABILITY_IAM' ] : []
-            }, callback);
+            var templateName = path.basename(options.template);
+            getTemplateUrl(templateName, configDetails.template, options.region, function(err, url) {
+                if (err) return callback(err);
+                options.templateUrl = url;
+                cfn.createStack(cfnParams(options, configDetails), callback);
+            });
         });
     });
 };
@@ -214,17 +211,12 @@ config.updateStack = function(options, callback) {
 
         confirmAction('Ready to update the stack?', function (confirm) {
             if (!confirm) return callback();
-            cfn.updateStack({
-                StackName: options.name,
-                TemplateBody: JSON.stringify(configDetails.template, null, 4),
-                Parameters: _(configDetails.configuration.Parameters).map(function(value, key) {
-                    return {
-                        ParameterKey: key,
-                        ParameterValue: value
-                    };
-                }),
-                Capabilities: options.iam ? [ 'CAPABILITY_IAM' ] : []
-            }, callback);
+            var templateName = path.basename(options.template);
+            getTemplateUrl(templateName, configDetails.template, options.region, function(err, url) {
+                if (err) return callback(err);
+                options.templateUrl = url;
+                cfn.updateStack(cfnParams(options, configDetails), callback);
+            });
         });
     });
 }
@@ -286,16 +278,18 @@ config.stackInfo = function(options, callback) {
     });
 }
 
-function readFile(filepath, callback) {
+function readFile(filepath, region, callback) {
     if (!filepath) return callback(new Error('file is required'));
 
     var uri = url.parse(filepath);
     if (uri.protocol === 's3:') {
-        var s3 = new AWS.S3(env);
+        var s3 = new AWS.S3(_(env).extend({ region: region }));
         s3.getObject({
             Bucket: uri.host,
             Key: uri.path.substring(1)
         }, function(err, data) {
+            if (err && err.code === 'PermanentRedirect')
+                return callback(new Error('Your template must exist in the same region as your CloudFormation stack'));
             if (err) return callback(err);
             ondata(data.Body.toString());
         });
@@ -331,11 +325,59 @@ function confirmAction(message, callback) {
     });
 }
 
+function getTemplateUrl(templateName, templateBody, region, callback) {
+    var s3 = new AWS.S3(_(env).extend({ region: region }));
+    var iam = new AWS.IAM(_(env).extend({ region: region }));
+    iam.getUser({}, function (err, userData) {
+        if (err && err.code !== 'AccessDenied') return callback(err);
+
+        // AccessDenied error messages still contain what we need
+        var acct = err ? /(arn:.+?) /.exec(err.message)[1] :
+            userData.User.Arn.split(':')[4];
+
+        var bucket = [
+            'cfn-config-templates', acct, region
+        ].join('-');
+        
+        var key = [Date.now(), hat(), templateName].join('-');
+
+        s3.createBucket({Bucket: bucket}, function(err, data) {
+            if (err && err.code !== 'BucketAlreadyOwnedByYou') return callback(err);
+            s3.putObject({
+                Bucket: bucket,
+                Key: key,
+                Body: JSON.stringify(templateBody)
+            }, function(err, data) {
+                if (err) return callback(err);
+                var host = region === 'us-east-1' ? 
+                    'https://s3.amazonaws.com' :
+                    'https://s3-' + region + '.amazonaws.com'
+                callback(null, [host, bucket, key].join('/'));
+            });
+        });
+    });
+}
+
+function cfnParams(options, configDetails) {
+    return {
+        StackName: options.name,
+        Capabilities: options.iam ? [ 'CAPABILITY_IAM' ] : [],
+        TemplateURL: options.templateUrl,
+        Parameters: _(configDetails.configuration.Parameters).map(function(value, key) {
+            return {
+                ParameterKey: key,
+                ParameterValue: value
+            };
+        })
+    };
+}
+
 function pickConfig(template, callback) {
     if (typeof template !== 'string') return callback(new TypeError('template must be a template filepath'));
     if (typeof env.bucket !== 'string') return callback(new TypeError('config.bucket must be an s3 bucket'));
 
-    var s3 = new AWS.S3(env);
+    var bucketRegion = env.bucketRegion ? env.bucketRegion : 'us-east-1';
+    var s3 = new AWS.S3(_(env).extend({ region : bucketRegion }));
     var prefix = path.basename(template, path.extname(template));
 
     s3.listObjects({
@@ -370,4 +412,3 @@ function pickConfig(template, callback) {
         }
     }
 }
-
