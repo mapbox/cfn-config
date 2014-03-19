@@ -5,7 +5,7 @@ var config = require('..');
 var env = require('superenv')('cfn');
 var optimist = require('optimist');
 
-config.setCredentials(env.accessKeyId, env.secretAccessKey);
+config.setCredentials(env.accessKeyId, env.secretAccessKey, env.bucket);
 
 var argv = optimist
     .options('template', {
@@ -33,7 +33,7 @@ if (argv.help) return optimist.showHelp();
 
 config.configStack(argv, function(err, stack) {
     if (err) throw err;
-    config.writeConfiguration(stack.configuration, function(err) {
+    config.writeConfiguration(argv.template, stack.configuration, function(err) {
         if (err) return console.error(err);
     });
 });

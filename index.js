@@ -9,9 +9,10 @@ var env = {};
 var config = module.exports;
 
 // Allow override of the default superenv credentials
-config.setCredentials = function (accessKeyId, secretAccessKey) {
+config.setCredentials = function (accessKeyId, secretAccessKey, bucket) {
     env.accessKeyId = accessKeyId;
     env.secretAccessKey = secretAccessKey;
+    env.bucket = bucket;
 };
 
 // Run configuration wizard on a CFN template.
@@ -69,15 +70,30 @@ config.readStackParameters = function(stackname, region, callback) {
     });
 }
 
-config.writeConfiguration = function(config, callback) {
-    var filepath = path.resolve(config.StackName + '.cfn.json');
+config.writeConfiguration = function(template, config, callback) {
     var json = JSON.stringify(config, null, 4);
 
     console.log('Stack configuration:\n%s', json);
 
-    confirmAction('Okay to write this configuration to ' + filepath + '?', function(confirm) {
-        if (!confirm) return callback();
-        fs.writeFile(filepath, json, callback);
+    inquirer.prompt([{
+        type: 'input',
+        name: 'name',
+        message: 'Name this configuration (leave blank to exit)',
+        default: ''
+    }], function(answers) {
+        if (!answers.name) return callback();
+
+        var s3 = new AWS.S3(env);
+        var key = path.basename(template, path.extname(template)) + '/' + answers.name + '.cfn.json';
+        s3.putObject({
+            Bucket: env.bucket,
+            Key: key,
+            Body: json
+        }, function(err, data) {
+            if (err) return callback(err);
+            console.log('Config written to s3://%s/%s', env.bucket, key);
+            callback();
+        });
     });
 };
 
@@ -103,7 +119,11 @@ config.configStack = function(options, callback) {
     readFile(options.template, function(err, template) {
         if (err) return callback(new Error('Failed to read template file: ' + err.message));
 
-        if (!options.config) return afterFileLoad({});
+        if (!options.config) return pickConfig(options.template, function(err, configuration) {
+            if (err) return callback(new Error('Failed to read configuration file: ' + err.message));
+            afterFileLoad(configuration ? configuration.Parameters : {});
+        });
+
         readFile(options.config, function(err, configuration) {
             if (err) return callback(new Error('Failed to read configuration file: ' + err.message));
             afterFileLoad(configuration.Parameters);
@@ -310,3 +330,44 @@ function confirmAction(message, callback) {
         callback(answers.confirm);
     });
 }
+
+function pickConfig(template, callback) {
+    if (typeof template !== 'string') return callback(new TypeError('template must be a template filepath'));
+    if (typeof env.bucket !== 'string') return callback(new TypeError('config.bucket must be an s3 bucket'));
+
+    var s3 = new AWS.S3(env);
+    var prefix = path.basename(template, path.extname(template));
+
+    s3.listObjects({
+        Bucket: env.bucket,
+        Prefix: prefix
+    }, function(err, data) {
+        if (err) return callback(err);
+        if (!data.Contents) return callback(new Error('no contents found for LIST of s3://' + env.bucket + '/' + prefix));
+        var configs = _(data.Contents).pluck('Key').map(function(key) {
+            return 's3://' + env.bucket + '/' + key;
+        });
+        ondata(configs);
+    });
+
+    function ondata(list) {
+        if (list.length === 0) return callback();
+        list.push('New configuration');
+        inquirer.prompt([{
+            type: 'list',
+            name: 'config',
+            message: 'Config',
+            default: list[0],
+            choices: list,
+        }], onchoice);
+    }
+
+    function onchoice(chosen) {
+        if (chosen.config === 'New configuration') {
+            callback();
+        } else {
+            readFile(chosen.config, callback);
+        }
+    }
+}
+
