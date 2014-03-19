@@ -70,15 +70,30 @@ config.readStackParameters = function(stackname, region, callback) {
     });
 }
 
-config.writeConfiguration = function(config, callback) {
-    var filepath = path.resolve(config.StackName + '.cfn.json');
+config.writeConfiguration = function(template, config, callback) {
     var json = JSON.stringify(config, null, 4);
 
     console.log('Stack configuration:\n%s', json);
 
-    confirmAction('Okay to write this configuration to ' + filepath + '?', function(confirm) {
-        if (!confirm) return callback();
-        fs.writeFile(filepath, json, callback);
+    inquirer.prompt([{
+        type: 'input',
+        name: 'name',
+        message: 'Name this configuration (leave blank to exit)',
+        default: ''
+    }], function(answers) {
+        if (!answers.name) return callback();
+
+        var s3 = new AWS.S3(env);
+        var key = path.basename(template, path.extname(template)) + '/' + answers.name + '.cfn.json';
+        s3.putObject({
+            Bucket: env.bucket,
+            Key: key,
+            Body: json
+        }, function(err, data) {
+            if (err) return callback(err);
+            console.log('Config written to s3://%s/%s', env.bucket, key);
+            callback();
+        });
     });
 };
 
