@@ -335,7 +335,7 @@ function pickConfig(template, callback) {
     if (typeof template !== 'string') return callback(new TypeError('template must be a template filepath'));
     if (typeof env.bucket !== 'string') return callback(new TypeError('config.bucket must be an s3 bucket'));
 
-    var s3 = new AWS.S3(_(env).defaults({ sslEnabled: true }));
+    var s3 = new AWS.S3(env);
     var prefix = path.basename(template, path.extname(template));
 
     s3.listObjects({
