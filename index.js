@@ -4,6 +4,7 @@ var fs = require('fs');
 var path = require('path');
 var AWS = require('aws-sdk');
 var url = require('url');
+var hat = require('hat');
 var env = {};
 
 var config = module.exports;
@@ -320,7 +321,7 @@ function getTemplateUrl(templateName, templateBody, region, callback) {
             if (err) return callback(err);
             s3.putObject({
                 Bucket: bucket,
-                Key: templateName,
+                Key: [Date.now(), hat(), templateName].join('-'),
                 Body: JSON.stringify(templateBody)
             }, function(err, data) {
                 if (err) return callback(err);
