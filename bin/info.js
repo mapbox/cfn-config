@@ -5,7 +5,7 @@ var config = require('..');
 var env = require('superenv')('cfn');
 var optimist = require('optimist');
 
-config.setCredentials(env.accessKeyId, env.secretAccessKey);
+config.setCredentials(env.accessKeyId, env.secretAccessKey, env.bucket);
 
 var argv = optimist
     .options('region', {
