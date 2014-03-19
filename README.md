@@ -3,7 +3,7 @@ Quickly configure and start AWS CloudFormation stacks.
 ## Features
 
 - CLI parameter prompting for easy configuration
-- Persists parameters in local config files for easy reuse and version control
+- Persists parameters in a specified S3 bucket for easy reuse and sharing privately
 - Library functions to include functionality into other projects
 
 ## CLI
@@ -26,7 +26,8 @@ update, and delete stacks. Add `~/.cfnrc` with the following properties:
 ```
 {
     "accessKeyId": "xxxx",
-    "secretAccessKey": "xxxx"
+    "secretAccessKey": "xxxx",
+    "bucket": "bucketname"
 }
 ```
 
