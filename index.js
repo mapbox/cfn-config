@@ -118,7 +118,7 @@ config.writeConfiguration = function(template, config, callback) {
 config.configStack = function(options, callback) {
     options.defaults = options.defaults || {};
 
-    readFile(options.template, function(err, template) {
+    readFile(options.template, options.region, function(err, template) {
         if (err) return callback(new Error('Failed to read template file: ' + err.message));
 
         if (!options.config) return pickConfig(options.template, function(err, configuration) {
@@ -278,16 +278,18 @@ config.stackInfo = function(options, callback) {
     });
 }
 
-function readFile(filepath, callback) {
+function readFile(filepath, region, callback) {
     if (!filepath) return callback(new Error('file is required'));
 
     var uri = url.parse(filepath);
     if (uri.protocol === 's3:') {
-        var s3 = new AWS.S3(env);
+        var s3 = new AWS.S3(_(env).extend({ region: region }));
         s3.getObject({
             Bucket: uri.host,
             Key: uri.path.substring(1)
         }, function(err, data) {
+            if (err && err.code === 'PermanentRedirect')
+                return callback(new Error('Your template must exist in the same region as your CloudFormation stack'));
             if (err) return callback(err);
             ondata(data.Body.toString());
         });
@@ -336,16 +338,21 @@ function getTemplateUrl(templateName, templateBody, region, callback) {
         var bucket = [
             'cfn-config-templates', acct, region
         ].join('-');
+        
+        var key = [Date.now(), hat(), templateName].join('-');
 
         s3.createBucket({Bucket: bucket}, function(err, data) {
-            if (err) return callback(err);
+            if (err && err.code !== 'BucketAlreadyOwnedByYou') return callback(err);
             s3.putObject({
                 Bucket: bucket,
-                Key: [Date.now(), hat(), templateName].join('-'),
+                Key: key,
                 Body: JSON.stringify(templateBody)
             }, function(err, data) {
                 if (err) return callback(err);
-                callback(null, 'https://s3.amazonaws.com/' + bucket + '/' + templateName);
+                var host = region === 'us-east-1' ? 
+                    'https://s3.amazonaws.com' :
+                    'https://s3-' + region + '.amazonaws.com'
+                callback(null, [host, bucket, key].join('/'));
             });
         });
     });
@@ -369,7 +376,8 @@ function pickConfig(template, callback) {
     if (typeof template !== 'string') return callback(new TypeError('template must be a template filepath'));
     if (typeof env.bucket !== 'string') return callback(new TypeError('config.bucket must be an s3 bucket'));
 
-    var s3 = new AWS.S3(env);
+    var bucketRegion = env.bucketRegion ? env.bucketRegion : 'us-east-1';
+    var s3 = new AWS.S3(_(env).extend({ region : bucketRegion }));
     var prefix = path.basename(template, path.extname(template));
 
     s3.listObjects({
