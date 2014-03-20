@@ -72,9 +72,11 @@ config.readStackParameters = function(stackname, region, callback) {
 }
 
 config.writeConfiguration = function(template, config, callback) {
-    var json = JSON.stringify(config, null, 4);
+    var json = JSON.stringify(config.Parameters, null, 4);
 
-    console.log('Stack configuration:\n%s', json);
+    console.log('Region: %s', config.Region);
+    console.log('StackName: %s', config.StackName);
+    console.log('Parameters:\n%s', json);
 
     inquirer.prompt([{
         type: 'input',
@@ -123,13 +125,13 @@ config.configStack = function(options, callback) {
 
         if (!options.config) return pickConfig(options.template, function(err, configuration) {
             if (err) return callback(new Error('Failed to read configuration file: ' + err.message));
-            afterFileLoad(configuration ? configuration.Parameters : {});
+            afterFileLoad(configuration ? configuration : {});
         });
 
         var bucketRegion = env.bucketRegion ? env.bucketRegion : 'us-east-1';
         readFile(options.config, bucketRegion, function(err, configuration) {
             if (err) return callback(new Error('Failed to read configuration file: ' + err.message));
-            afterFileLoad(configuration.Parameters);
+            afterFileLoad(configuration);
         });
 
         function afterFileLoad(fileParameters) {
