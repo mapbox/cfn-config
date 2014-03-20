@@ -386,9 +386,9 @@ function pickConfig(template, callback) {
     }, function(err, data) {
         if (err) return callback(err);
         if (!data.Contents) return callback(new Error('no contents found for LIST of s3://' + env.bucket + '/' + prefix));
-        var configs = _(data.Contents).pluck('Key').map(function(key) {
-            return 's3://' + env.bucket + '/' + key;
-        });
+        var configs = data.Contents
+            .filter(function(obj) { return obj.Size > 0; })
+            .map(function(obj) { return 's3://' + env.bucket + '/' + obj.Key; });
         ondata(configs);
     });
 
