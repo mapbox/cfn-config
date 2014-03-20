@@ -126,7 +126,8 @@ config.configStack = function(options, callback) {
             afterFileLoad(configuration ? configuration.Parameters : {});
         });
 
-        readFile(options.config, function(err, configuration) {
+        var bucketRegion = env.bucketRegion ? env.bucketRegion : 'us-east-1';
+        readFile(options.config, bucketRegion, function(err, configuration) {
             if (err) return callback(new Error('Failed to read configuration file: ' + err.message));
             afterFileLoad(configuration.Parameters);
         });
@@ -408,7 +409,7 @@ function pickConfig(template, callback) {
         if (chosen.config === 'New configuration') {
             callback();
         } else {
-            readFile(chosen.config, callback);
+            readFile(chosen.config, bucketRegion, callback);
         }
     }
 }
