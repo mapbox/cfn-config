@@ -180,7 +180,6 @@ config.createStack = function(options, callback) {
     // - region: The AWS region to deploy into
     // - name: Required. Name of the Cloudformation stack
     // - config: Optional. Path to a configuration file to use
-    // - iam: Defaults to false. Allows stack to create IAM resources
 
     var cfn = new AWS.CloudFormation(_(env).extend({
         region: options.region
@@ -364,7 +363,7 @@ function getTemplateUrl(templateName, templateBody, region, callback) {
 function cfnParams(options, configDetails) {
     return {
         StackName: options.name,
-        Capabilities: options.iam ? [ 'CAPABILITY_IAM' ] : [],
+        Capabilities: [ 'CAPABILITY_IAM' ],
         TemplateURL: options.templateUrl,
         Parameters: _(configDetails.configuration.Parameters).map(function(value, key) {
             return {
