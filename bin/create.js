@@ -27,8 +27,6 @@ var argv = optimist
         describe: 'Path to a configuration file to read',
         alias: 'c'
     })
-    .boolean('iam')
-    .describe('iam', 'Set to allow stack to create IAM resources')
     .argv;
 
 if (argv.help) return optimist.showHelp();
