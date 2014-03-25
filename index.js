@@ -334,8 +334,7 @@ function getTemplateUrl(templateName, templateBody, region, callback) {
         if (err && err.code !== 'AccessDenied') return callback(err);
 
         // AccessDenied error messages still contain what we need
-        var acct = err ? /(arn:.+?) /.exec(err.message)[1] :
-            userData.User.Arn.split(':')[4];
+        var acct = (err ? /(arn:.+) /.exec(err.message)[1] : userData.User.Arn).split(':')[4];
 
         var bucket = [
             'cfn-config-templates', acct, region
