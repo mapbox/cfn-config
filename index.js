@@ -139,8 +139,11 @@ config.configStack = function(options, callback) {
             config.readStackParameters(options.name, options.region, function(err, stackParameters) {
                 if (err) return callback(err);
 
-                // Exclude masked stack parameters that come from the CFN API.
+                // Exclude:
+                // - stack parameters that no longer exist in the template
+                // - masked stack parameters that come from the CFN API
                 stackParameters = _(stackParameters).reduce(function(memo, param, key) {
+                    if (template.Parameters[key] === undefined) return memo;
                     if (template.Parameters[key].NoEcho === 'true') return memo;
                     memo[key] = param;
                     return memo;
