@@ -294,18 +294,18 @@ config.stackInfo = function(options, callback) {
 };
 
 config.compareParameters = function(lhs, rhs) {
-            // Determine deleted parameters and value differences
-            _(lhs).each(function(value, key) {
-                if (!rhs[key])
-                    console.log('Remove parameter %s with value %s', key, value);
-                else if (value != rhs[key])
-                    console.log('Change parameter %s from %s to %s', key, value, rhs[key]);
-            });
-            // Determine new parameters
-            _(rhs).each(function(value, key) {
-                if (!lhs[key])
-                    console.log('Add parameter %s with value %s', key, value);
-            });
+    // Determine deleted parameters and value differences
+    _(lhs).each(function(value, key) {
+        if (!rhs[key])
+            console.log('Remove parameter %s with value %s', key, value);
+        else if (value != rhs[key])
+            console.log('Change parameter %s from %s to %s', key, value, rhs[key]);
+    });
+    // Determine new parameters
+    _(rhs).each(function(value, key) {
+        if (!lhs[key])
+            console.log('Add parameter %s with value %s', key, value);
+    });
 };
 
 config.compareTemplates = function(lhs, rhs) {
