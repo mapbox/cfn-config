@@ -5,6 +5,7 @@ var path = require('path');
 var AWS = require('aws-sdk');
 var url = require('url');
 var hat = require('hat');
+var jsdiff = require('diff');
 var env = {};
 
 var config = module.exports;
@@ -205,26 +206,45 @@ config.createStack = function(options, callback) {
 
 config.updateStack = function(options, callback) {
     // Same options as createStack above.
-
     var cfn = new AWS.CloudFormation(_(env).extend({
         region: options.region
     }));
-
     options.update = true;
     config.configStack(options, function(err, configDetails) {
         if (err) return callback(err);
-
-        confirmAction('Ready to update the stack?', function (confirm) {
-            if (!confirm) return callback();
-            var templateName = path.basename(options.template);
-            getTemplateUrl(templateName, configDetails.template, options.region, function(err, url) {
-                if (err) return callback(err);
-                options.templateUrl = url;
-                cfn.updateStack(cfnParams(options, configDetails), callback);
+        var finalize = function() {
+            confirmAction('Ready to update the stack?', function (confirm) {
+                if (!confirm) return callback();
+                var templateName = path.basename(options.template);
+                getTemplateUrl(templateName, configDetails.template, options.region, function(err, url) {
+                    if (err) return callback(err);
+                    options.templateUrl = url;
+                    cfn.updateStack(cfnParams(options, configDetails), callback);
+                });
+            });
+        };
+        var newParameters = configDetails.configuration.Parameters;
+        config.stackInfo(options, function(err, stack) {
+            if (err) return callback(err);
+            var oldParameters = stack.Parameters;
+            config.compareParameters(oldParameters, newParameters);
+            config.compareTemplates(options, function(err, diff) {
+                if (!diff) {
+                    console.log('Templates are identical');
+                    finalize();
+                } else {
+                    confirmAction('Templates are different, view patch?', function(confirm) {
+                        if (!confirm) finalize();
+                        else {
+                            console.log(diff);
+                            finalize();
+                        }
+                    });
+                }
             });
         });
     });
-}
+};
 
 config.deleteStack = function(options, callback) {
     // `options` object should include
@@ -281,7 +301,37 @@ config.stackInfo = function(options, callback) {
             callback(err, _(stackInfo).extend(data));
         });
     });
-}
+};
+
+config.compareParameters = function(lhs, rhs) {
+    // Determine deleted parameters and value differences
+    _(lhs).each(function(value, key) {
+        if (!rhs[key])
+            console.log('Remove parameter %s with value %s', key, value);
+        else if (value != rhs[key])
+            console.log('Change parameter %s from %s to %s', key, value, rhs[key]);
+    });
+    // Determine new parameters
+    _(rhs).each(function(value, key) {
+        if (!lhs[key])
+            console.log('Add parameter %s with value %s', key, value);
+    });
+};
+
+config.compareTemplates = function(options, callback) {
+    var lhs;
+    var rhs;
+    var cfn = new AWS.CloudFormation(_(env).extend({
+        region: options.region
+    }));
+    lhs = JSON.stringify(JSON.parse(fs.readFileSync(options.template)), null, 4);
+    cfn.getTemplate({StackName: options.name}, function(err, data) {
+        if (err) return callback(err);
+        rhs = JSON.stringify(JSON.parse(data.TemplateBody), null, 4);
+        if (lhs === rhs) return callback(null, false);
+        else return callback(null, jsdiff.createPatch('template', rhs, lhs, options.name, options.template));
+    });
+};
 
 function readFile(filepath, region, callback) {
     if (!filepath) return callback(new Error('file is required'));
