@@ -392,7 +392,7 @@ function getTemplateUrl(templateName, templateBody, region, callback) {
         var bucket = [
             'cfn-config-templates', acct, region
         ].join('-');
-        
+
         var key = [Date.now(), hat(), templateName].join('-');
 
         s3.createBucket({Bucket: bucket}, function(err, data) {
@@ -403,7 +403,7 @@ function getTemplateUrl(templateName, templateBody, region, callback) {
                 Body: JSON.stringify(templateBody)
             }, function(err, data) {
                 if (err) return callback(err);
-                var host = region === 'us-east-1' ? 
+                var host = region === 'us-east-1' ?
                     'https://s3.amazonaws.com' :
                     'https://s3-' + region + '.amazonaws.com'
                 callback(null, [host, bucket, key].join('/'));
