@@ -400,7 +400,7 @@ function getTemplateUrl(templateName, templateBody, region, callback) {
             s3.putObject({
                 Bucket: bucket,
                 Key: key,
-                Body: JSON.stringify(templateBody)
+                Body: JSON.stringify(templateBody, null, 4)
             }, function(err, data) {
                 if (err) return callback(err);
                 var host = region === 'us-east-1' ?
