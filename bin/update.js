@@ -33,5 +33,8 @@ if (argv.help) return optimist.showHelp();
 
 config.updateStack(argv, function(err, result) {
     if (err) throw err;
-    console.log(result ? 'Updated stack: ' + argv.name : '');
+    config.monitorStack(argv, function (err) {
+        if (err) throw err;
+        console.log(result ? 'Updated stack: ' + argv.name : '');
+    });
 });

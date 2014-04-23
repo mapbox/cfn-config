@@ -246,6 +246,43 @@ config.updateStack = function(options, callback) {
     });
 };
 
+require('colors');
+
+var colors = {
+    "CREATE_IN_PROGRESS":                  'yellow',
+    "CREATE_FAILED":                       'red',
+    "CREATE_COMPLETE":                     'green',
+    "DELETE_IN_PROGRESS":                  'yellow',
+    "DELETE_FAILED":                       'red',
+    "DELETE_COMPLETE":                     'grey',
+    "UPDATE_IN_PROGRESS":                  'yellow',
+    "UPDATE_COMPLETE_CLEANUP_IN_PROGRESS": 'yellow',
+    "UPDATE_FAILED":                       'red',
+    "UPDATE_COMPLETE":                     'green',
+    "ROLLBACK_IN_PROGRESS":                'red',
+    "ROLLBACK_COMPLETE":                   'red'
+};
+
+config.monitorStack = function(options, callback) {
+    var cfn = new AWS.CloudFormation(_(env).extend({
+        region: options.region
+    }));
+
+    var EventStream = require('cfn-stack-event-stream');
+
+    EventStream(cfn, options.name)
+        .on('error', function (e) {
+            return callback(e);
+        })
+        .on('data', function (e) {
+            console.log(e.ResourceStatus[colors[e.ResourceStatus]] + ' ' + e.LogicalResourceId);
+            if (e.ResourceStatusReason) {
+                console.log('    ' + e.ResourceStatusReason);
+            }
+        })
+        .on('end', callback);
+};
+
 config.deleteStack = function(options, callback) {
     // `options` object should include
     // - name: Required. Name of the Cloudformation stack
