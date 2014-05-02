@@ -113,16 +113,24 @@ config.writeConfiguration = function(template, config, callback) {
 //   set to an object where the keys are Cloudformation parameter names, and the
 //   values are as described by https://github.com/SBoudrias/Inquirer.js#question
 //
-//   Prioritization of defaults written by multiple processes follows:
-//   1. Values set by parameters in an existing Cloudformation stack
-//   2. Values set by higher-level libs (i.e. passed into this function as options.defaults)
-//   3. Values set by a configuration file
-//   4. Values set by the Cloudformation template
+//   Sources for stack parameter values, in descending order:
+//
+//     1. Values passed into this function as options.overrides
+//     2. Values from the existing stack
+//     3. Values set by a configuration file
+//     4. Values passed into this function as options.defaults
+//     5. Values set by the stack template
+//
 config.configStack = function(options, callback) {
     options.defaults = options.defaults || {};
 
     readFile(options.template, options.region, function(err, template) {
         if (err) return callback(new Error('Failed to read template file: ' + err.message));
+
+        var templateParameters = _(template.Parameters).reduce(function(memo, value, key) {
+            memo[key] = value.Default;
+            return memo;
+        }, {});
 
         if (!options.config) return pickConfig(options.template, function(err, configuration) {
             if (err) return callback(new Error('Failed to read configuration file: ' + err.message));
@@ -157,13 +165,8 @@ config.configStack = function(options, callback) {
         function afterStackLoad(fileParameters, stackParameters) {
 
             var overrides = {
-                defaults: _(stackParameters).chain()
-                    .defaults(fileParameters)
-                    .defaults(options.defaults)
-                    .defaults(_(template.Parameters).reduce(function(memo, value, key) {
-                        memo[key] = value.Default;
-                        return memo;
-                    }, {})).value(),
+                defaults: _.defaults({}, options.overrides, stackParameters,
+                    fileParameters, options.defaults, templateParameters),
                 choices: options.choices || {},
                 filters: options.filters || {},
                 messages: options.messages || {}
