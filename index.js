@@ -92,7 +92,8 @@ config.writeConfiguration = function(template, config, callback) {
         s3.putObject({
             Bucket: env.bucket,
             Key: key,
-            Body: json
+            Body: json,
+            ServerSideEncryption:'AES256'
         }, function(err, data) {
             if (err) return callback(err);
             console.log('Config written to s3://%s/%s', env.bucket, key);
