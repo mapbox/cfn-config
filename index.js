@@ -18,15 +18,24 @@ config.setCredentials = function (accessKeyId, secretAccessKey, bucket) {
 };
 
 // Run configuration wizard on a CFN template.
-config.configure = function(template, stackname, region, overrides, callback) {
+config.configure = function(template, options, overrides, callback) {
     var params = _(template.Parameters).map(_(config.question).partial(overrides));
-    inquirer.prompt(params, function(answers) {
-        callback(null, {
-            StackName: stackname,
-            Region: region,
-            Parameters: answers
+    var configuration = {
+        StackName: options.name,
+        Region: options.region
+    };
+    if (options.headless) {
+        configuration.Parameters = _(params).reduce(function(memo, param) {
+            memo[param.name] = param.default;
+            return memo;
+        }, {});
+        callback(null, configuration);
+    } else {
+        inquirer.prompt(params, function(answers) {
+            configuration.Parameters = answers;
+            callback(null, configuration);
         });
-    });
+    }
 };
 
 // Return a inquirer-compatible question object for a given CFN template
@@ -171,8 +180,7 @@ config.configStack = function(options, callback) {
                 filters: options.filters || {},
                 messages: options.messages || {}
             };
-
-            config.configure(template, options.name, options.region, overrides, function(err, configuration) {
+            config.configure(template, options, overrides, function(err, configuration) {
                 if (err) return callback(err);
                 callback(null, {template: template, configuration: configuration});
             });
@@ -194,8 +202,7 @@ config.createStack = function(options, callback) {
 
     config.configStack(options, function (err, configDetails) {
         if (err) return callback(err);
-
-        confirmAction('Ready to create this stack?', function (confirm) {
+        confirmAction('Ready to create this stack?', options.force, function (confirm) {
             if (!confirm) return callback();
             var templateName = path.basename(options.template);
             getTemplateUrl(templateName, configDetails.template, options.region, function(err, url) {
@@ -216,7 +223,7 @@ config.updateStack = function(options, callback) {
     config.configStack(options, function(err, configDetails) {
         if (err) return callback(err);
         var finalize = function() {
-            confirmAction('Ready to update the stack?', function (confirm) {
+            confirmAction('Ready to update the stack?', options.force, function (confirm) {
                 if (!confirm) return callback();
                 var templateName = path.basename(options.template);
                 getTemplateUrl(templateName, configDetails.template, options.region, function(err, url) {
@@ -236,7 +243,7 @@ config.updateStack = function(options, callback) {
                     console.log('Templates are identical');
                     finalize();
                 } else {
-                    confirmAction('Templates are different, view patch?', function(confirm) {
+                    confirmAction('Templates are different, view patch?', options.force, function(confirm) {
                         if (!confirm) finalize();
                         else {
                             console.log(diff);
@@ -409,7 +416,10 @@ function readFile(filepath, region, callback) {
     }
 }
 
-function confirmAction(message, callback) {
+function confirmAction(message, force, callback) {
+    if ('undefined' == typeof callback)
+        callback = force;
+    if (force === true) return callback(true);
     inquirer.prompt([{
         type: 'confirm',
         name: 'confirm',

@@ -27,6 +27,14 @@ var argv = optimist
         describe: 'Path to a configuration file to read',
         alias: 'c'
     })
+    .options('headless', {
+        describe: 'Do not prompt for configuration choices',
+        alias: 'h'
+    })
+    .options('force', {
+        describe: 'Do not prompt for final confirmation',
+        alias: 'f'
+    })
     .argv;
 
 if (argv.help) return optimist.showHelp();
