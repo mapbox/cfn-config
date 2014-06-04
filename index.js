@@ -24,6 +24,7 @@ config.configure = function(template, options, overrides, callback) {
         StackName: options.name,
         Region: options.region
     };
+    // In headless mode, use defaults determined by config.configStack
     if (options.headless) {
         configuration.Parameters = _(params).reduce(function(memo, param) {
             memo[param.name] = param.default;
@@ -202,7 +203,7 @@ config.createStack = function(options, callback) {
 
     config.configStack(options, function (err, configDetails) {
         if (err) return callback(err);
-        confirmAction('Ready to create this stack?', options.force, function (confirm) {
+        confirmAction('Ready to create this stack?', options.headless, function (confirm) {
             if (!confirm) return callback();
             var templateName = path.basename(options.template);
             getTemplateUrl(templateName, configDetails.template, options.region, function(err, url) {
@@ -223,7 +224,7 @@ config.updateStack = function(options, callback) {
     config.configStack(options, function(err, configDetails) {
         if (err) return callback(err);
         var finalize = function() {
-            confirmAction('Ready to update the stack?', options.force, function (confirm) {
+            confirmAction('Ready to update the stack?', options.headless, function (confirm) {
                 if (!confirm) return callback();
                 var templateName = path.basename(options.template);
                 getTemplateUrl(templateName, configDetails.template, options.region, function(err, url) {
@@ -243,7 +244,7 @@ config.updateStack = function(options, callback) {
                     console.log('Templates are identical');
                     finalize();
                 } else {
-                    confirmAction('Templates are different, view patch?', options.force, function(confirm) {
+                    confirmAction('Templates are different, view patch?', options.headless, function(confirm) {
                         if (!confirm) finalize();
                         else {
                             console.log(diff);
@@ -416,10 +417,10 @@ function readFile(filepath, region, callback) {
     }
 }
 
-function confirmAction(message, force, callback) {
+function confirmAction(message, headless, callback) {
     if ('undefined' == typeof callback)
-        callback = force;
-    if (force === true) return callback(true);
+        callback = headless;
+    if (headless === true) return callback(true);
     inquirer.prompt([{
         type: 'confirm',
         name: 'confirm',

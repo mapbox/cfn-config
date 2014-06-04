@@ -29,11 +29,7 @@ var argv = optimist
     })
     .options('headless', {
         describe: 'Do not prompt for configuration choices',
-        alias: 'h'
-    })
-    .options('force', {
-        describe: 'Do not prompt for final confirmation',
-        alias: 'f'
+        alias: 'l'
     })
     .argv;
 
