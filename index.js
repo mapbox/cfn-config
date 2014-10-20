@@ -142,8 +142,6 @@ config.configStack = function(options, callback) {
             return memo;
         }, {});
 
-        if (options.headless) return afterFileLoad({});
-
         if (!options.config) return pickConfig(options.template, function(err, configuration) {
             if (err) return callback(new Error('Failed to read configuration file: ' + err.message));
             afterFileLoad(configuration ? configuration : {});
