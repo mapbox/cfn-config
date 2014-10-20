@@ -18,6 +18,10 @@ var argv = optimist
         demand: true,
         alias: 'n'
     })
+    .options('headless', {
+        describe: 'Do not prompt',
+        alias: 'l'
+    })
     .argv;
 
 if (argv.help) return optimist.showHelp();

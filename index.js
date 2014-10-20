@@ -311,7 +311,7 @@ config.deleteStack = function(options, callback) {
             return callback(new Error([options.name, status].join(' ')));
         }
 
-        confirmAction('Ready to delete the stack ' + options.name + '?', function (confirm) {
+        confirmAction('Ready to delete the stack ' + options.name + '?', options.headless, function (confirm) {
             if (!confirm) return callback();
             cfn.deleteStack({
                 StackName: options.name
