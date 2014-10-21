@@ -27,9 +27,9 @@ var argv = optimist
         describe: 'Path to a configuration file to read',
         alias: 'c'
     })
-    .options('headless', {
+    .options('force', {
         describe: 'Do not prompt for configuration choices',
-        alias: 'l'
+        alias: 'f'
     })
     .argv;
 

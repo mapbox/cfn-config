@@ -18,9 +18,9 @@ var argv = optimist
         demand: true,
         alias: 'n'
     })
-    .options('headless', {
+    .options('force', {
         describe: 'Do not prompt',
-        alias: 'l'
+        alias: 'f'
     })
     .argv;
 

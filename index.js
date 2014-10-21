@@ -24,8 +24,8 @@ config.configure = function(template, options, overrides, callback) {
         StackName: options.name,
         Region: options.region
     };
-    // In headless mode, use defaults determined by config.configStack
-    if (options.headless) {
+    // In force mode, use defaults determined by config.configStack
+    if (options.force) {
         configuration.Parameters = _(params).reduce(function(memo, param) {
             memo[param.name] = param.default;
             return memo;
@@ -203,7 +203,7 @@ config.createStack = function(options, callback) {
 
     config.configStack(options, function (err, configDetails) {
         if (err) return callback(err);
-        confirmAction('Ready to create this stack?', options.headless, function (confirm) {
+        confirmAction('Ready to create this stack?', options.force, function (confirm) {
             if (!confirm) return callback();
             var templateName = path.basename(options.template);
             getTemplateUrl(templateName, configDetails.template, options.region, function(err, url) {
@@ -224,7 +224,7 @@ config.updateStack = function(options, callback) {
     config.configStack(options, function(err, configDetails) {
         if (err) return callback(err);
         var finalize = function() {
-            confirmAction('Ready to update the stack?', options.headless, function (confirm) {
+            confirmAction('Ready to update the stack?', options.force, function (confirm) {
                 if (!confirm) return callback();
                 var templateName = path.basename(options.template);
                 getTemplateUrl(templateName, configDetails.template, options.region, function(err, url) {
@@ -244,7 +244,7 @@ config.updateStack = function(options, callback) {
                     console.log('Templates are identical');
                     finalize();
                 } else {
-                    confirmAction('Templates are different, view patch?', options.headless, function(confirm) {
+                    confirmAction('Templates are different, view patch?', options.force, function(confirm) {
                         if (!confirm) finalize();
                         else {
                             console.log(diff);
@@ -309,7 +309,7 @@ config.deleteStack = function(options, callback) {
             return callback(new Error([options.name, status].join(' ')));
         }
 
-        confirmAction('Ready to delete the stack ' + options.name + '?', options.headless, function (confirm) {
+        confirmAction('Ready to delete the stack ' + options.name + '?', options.force, function (confirm) {
             if (!confirm) return callback();
             cfn.deleteStack({
                 StackName: options.name
@@ -417,10 +417,10 @@ function readFile(filepath, region, callback) {
     }
 }
 
-function confirmAction(message, headless, callback) {
+function confirmAction(message, force, callback) {
     if ('undefined' == typeof callback)
-        callback = headless;
-    if (headless === true) return callback(true);
+        callback = force;
+    if (force === true) return callback(true);
     inquirer.prompt([{
         type: 'confirm',
         name: 'confirm',
