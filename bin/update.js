@@ -27,6 +27,10 @@ var argv = optimist
         describe: 'Path to a configuration file to read',
         alias: 'c'
     })
+    .options('force', {
+        describe: 'Do not prompt for configuration choices',
+        alias: 'f'
+    })
     .argv;
 
 if (argv.help) return optimist.showHelp();

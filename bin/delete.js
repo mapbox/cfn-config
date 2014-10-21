@@ -18,6 +18,10 @@ var argv = optimist
         demand: true,
         alias: 'n'
     })
+    .options('force', {
+        describe: 'Do not prompt',
+        alias: 'f'
+    })
     .argv;
 
 if (argv.help) return optimist.showHelp();
