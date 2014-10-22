@@ -11,10 +11,11 @@ var env = {};
 var config = module.exports;
 
 // Allow override of the default superenv credentials
-config.setCredentials = function (accessKeyId, secretAccessKey, bucket) {
+config.setCredentials = function (accessKeyId, secretAccessKey, bucket, sessionToken) {
     env.accessKeyId = accessKeyId;
     env.secretAccessKey = secretAccessKey;
     env.bucket = bucket;
+    if (sessionToken) env.sessionToken = sessionToken;
 };
 
 // Run configuration wizard on a CFN template.
