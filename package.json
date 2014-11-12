@@ -20,7 +20,7 @@
     "optimist": "~0.6.0",
     "inquirer": "~0.4.0",
     "underscore": "~1.5.2",
-    "aws-sdk": "2.0.0-rc13",
+    "aws-sdk": "~2.0.25",
     "superenv": "0.0.1",
     "hat": "0.0.3",
     "diff": "1.0.8",
