@@ -282,7 +282,7 @@ config.monitorStack = function(options, callback) {
 
     var EventStream = require('cfn-stack-event-stream');
 
-    EventStream(cfn, options.name)
+    EventStream(cfn, options.name, {pollInterval:10000})
         .on('error', function (e) {
             return callback(e);
         })
