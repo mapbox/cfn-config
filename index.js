@@ -275,7 +275,20 @@ var colors = {
     "ROLLBACK_COMPLETE":                   'red'
 };
 
+// Read everything from stack's event stream until finished
+//
+// `options` object should include:
+// - name: Required. Name of the Cloudformation stack
+// - region: The AWS region of the stack to monitor
+// - logger: Optional. The EventEmitter to emit log events to
 config.monitorStack = function(options, callback) {
+    var logger = options.logger;
+    if (!logger) {
+        var EventEmitter = require('events').EventEmitter;
+        logger = new EventEmitter;
+        logger.on('log', console.log);
+    }
+
     var cfn = new AWS.CloudFormation(_(env).extend({
         region: options.region
     }));
@@ -287,9 +300,9 @@ config.monitorStack = function(options, callback) {
             return callback(e);
         })
         .on('data', function (e) {
-            console.log(e.ResourceStatus[colors[e.ResourceStatus]] + ' ' + e.LogicalResourceId);
+            logger.emit('log', e.ResourceStatus[colors[e.ResourceStatus]] + ' ' + e.LogicalResourceId);
             if (e.ResourceStatusReason) {
-                console.log('    ' + e.ResourceStatusReason);
+                logger.emit('log', '    ' + e.ResourceStatusReason);
             }
         })
         .on('end', callback);
