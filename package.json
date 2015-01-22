@@ -1,6 +1,6 @@
 {
   "name": "cfn-config",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "description": "Quickly configure and start AWS CloudFormation stacks",
   "main": "index.js",
   "bin": {
