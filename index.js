@@ -332,6 +332,7 @@ config.stackInfo = function(options, callback) {
         if (err) return callback(err);
         if (data.Stacks.length < 1) return callback(new Error('Stack ' + stackname + ' not found'));
         var stackInfo = data.Stacks[0];
+        stackInfo.Region = options.region;
 
         stackInfo.Parameters = stackInfo.Parameters.reduce(function(memo, param) {
             memo[param.ParameterKey] = param.ParameterValue;
