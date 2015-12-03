@@ -222,16 +222,22 @@ config.updateStack = function(options, callback) {
         region: options.region
     }));
     options.update = true;
+    options.beforeUpdate = options.beforeUpdate || function(next) {
+        next();
+    };
     config.configStack(options, function(err, configDetails) {
         if (err) return callback(err);
         var finalize = function() {
             confirmAction('Ready to update the stack?', options.force, function (confirm) {
                 if (!confirm) return callback();
-                var templateName = path.basename(options.template);
-                getTemplateUrl(templateName, configDetails.template, options.region, function(err, url) {
+                options.beforeUpdate(function(err, res) {
                     if (err) return callback(err);
-                    options.templateUrl = url;
-                    cfn.updateStack(cfnParams(options, configDetails), callback);
+                    var templateName = path.basename(options.template);
+                    getTemplateUrl(templateName, configDetails.template, options.region, function(err, url) {
+                        if (err) return callback(err);
+                        options.templateUrl = url;
+                        cfn.updateStack(cfnParams(options, configDetails), callback);
+                    });
                 });
             });
         };
