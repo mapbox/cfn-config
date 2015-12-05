@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file. For change 
 
 Keep future unreleased changes here
 
+## 0.5.0 - 2015-12-05
+
+### Changed
+- config.config.updateStack optionally takes a beforeUpdate function
+
 ## 0.4.3 - 2015-04-28
 
 ### Changed
