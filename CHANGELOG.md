@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file. For change 
 
 Keep future unreleased changes here
 
+## 0.6.0 - 2015-12-07
+
+- Support JS module templates using the `.js` extension
+
 ## 0.5.0 - 2015-12-05
 
 ### Changed
