@@ -382,13 +382,17 @@ config.compareTemplates = function(options, callback) {
     var cfn = new config.AWS.CloudFormation(_(env).extend({
         region: options.region
     }));
-    lhs = JSON.stringify(JSON.parse(fs.readFileSync(options.template)), null, 4);
-    cfn.getTemplate({StackName: options.name}, function(err, data) {
+    readFile(options.template, null, function(err, data) {
+        if (err) return callback(err);
+        lhs = JSON.stringify(data, null, 4);
+        cfn.getTemplate({StackName: options.name}, onLoad);
+    });
+    function onLoad(err, data) {
         if (err) return callback(err);
         rhs = JSON.stringify(JSON.parse(data.TemplateBody), null, 4);
         if (lhs === rhs) return callback(null, false);
         else return callback(null, jsdiff.createPatch('template', rhs, lhs, options.name, options.template));
-    });
+    }
 };
 
 config.readFile = readFile;
@@ -407,6 +411,8 @@ function readFile(filepath, region, callback) {
             if (err) return callback(err);
             ondata(data.Body.toString());
         });
+    } else if (/\.js$/.test(filepath)) {
+        callback(null, require(path.resolve(filepath)));
     } else {
         fs.readFile(path.resolve(filepath), function(err, data) {
             if (err) {
