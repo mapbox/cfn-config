@@ -10,6 +10,8 @@ var env = {};
 
 var config = module.exports;
 
+config.AWS = AWS;
+
 // Allow override of the default superenv credentials
 config.setCredentials = function (accessKeyId, secretAccessKey, bucket, sessionToken) {
     env.accessKeyId = accessKeyId;
@@ -377,7 +379,7 @@ config.compareParameters = function(lhs, rhs) {
 config.compareTemplates = function(options, callback) {
     var lhs;
     var rhs;
-    var cfn = new AWS.CloudFormation(_(env).extend({
+    var cfn = new config.AWS.CloudFormation(_(env).extend({
         region: options.region
     }));
     lhs = JSON.stringify(JSON.parse(fs.readFileSync(options.template)), null, 4);
@@ -389,12 +391,13 @@ config.compareTemplates = function(options, callback) {
     });
 };
 
+config.readFile = readFile;
 function readFile(filepath, region, callback) {
     if (!filepath) return callback(new Error('file is required'));
 
     var uri = url.parse(filepath);
     if (uri.protocol === 's3:') {
-        var s3 = new AWS.S3(_(env).extend({ region: region }));
+        var s3 = new config.AWS.S3(_(env).extend({ region: region }));
         s3.getObject({
             Bucket: uri.host,
             Key: uri.path.substring(1)
@@ -440,8 +443,8 @@ function confirmAction(message, force, callback) {
 }
 
 function getTemplateUrl(templateName, templateBody, region, callback) {
-    var s3 = new AWS.S3(_(env).extend({ region: region }));
-    var iam = new AWS.IAM(_(env).extend({ region: region }));
+    var s3 = new config.AWS.S3(_(env).extend({ region: region }));
+    var iam = new config.AWS.IAM(_(env).extend({ region: region }));
     iam.getUser({}, function (err, userData) {
         if (err && err.code !== 'AccessDenied') return callback(err);
 
