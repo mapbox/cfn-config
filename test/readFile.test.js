@@ -15,6 +15,17 @@ tape('readFile-local-valid', function(assert) {
     });
 });
 
+tape('readFile-local-valid-js', function(assert) {
+    readFile(__dirname + '/fixtures/local-valid.template.js', 'us-east-1', function(err, data) {
+        assert.ifError(err);
+        assert.deepEqual(data, {
+            Parameters: {},
+            Resources: {}
+        });
+        assert.end();
+    });
+});
+
 tape('readFile-local-invalid', function(assert) {
     readFile(__dirname + '/fixtures/local-invalid.template', 'us-east-1', function(err, data) {
         assert.equal(err.toString(), 'Error: Unable to parse file');
