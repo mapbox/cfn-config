@@ -435,11 +435,20 @@ function confirmAction(message, force, callback) {
 function getTemplateUrl(templateName, templateBody, region, callback) {
     var s3 = new AWS.S3(_(env).extend({ region: region }));
     var iam = new AWS.IAM(_(env).extend({ region: region }));
-    iam.getUser({}, function (err, userData) {
-        if (err && err.code !== 'AccessDenied') return callback(err);
 
-        // AccessDenied error messages still contain what we need
-        var acct = (err ? /(arn:.+) /.exec(err.message)[1] : userData.User.Arn).split(':')[4];
+    var getAccountId = function(cb) {
+        if (process.env.AWS_ACCOUNT_ID)
+            return cb(null, process.env.AWS_ACCOUNT_ID);
+        iam.getUser({}, function(err, userData) {
+            // AccessDenied error messages still contain what we need
+            if (err && err.code !== 'AccessDenied') return cb(err);
+            var id = (err ? /(arn:.+) /.exec(err.message)[1] : userData.User.Arn).split(':')[4];
+            cb(null, acct);
+        });
+    };
+
+    getAccountId(function(err, acct) {
+        if (err) return callback(err);
 
         var bucket = [
             'cfn-config-templates', acct, region
