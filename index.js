@@ -10,6 +10,8 @@ var env = {};
 
 var config = module.exports;
 
+config.AWS = AWS;
+
 // Allow override of the default superenv credentials
 config.setCredentials = function (accessKeyId, secretAccessKey, bucket, sessionToken) {
     env.accessKeyId = accessKeyId;
@@ -222,16 +224,22 @@ config.updateStack = function(options, callback) {
         region: options.region
     }));
     options.update = true;
+    options.beforeUpdate = options.beforeUpdate || function(next) {
+        next();
+    };
     config.configStack(options, function(err, configDetails) {
         if (err) return callback(err);
         var finalize = function() {
             confirmAction('Ready to update the stack?', options.force, function (confirm) {
                 if (!confirm) return callback();
-                var templateName = path.basename(options.template);
-                getTemplateUrl(templateName, configDetails.template, options.region, function(err, url) {
+                options.beforeUpdate(function(err, res) {
                     if (err) return callback(err);
-                    options.templateUrl = url;
-                    cfn.updateStack(cfnParams(options, configDetails), callback);
+                    var templateName = path.basename(options.template);
+                    getTemplateUrl(templateName, configDetails.template, options.region, function(err, url) {
+                        if (err) return callback(err);
+                        options.templateUrl = url;
+                        cfn.updateStack(cfnParams(options, configDetails), callback);
+                    });
                 });
             });
         };
@@ -332,6 +340,7 @@ config.stackInfo = function(options, callback) {
         if (err) return callback(err);
         if (data.Stacks.length < 1) return callback(new Error('Stack ' + stackname + ' not found'));
         var stackInfo = data.Stacks[0];
+        stackInfo.Region = options.region;
 
         stackInfo.Parameters = stackInfo.Parameters.reduce(function(memo, param) {
             memo[param.ParameterKey] = param.ParameterValue;
@@ -370,24 +379,29 @@ config.compareParameters = function(lhs, rhs) {
 config.compareTemplates = function(options, callback) {
     var lhs;
     var rhs;
-    var cfn = new AWS.CloudFormation(_(env).extend({
+    var cfn = new config.AWS.CloudFormation(_(env).extend({
         region: options.region
     }));
-    lhs = JSON.stringify(JSON.parse(fs.readFileSync(options.template)), null, 4);
-    cfn.getTemplate({StackName: options.name}, function(err, data) {
+    readFile(options.template, null, function(err, data) {
+        if (err) return callback(err);
+        lhs = JSON.stringify(data, null, 4);
+        cfn.getTemplate({StackName: options.name}, onLoad);
+    });
+    function onLoad(err, data) {
         if (err) return callback(err);
         rhs = JSON.stringify(JSON.parse(data.TemplateBody), null, 4);
         if (lhs === rhs) return callback(null, false);
         else return callback(null, jsdiff.createPatch('template', rhs, lhs, options.name, options.template));
-    });
+    }
 };
 
+config.readFile = readFile;
 function readFile(filepath, region, callback) {
     if (!filepath) return callback(new Error('file is required'));
 
     var uri = url.parse(filepath);
     if (uri.protocol === 's3:') {
-        var s3 = new AWS.S3(_(env).extend({ region: region }));
+        var s3 = new config.AWS.S3(_(env).extend({ region: region }));
         s3.getObject({
             Bucket: uri.host,
             Key: uri.path.substring(1)
@@ -397,6 +411,8 @@ function readFile(filepath, region, callback) {
             if (err) return callback(err);
             ondata(data.Body.toString());
         });
+    } else if (/\.js$/.test(filepath)) {
+        callback(null, require(path.resolve(filepath)));
     } else {
         fs.readFile(path.resolve(filepath), function(err, data) {
             if (err) {
@@ -433,8 +449,8 @@ function confirmAction(message, force, callback) {
 }
 
 function getTemplateUrl(templateName, templateBody, region, callback) {
-    var s3 = new AWS.S3(_(env).extend({ region: region }));
-    var iam = new AWS.IAM(_(env).extend({ region: region }));
+    var s3 = new config.AWS.S3(_(env).extend({ region: region }));
+    var iam = new config.AWS.IAM(_(env).extend({ region: region }));
 
     var getAccountId = function(cb) {
         if (process.env.AWS_ACCOUNT_ID)
