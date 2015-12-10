@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file. For change 
 
 Keep future unreleased changes here
 
+## 0.7.1 - 2015-12-10
+
+- Fix undefined variable from change in 0.7.0
+
 ## 0.7.0 - 2015-12-10
 
 - Look for AWS_ACCOUNT_ID environment variable before calling IAM.GetUser
