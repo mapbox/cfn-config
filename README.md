@@ -33,6 +33,10 @@ update, and delete stacks. Add `~/.cfnrc` with the following properties:
 }
 ```
 
+If the environment variable `AWS_ACCOUNT_ID` is set, it will be used instead of
+making a call to IAM.GetUser in order to determine the AWS account Id for certain
+AWS API calls.
+
 ### Usage
 
 The following commands are available. Run each with `--help` for specific
