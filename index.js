@@ -458,7 +458,7 @@ function getTemplateUrl(templateName, templateBody, region, callback) {
         iam.getUser({}, function(err, userData) {
             // AccessDenied error messages still contain what we need
             if (err && err.code !== 'AccessDenied') return cb(err);
-            var id = (err ? /(arn:.+) /.exec(err.message)[1] : userData.User.Arn).split(':')[4];
+            var acct = (err ? /(arn:.+) /.exec(err.message)[1] : userData.User.Arn).split(':')[4];
             cb(null, acct);
         });
     };
