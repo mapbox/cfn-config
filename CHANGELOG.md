@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file. For change 
 
 Keep future unreleased changes here
 
+## 0.7.2 - 2016-01-07
+
+- Respect `options.force` in updateStack to allow for non-interactive stack updates (CI testing)
+- Fix bad logic in parameter comparison between null and falsey values
+
 ## 0.7.1 - 2015-12-10
 
 - Fix undefined variable from change in 0.7.0
