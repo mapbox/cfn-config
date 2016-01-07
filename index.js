@@ -145,16 +145,26 @@ config.configStack = function(options, callback) {
             return memo;
         }, {});
 
-        if (!options.config) return pickConfig(options.template, function(err, configuration) {
-            if (err) return callback(new Error('Failed to read configuration file: ' + err.message));
-            afterFileLoad(configuration ? configuration : {});
-        });
+        if (options.force) return afterFileLoad({});
 
         var bucketRegion = env.bucketRegion ? env.bucketRegion : 'us-east-1';
-        readFile(options.config, bucketRegion, function(err, configuration) {
-            if (err) return callback(new Error('Failed to read configuration file: ' + err.message));
-            afterFileLoad(configuration);
-        });
+
+        // Config file provided, read and pass on
+        if (options.config) {
+            readFile(options.config, bucketRegion, function(err, configuration) {
+                if (err) return callback(new Error('Failed to read configuration file: ' + err.message));
+                afterFileLoad(configuration);
+            });
+        // In force mode, skip interactivity
+        } else if (options.force) {
+            afterFileLoad({});
+        // No config file, prompt for configuration
+        } else if (!options.force) {
+            pickConfig(options.template, function(err, configuration) {
+                if (err) return callback(new Error('Failed to read configuration file: ' + err.message));
+                afterFileLoad(configuration ? configuration : {});
+            });
+        }
 
         function afterFileLoad(fileParameters) {
             if (!options.update) return afterStackLoad(fileParameters, {});
