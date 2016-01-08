@@ -234,7 +234,7 @@ config.updateStack = function(options, callback) {
         region: options.region
     }));
     options.update = true;
-    options.beforeUpdate = options.beforeUpdate || function(next) {
+    options.beforeUpdate = options.beforeUpdate || function(configDetails, next) {
         next();
     };
     config.configStack(options, function(err, configDetails) {
@@ -242,7 +242,7 @@ config.updateStack = function(options, callback) {
         var finalize = function() {
             confirmAction('Ready to update the stack?', options.force, function (confirm) {
                 if (!confirm) return callback();
-                options.beforeUpdate(function(err, res) {
+                options.beforeUpdate(configDetails, function(err, res) {
                     if (err) return callback(err);
                     var templateName = path.basename(options.template);
                     getTemplateUrl(templateName, configDetails.template, options.region, function(err, url) {
