@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file. For change 
 
 Keep future unreleased changes here
 
+## 0.8.0 - 2016-01-07
+
+- Pass `configDetails` to `beforeUpdate` functions so that they can use future config in their actions
+
 ## 0.7.2 - 2016-01-07
 
 - Respect `options.force` in updateStack to allow for non-interactive stack updates (CI testing)
