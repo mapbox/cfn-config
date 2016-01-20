@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file. For change 
 
 Keep future unreleased changes here
 
+## 0.8.1 - 2016-01-20
+
+- Fix to find cfn templates on s3 if local template is either name.template.js or name.template
+
 ## 0.8.0 - 2016-01-07
 
 - Pass `configDetails` to `beforeUpdate` functions so that they can use future config in their actions
