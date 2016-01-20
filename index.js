@@ -523,7 +523,7 @@ function pickConfig(template, callback) {
 
     var bucketRegion = env.bucketRegion ? env.bucketRegion : 'us-east-1';
     var s3 = new AWS.S3(_(env).extend({ region : bucketRegion }));
-    var prefix = path.basename(template, path.extname(template));
+    var prefix = path.basename(template.substring(0, template.indexOf('.')));
 
     s3.listObjects({
         Bucket: env.bucket,
