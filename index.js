@@ -100,7 +100,9 @@ config.writeConfiguration = function(template, config, callback) {
     }], function(answers) {
         if (!answers.name) return callback();
 
-        var s3 = new AWS.S3(env);
+        var s3 = new AWS.S3(_(env).extend({
+            region: env.bucketRegion ? env.bucketRegion : 'us-east-1'
+        }));
         var key = path.basename(template, path.extname(template)) + '/' + answers.name + '.cfn.json';
         s3.putObject({
             Bucket: env.bucket,

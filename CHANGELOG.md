@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file. For change 
 
 Keep future unreleased changes here
 
+## 0.8.2 - 2016-01-27
+
+- Fix `writeConfiguration` to use bucket region
+
 ## 0.8.1 - 2016-01-20
 
 - Fix to find cfn templates on s3 if local template is either name.template.js or name.template
