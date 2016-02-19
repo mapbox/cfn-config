@@ -333,7 +333,7 @@ config.deleteStack = function(options, callback) {
         confirmAction('Ready to delete the stack ' + options.name + '?', options.force, function (confirm) {
             if (!confirm) return callback();
             cfn.deleteStack({
-                StackName: options.name
+                StackName: data.Stacks[0].StackId
             }, callback);
         });
     });
