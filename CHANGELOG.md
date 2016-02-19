@@ -5,6 +5,8 @@ All notable changes to this project will be documented in this file. For change 
 
 Keep future unreleased changes here
 
+- `cfn-delete` outputs full progress
+
 ## 0.8.2 - 2016-01-27
 
 - Fix `writeConfiguration` to use bucket region
