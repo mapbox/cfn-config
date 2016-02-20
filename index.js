@@ -147,9 +147,12 @@ config.configStack = function(options, callback) {
             return memo;
         }, {});
 
-        if (options.force) return afterFileLoad({});
-
         var bucketRegion = env.bucketRegion ? env.bucketRegion : 'us-east-1';
+
+        // do not read stored config file if update forced
+        if (options.update && options.force) {
+            return afterFileLoad({});
+        }
 
         // Config file provided, read and pass on
         if (options.config) {
