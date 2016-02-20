@@ -5,6 +5,8 @@ All notable changes to this project will be documented in this file. For change 
 
 Keep future unreleased changes here
 
+## 0.8.3 - 2016-02-19
+- `cfn-update -f` checking improved, no longer overriddes other options in other `cfn-config` commands like `cfn-create -c -f` 
 - `cfn-delete` outputs full progress
 
 ## 0.8.2 - 2016-01-27
