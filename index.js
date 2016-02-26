@@ -414,7 +414,7 @@ config.compareTemplates = function(options, callback) {
     }
 };
 
-config.solveTemplatePath = function(template){
+config.resolveTemplatePath = function(template){
     if (path.extname(template) === '.js') {
         template = template.substring(0, template.lastIndexOf('.'));
     }
@@ -534,7 +534,7 @@ function pickConfig(template, callback) {
 
     var bucketRegion = env.bucketRegion ? env.bucketRegion : 'us-east-1';
     var s3 = new AWS.S3(_(env).extend({ region : bucketRegion }));
-    var prefix = config.solveTemplatePath(template);
+    var prefix = config.resolveTemplatePath(template);
 
     s3.listObjects({
         Bucket: env.bucket,
