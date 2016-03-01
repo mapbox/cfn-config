@@ -5,6 +5,8 @@ All notable changes to this project will be documented in this file. For change 
 
 Keep future unreleased changes here
 
+## 0.8.5 - 2016-03-01
+
 - fix template path resolution bug in writeConfiguration
 
 ## 0.8.4 - 2016-02-26
