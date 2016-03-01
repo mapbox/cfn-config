@@ -5,6 +5,8 @@ All notable changes to this project will be documented in this file. For change 
 
 Keep future unreleased changes here
 
+- fix template path resolution bug in writeConfiguration
+
 ## 0.8.4 - 2016-02-26
 - `config.resolveTemplatePath` Uses correct prefix to find the `.cfn.json` files
 
