@@ -85,11 +85,11 @@ config.readStackParameters = function(stackname, region, callback) {
     });
 }
 
-config.writeConfiguration = function(template, config, callback) {
-    var json = JSON.stringify(config.Parameters, null, 4);
+config.writeConfiguration = function(template, configuration, callback) {
+    var json = JSON.stringify(configuration.Parameters, null, 4);
 
-    console.log('Region: %s', config.Region);
-    console.log('StackName: %s', config.StackName);
+    console.log('Region: %s', configuration.Region);
+    console.log('StackName: %s', configuration.StackName);
     console.log('Parameters:\n%s', json);
 
     inquirer.prompt([{
@@ -103,7 +103,7 @@ config.writeConfiguration = function(template, config, callback) {
         var s3 = new AWS.S3(_(env).extend({
             region: env.bucketRegion ? env.bucketRegion : 'us-east-1'
         }));
-        var key = path.basename(template, path.extname(template)) + '/' + answers.name + '.cfn.json';
+        var key = config.resolveTemplatePath(template) + '/' + answers.name + '.cfn.json';
         s3.putObject({
             Bucket: env.bucket,
             Key: key,
@@ -420,6 +420,7 @@ config.resolveTemplatePath = function(template){
     }
     return path.basename(template.substring(0, template.lastIndexOf('.')));
 };
+
 config.readFile = readFile;
 function readFile(filepath, region, callback) {
     if (!filepath) return callback(new Error('file is required'));
