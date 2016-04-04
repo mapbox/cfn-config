@@ -80,7 +80,11 @@ Reusable function for determining configuration.
   computer, or the URI for a template file that has been uploaded to S3
   (`s3://my-bucket/my-template.json`, for example). *Please note* that if your
   template is very large, it **must** be uploaded to S3 first. Also, the
-  template file must reside in the same region as your stack.
+  template file must reside in the same region as your stack.  The template may
+  be either a valid CloudFormation template in JSON format, or, a javascript
+  object which contains the normal CloudFormation properties. A javascript
+  template allows you to require helper modules, or write javascript code, to
+  assist with the creation of the CloudFormation template.
 - region: The AWS region to deploy into
 - name: Required. Name of the Cloudformation stack
 - config: Optional. Path to a configuration file to use
