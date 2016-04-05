@@ -148,7 +148,7 @@ config.writeConfiguration = function(template, configuration, callback) {
 config.configStack = function(options, callback) {
     options.defaults = options.defaults || {};
 
-    readFile(options.template, options.region, function(err, template) {
+    readFile(options, function(err, template) {
         if (err) return callback(new Error('Failed to read template file: ' + err.message));
 
         var templateParameters = _(template.Parameters).reduce(function(memo, value, key) {
@@ -165,7 +165,7 @@ config.configStack = function(options, callback) {
 
         // Config file provided, read and pass on
         if (options.config) {
-            readFile(options.config, bucketRegion, function(err, configuration) {
+            readFile({template:options.config, region: bucketRegion}, function(err, configuration) {
                 if (err) return callback(new Error('Failed to read configuration file: ' + err.message));
                 afterFileLoad(configuration);
             });
@@ -410,7 +410,7 @@ config.compareTemplates = function(options, callback) {
     var cfn = new config.AWS.CloudFormation(_(env).extend({
         region: options.region
     }));
-    readFile(options.template, null, function(err, data) {
+    readFile(options, function(err, data) {
         if (err) return callback(err);
         lhs = JSON.stringify(data, null, 4);
         cfn.getTemplate({StackName: options.name}, onLoad);
@@ -431,8 +431,13 @@ config.resolveTemplatePath = function(template){
 };
 
 config.readFile = readFile;
-function readFile(filepath, region, callback) {
-    if (!filepath) return callback(new Error('file is required'));
+function readFile(options, callback) {
+    // `options` object should include
+    // - template: Required. Path to the json or js file.
+    // - region: The AWS region to deploy into
+    if (!options.template) return callback(new Error('file is required'));
+    var filepath = options.template;
+    var region = options.region;
 
     var uri = url.parse(filepath);
     if (uri.protocol === 's3:') {
@@ -449,7 +454,7 @@ function readFile(filepath, region, callback) {
     } else if (/\.js$/.test(filepath)) {
         var jstemplate = require(path.resolve(filepath));
         if (typeof jstemplate == 'function') {
-            return jstemplate(callback);
+            return jstemplate(options, callback);
         }
         callback(null, jstemplate);
     } else {
@@ -578,7 +583,7 @@ function pickConfig(template, callback) {
         if (chosen.config === 'New configuration') {
             callback();
         } else {
-            readFile(chosen.config, bucketRegion, callback);
+            readFile({template: chosen.config, region: bucketRegion}, callback);
         }
     }
 }

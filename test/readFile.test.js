@@ -5,7 +5,7 @@ var config = require('../index.js');
 var readFile = config.readFile;
 
 tape('readFile-local-valid', function(assert) {
-    readFile(__dirname + '/fixtures/local-valid.template', 'us-east-1', function(err, data) {
+    readFile({ template: __dirname + '/fixtures/local-valid.template', region: 'us-east-1' }, function(err, data) {
         assert.ifError(err);
         assert.deepEqual(data, {
             Parameters: {},
@@ -16,7 +16,18 @@ tape('readFile-local-valid', function(assert) {
 });
 
 tape('readFile-local-valid-js', function(assert) {
-    readFile(__dirname + '/fixtures/local-valid.template.js', 'us-east-1', function(err, data) {
+    readFile({ template:__dirname + '/fixtures/local-valid.template.js', region: 'us-east-1' }, function(err, data) {
+        assert.ifError(err);
+        assert.deepEqual(data, {
+            Parameters: {},
+            Resources: {}
+        });
+        assert.end();
+    });
+});
+
+tape('readFile-async-local-valid-js', function(assert) {
+    readFile({ template:__dirname + '/fixtures/local-async-valid.template.js', region: 'us-east-1' }, function(err, data) {
         assert.ifError(err);
         assert.deepEqual(data, {
             Parameters: {},
@@ -27,7 +38,7 @@ tape('readFile-local-valid-js', function(assert) {
 });
 
 tape('readFile-local-invalid', function(assert) {
-    readFile(__dirname + '/fixtures/local-invalid.template', 'us-east-1', function(err, data) {
+    readFile({ template:__dirname + '/fixtures/local-invalid.template', region: 'us-east-1' }, function(err, data) {
         assert.equal(err.toString(), 'Error: Unable to parse file');
         assert.end();
     });
@@ -53,7 +64,7 @@ tape('setup MockS3', function(assert) {
 });
 
 tape('readFile-s3', function(assert) {
-    readFile('s3://mock-bucket/valid.template', 'us-east-1', function(err, data) {
+    readFile({ template:'s3://mock-bucket/valid.template', region: 'us-east-1' }, function(err, data) {
         assert.ifError(err);
         assert.deepEqual(data, {
             Parameters: {},
@@ -64,7 +75,7 @@ tape('readFile-s3', function(assert) {
 });
 
 tape('readFile-s3', function(assert) {
-    readFile('s3://mock-bucket/invalid.template', 'us-east-1', function(err, data) {
+    readFile({ template:'s3://mock-bucket/invalid.template', region: 'us-east-1' }, function(err, data) {
         assert.equal(err.toString(), 'Error: Unable to parse file');
         assert.end();
     });
