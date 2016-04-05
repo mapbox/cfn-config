@@ -447,7 +447,11 @@ function readFile(filepath, region, callback) {
             ondata(data.Body.toString());
         });
     } else if (/\.js$/.test(filepath)) {
-        callback(null, require(path.resolve(filepath)));
+        var jstemplate = require(path.resolve(filepath));
+        if (typeof jstemplate == 'function') {
+            return jstemplate(callback);
+        }
+        callback(null, jstemplate);
     } else {
         fs.readFile(path.resolve(filepath), function(err, data) {
             if (err) {
