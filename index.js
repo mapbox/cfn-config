@@ -88,7 +88,7 @@ config.readStackParameters = function(stackname, region, callback) {
 config.readSavedConfig = function(path, callback) {
     var bucketRegion = env.bucketRegion ? env.bucketRegion : 'us-east-1';
     path = 's3://' + env.bucket + '/' + path;
-    readFile(path, bucketRegion, function(err, config) {
+    readFile({template: path, region: bucketRegion}, function(err, config) {
         if (err) return callback(new Error('Failed to read configuration file: ' + err.message));
         callback(null, config);
     });
