@@ -3,10 +3,14 @@ All notable changes to this project will be documented in this file. For change 
 
 ## Unreleased
 
-Keep future unreleased changes here
+## 1.0.0 - 2016-04-11
 
+- BREAKING Change `readFile` method to accept a single options object and a callback.
 - Support asynchronous javascript templates.
-- Change `readFile` method to accept a single options object and a callback.
+
+## 0.9.0 - 2016-04-5
+
+- Added `readSavedConfig` method
 
 ## 0.8.5 - 2016-03-01
 
