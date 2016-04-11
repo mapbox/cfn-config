@@ -5,14 +5,19 @@ All notable changes to this project will be documented in this file. For change 
 
 Keep future unreleased changes here
 
+- Support asynchronous javascript templates.
+- Change `readFile` method to accept a single options object and a callback.
+
 ## 0.8.5 - 2016-03-01
 
 - fix template path resolution bug in writeConfiguration
 
 ## 0.8.4 - 2016-02-26
+
 - `config.resolveTemplatePath` Uses correct prefix to find the `.cfn.json` files
 
 ## 0.8.3 - 2016-02-19
+
 - `cfn-update -f` checking improved, no longer overriddes other options in other `cfn-config` commands like `cfn-create -c -f` 
 - `cfn-delete` outputs full progress
 
