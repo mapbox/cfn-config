@@ -2,7 +2,7 @@ var AWS = require('aws-sdk');
 var s3 = new AWS.S3();
 var tape = require('tape');
 var config = require('../index.js');
-var readSavedConfig = config.readSavedConfig;
+//var readSavedConfig = config.readSavedConfig;
 
 var origAWS = config.AWS;
 tape('setup MockS3', function(assert) {
@@ -23,9 +23,18 @@ tape('setup MockS3', function(assert) {
     assert.end();
 });
 
-config.setCredentials('test', 'test', 'test');
+
 tape('read saved config', function(assert) {
-    readSavedConfig('valid.template', function(err, data) {
+    console.log('before::: ' + JSON.stringify(config.env));
+
+    config.env = {};
+    delete process.env.AWS_REGION;
+    config.setCredentials('test', 'test', 'test');
+    console.log('after::: ' + JSON.stringify(config.env));
+
+    console.log("HHHHH: "+process.env.AWS_REGION);
+    config.readSavedConfig('valid.template', function(err, data) {
+        assert.comment(data);
         assert.ifError(err);
         assert.deepEqual(data, {
             Secret: 'apples',
