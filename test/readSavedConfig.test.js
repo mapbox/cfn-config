@@ -2,7 +2,7 @@ var AWS = require('aws-sdk');
 var s3 = new AWS.S3();
 var tape = require('tape');
 var config = require('../index.js');
-//var readSavedConfig = config.readSavedConfig;
+var readSavedConfig = config.readSavedConfig;
 
 var origAWS = config.AWS;
 tape('setup MockS3', function(assert) {
@@ -33,7 +33,7 @@ tape('read saved config', function(assert) {
     console.log('after::: ' + JSON.stringify(config.env));
 
     console.log("HHHHH: "+process.env.AWS_REGION);
-    config.readSavedConfig('valid.template', function(err, data) {
+    readSavedConfig('valid.template', function(err, data) {
         assert.comment(data);
         assert.ifError(err);
         assert.deepEqual(data, {
