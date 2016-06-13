@@ -12,6 +12,19 @@ var config = module.exports;
 var env = config.env = {};
 config.AWS = AWS;
 
+var globalRegions = [
+    'us-east-1',
+    'us-west-1',
+    'us-west-2',
+    'eu-central-1',
+    'eu-west-1',
+    'sa-east-1',
+    'ap-northeast-1',
+    'ap-northeast-2',
+    'ap-southeast-1',
+    'ap-southeast-2'
+];
+
 // Allow override of the default superenv credentials
 config.setCredentials = function (accessKeyId, secretAccessKey, bucket, sessionToken) {
     env.accessKeyId = accessKeyId;
@@ -93,6 +106,7 @@ config.readStackParameters = function(stackname, region, callback) {
 config.readSavedConfig = function(path, callback) {
     console.log(env);
     var bucketRegion = env.bucketRegion ? env.bucketRegion : 'us-east-1';
+
     path = 's3://' + env.bucket + '/' + path;
     readFile({template: path, region: bucketRegion}, function(err, config) {
         if (err) return callback(new Error('Failed to read configuration file: ' + err.message));
@@ -239,7 +253,7 @@ config.createStack = function(options, callback) {
         confirmAction('Ready to create this stack?', options.force, function (confirm) {
             if (!confirm) return callback();
             var templateName = path.basename(options.template);
-            getTemplateUrl(templateName, configDetails.template, options.region, function(err, url) {
+            config.getTemplateUrl(templateName, configDetails.template, options.region, function(err, url) {
                 if (err) return callback(err);
                 options.templateUrl = url;
                 cfn.createStack(cfnParams(options, configDetails), callback);
@@ -265,7 +279,7 @@ config.updateStack = function(options, callback) {
                 options.beforeUpdate(configDetails, function(err, res) {
                     if (err) return callback(err);
                     var templateName = path.basename(options.template);
-                    getTemplateUrl(templateName, configDetails.template, options.region, function(err, url) {
+                    config.getTemplateUrl(templateName, configDetails.template, options.region, function(err, url) {
                         if (err) return callback(err);
                         options.templateUrl = url;
                         cfn.updateStack(cfnParams(options, configDetails), callback);
@@ -482,7 +496,21 @@ function readFile(options, callback) {
         }
         callback(null, jsonData);
     }
+
+    function localize(template) {
+        if (region.match(/^cn-/)) {
+            // needs to handle regional endpoints like s3-eu-west-1.amazonaws.com
+            var arnRegex = /arn:aws:/g;
+            var endpointRegex = /([^\/]*)amazonaws.com[^\/]*/;
+            template.replace(arnRegex,'arn:aws-cn:');
+            template.replace(endpointRegex,'amazonaws.com.cn');
+        }
+        return template;
+    }
 }
+
+
+
 
 function confirmAction(message, force, callback) {
     if ('undefined' == typeof callback)
@@ -498,7 +526,7 @@ function confirmAction(message, force, callback) {
     });
 }
 
-config.getTemplateUrl = function getTemplateUrl(templateName, templateBody, region, callback) {
+config.getTemplateUrl = function(templateName, templateBody, region, callback) {
     var s3 = new config.AWS.S3(_(env).extend({ region: region }));
     var iam = new config.AWS.IAM(_(env).extend({ region: region }));
 
