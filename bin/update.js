@@ -31,7 +31,12 @@ var argv = optimist
         describe: 'Do not prompt for configuration choices',
         alias: 'f'
     })
-    .argv;
+    .options('localize', {
+        describe: 'Automatically localize template to AWS China',
+        alias: 'l',
+        boolean: true
+    })
+   .argv;
 
 if (argv.help) return optimist.showHelp();
 

@@ -8,7 +8,8 @@
     "cfn-create": "./bin/create.js",
     "cfn-delete": "./bin/delete.js",
     "cfn-info": "./bin/info.js",
-    "cfn-update": "./bin/update.js"
+    "cfn-update": "./bin/update.js",
+    "cfn-dump": "./bin/dump.js"
   },
   "repository": {
     "type": "git",
@@ -25,7 +26,8 @@
     "hat": "0.0.3",
     "diff": "1.0.8",
     "cfn-stack-event-stream": "0.0.2",
-    "colors": "^0.6.2"
+    "colors": "^0.6.2",
+    "traverse": "0.6.6"
   },
   "devDependencies": {
     "tap-spec": "^4.1.1",

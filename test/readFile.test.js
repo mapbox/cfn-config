@@ -3,6 +3,7 @@ var s3 = new AWS.S3();
 var tape = require('tape');
 var config = require('../index.js');
 var readFile = config.readFile;
+var localize = config.localize;
 
 tape('readFile-local-valid', function(assert) {
     readFile({ template: __dirname + '/fixtures/local-valid.template', region: 'us-east-1' }, function(err, data) {
@@ -85,4 +86,3 @@ tape('unset MockS3', function(assert) {
     config.AWS = origAWS;
     assert.end();
 });
-

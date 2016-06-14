@@ -1,0 +1,22 @@
+{
+  ArnTest: {
+    Arn1: "arn:aws:s3:::test-account",
+    Arn2: "arn:aws:s3:::test-account/test/*",
+    ArnJoin: {
+      Fn::Join: [
+        "",
+        [
+          "something",
+          "arn:aws:ec2:::"
+        ]
+      ]
+    }
+  },
+  EndpointTest: {
+    Standalone: "amazonaws.com",
+    S3GlobalJoin: ".s3.amazonaws.com",
+    DashS3: "s3-eu-west-1.amazonaws.com",
+    Service1: "ec2.us-east-1.amazonaws.com",
+    Service2: "cognito-identity.us-east-1.amazonaws.com"
+  }
+}

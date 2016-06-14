@@ -6,24 +6,11 @@ var AWS = require('aws-sdk');
 var url = require('url');
 var hat = require('hat');
 var jsdiff = require('diff');
-
+var traverse = require('traverse');
 
 var config = module.exports;
 var env = config.env = {};
 config.AWS = AWS;
-
-var globalRegions = [
-    'us-east-1',
-    'us-west-1',
-    'us-west-2',
-    'eu-central-1',
-    'eu-west-1',
-    'sa-east-1',
-    'ap-northeast-1',
-    'ap-northeast-2',
-    'ap-southeast-1',
-    'ap-southeast-2'
-];
 
 // Allow override of the default superenv credentials
 config.setCredentials = function (accessKeyId, secretAccessKey, bucket, sessionToken) {
@@ -104,7 +91,6 @@ config.readStackParameters = function(stackname, region, callback) {
 }
 
 config.readSavedConfig = function(path, callback) {
-    console.log(env);
     var bucketRegion = env.bucketRegion ? env.bucketRegion : 'us-east-1';
 
     path = 's3://' + env.bucket + '/' + path;
@@ -170,70 +156,79 @@ config.configStack = function(options, callback) {
 
     readFile(options, function(err, template) {
         if (err) return callback(new Error('Failed to read template file: ' + err.message));
-
-        var templateParameters = _(template.Parameters).reduce(function(memo, value, key) {
-            memo[key] = value.Default;
-            return memo;
-        }, {});
-
-        var bucketRegion = env.bucketRegion ? env.bucketRegion : 'us-east-1';
-
-        // do not read stored config file if update forced
-        if (options.update && options.force) {
-            return afterFileLoad({});
+        else if (options.localize && options.region.match(/^cn-/)) {
+            config.localize(options, template, function(err, localizedTemplate) {
+                if (err) return callback(new Error('Failed to localize template file: ' + err.message));
+                processStack(localizedTemplate);
+            });
+        } else {
+            processStack(template);
         }
 
-        // Config file provided, read and pass on
-        if (options.config) {
-            readFile({template:options.config, region: bucketRegion}, function(err, configuration) {
-                if (err) return callback(new Error('Failed to read configuration file: ' + err.message));
-                afterFileLoad(configuration);
-            });
-        // In force mode, skip interactivity
-        } else if (options.force) {
-            afterFileLoad({});
-        // No config file, prompt for configuration
-        } else if (!options.force) {
-            pickConfig(options.template, function(err, configuration) {
-                if (err) return callback(new Error('Failed to read configuration file: ' + err.message));
-                afterFileLoad(configuration ? configuration : {});
-            });
+        function processStack(template) {
+            var templateParameters = _(template.Parameters).reduce(function(memo, value, key) {
+                memo[key] = value.Default;
+                return memo;
+            }, {});
+
+            var bucketRegion = env.bucketRegion ? env.bucketRegion : 'us-east-1';
+
+            // do not read stored config file if update forced
+            if (options.update && options.force) {
+                return afterFileLoad({});
+            }
+
+            // Config file provided, read and pass on
+            if (options.config) {
+                readFile({template:options.config, region: bucketRegion}, function(err, configuration) {
+                    if (err) return callback(new Error('Failed to read configuration file: ' + err.message));
+                    afterFileLoad(configuration);
+                });
+                // In force mode, skip interactivity
+            } else if (options.force) {
+                afterFileLoad({});
+                // No config file, prompt for configuration
+            } else if (!options.force) {
+                pickConfig(options.template, function(err, configuration) {
+                    if (err) return callback(new Error('Failed to read configuration file: ' + err.message));
+                    afterFileLoad(configuration ? configuration : {});
+                });
+            }
+
+            function afterFileLoad(fileParameters) {
+                if (!options.update) return afterStackLoad(fileParameters, {});
+                config.readStackParameters(options.name, options.region, function(err, stackParameters) {
+                    if (err) return callback(err);
+
+                    // Exclude:
+                    // - stack parameters that no longer exist in the template
+                    // - masked stack parameters that come from the CFN API
+                    stackParameters = _(stackParameters).reduce(function(memo, param, key) {
+                        if (template.Parameters[key] === undefined) return memo;
+                        if (template.Parameters[key].NoEcho === 'true') return memo;
+                        memo[key] = param;
+                        return memo;
+                    }, {});
+
+                    afterStackLoad(fileParameters, stackParameters);
+                });
+            }
+
+            function afterStackLoad(fileParameters, stackParameters) {
+
+                var overrides = {
+                    defaults: _.defaults({}, options.overrides, stackParameters,
+                                         fileParameters, options.defaults, templateParameters),
+                    choices: options.choices || {},
+                    filters: options.filters || {},
+                    messages: options.messages || {}
+                };
+                config.configure(template, options, overrides, function(err, configuration) {
+                    if (err) return callback(err);
+                    callback(null, {template: template, configuration: configuration});
+                });
+            }
         }
-
-        function afterFileLoad(fileParameters) {
-            if (!options.update) return afterStackLoad(fileParameters, {});
-            config.readStackParameters(options.name, options.region, function(err, stackParameters) {
-                if (err) return callback(err);
-
-                // Exclude:
-                // - stack parameters that no longer exist in the template
-                // - masked stack parameters that come from the CFN API
-                stackParameters = _(stackParameters).reduce(function(memo, param, key) {
-                    if (template.Parameters[key] === undefined) return memo;
-                    if (template.Parameters[key].NoEcho === 'true') return memo;
-                    memo[key] = param;
-                    return memo;
-                }, {});
-
-                afterStackLoad(fileParameters, stackParameters);
-            });
-        }
-
-        function afterStackLoad(fileParameters, stackParameters) {
-
-            var overrides = {
-                defaults: _.defaults({}, options.overrides, stackParameters,
-                    fileParameters, options.defaults, templateParameters),
-                choices: options.choices || {},
-                filters: options.filters || {},
-                messages: options.messages || {}
-            };
-            config.configure(template, options, overrides, function(err, configuration) {
-                if (err) return callback(err);
-                callback(null, {template: template, configuration: configuration});
-            });
-        }
-
     });
 };
 
@@ -496,21 +491,65 @@ function readFile(options, callback) {
         }
         callback(null, jsonData);
     }
-
-    function localize(template) {
-        if (region.match(/^cn-/)) {
-            // needs to handle regional endpoints like s3-eu-west-1.amazonaws.com
-            var arnRegex = /arn:aws:/g;
-            var endpointRegex = /([^\/]*)amazonaws.com[^\/]*/;
-            template.replace(arnRegex,'arn:aws-cn:');
-            template.replace(endpointRegex,'amazonaws.com.cn');
-        }
-        return template;
-    }
 }
 
+config.localize = function localize(options, template, callback) {
+    var cnRoot = 'amazonaws.com.cn';
+    var region = options.region;
 
+    var globalRegex = /us-east-1|us-west-1|us-west-2|eu-central-1|eu-west-1|sa-east-1|ap-northeast-1|ap-southeast-1|ap-southeast-2/;
 
+    if (region.match(/^cn-/)) {
+        var arnRegex = /arn:aws:/g;
+        var endpointRegex = /([^"\/]*)amazonaws.com(?!.cn)/;
+        var unavail = /lambda|kms|route53/i;
+        var localizeError;
+
+        traverse(template).forEach(function(x) {
+            if (typeof(x) === 'string' && !localizeError) {
+                if (x.match(arnRegex)) {
+                    var accountRegex = /arn:.*(\d{5,})/;
+                    if (x.match(unavail)) {
+                        localizeError = ('Unavailable service found in arn match: ' + x);
+                    } else if (x.match(accountRegex)) {
+                        localizeError = ('Hardcoded AWS account id found in arn: ' + x);
+                    }
+                    this.update(x.replace(arnRegex,'arn:aws-cn:'));
+                } else if (x.match(endpointRegex)) {
+                    if (x.match(unavail)) {
+                        localizeError = ('Unavailable service found in endpoint match: ' + x);
+                    }
+                    var endpoint = x.match(endpointRegex);
+                    if (endpoint[1] == '' || endpoint[1] == '.s3.') {
+                        // stand alone 'amazonaws.com' or global s3 endpoint in join fn
+                        this.update(x.replace('amazonaws.com', region + '.' + cnRoot));
+                    } else if (endpoint[1].match(/s3-\w+-\w+-\w+/)) {
+                        // found s3 region endpoint with dash: s3-region
+                        this.update(x.replace(endpointRegex,'s3.' + region + '.' + cnRoot));
+                    } else if (endpoint[1].match(/.*\.\w+-\w+-\w+/)) {
+                        // found a service endpoint like ec2.us-east-1.amazonaws.com
+                        var service = endpoint[1].match(/(.*)\.\w+-\w+-\w+/);
+                        this.update(x.replace(endpointRegex, service[1] + '.' + region + '.' + cnRoot));
+                    } else if (endpoint[1].match(/[\w-]+\./)) {
+                        // found global service endpoint, ec2.amazonaws.com
+                        this.update(x.replace(endpointRegex,endpoint[1] + region + '.' + cnRoot));
+                    } else {
+                        localizeError = ('Unknown and unmatched: ' + x);
+                    }
+                }
+            }
+        });
+        if (!localizeError) {
+            try {
+                var jsonData = JSON.parse(JSON.stringify(template));
+            } catch(e) {
+                if (e.name === 'SyntaxError') return callback(new Error('Unable to parse file'));
+                return callback(e);
+            }
+        }
+    }
+    callback(localizeError,template);
+}
 
 function confirmAction(message, force, callback) {
     if ('undefined' == typeof callback)

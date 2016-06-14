@@ -9,7 +9,7 @@ config.setCredentials(env.accessKeyId, env.secretAccessKey, env.bucket);
 
 var argv = optimist
     .options('template', {
-        describe: 'AWS CloudFormation template to be deployed',
+        describe: 'AWS CloudFormation template to be dumped to console',
         demand: true,
         alias: 't'
     })
@@ -17,15 +17,6 @@ var argv = optimist
         describe: 'AWS region deployed the stack',
         demand: true,
         alias: 'r'
-    })
-    .options('name', {
-        describe: 'Name of the AWS CloudFormation to deploy',
-        demand: true,
-        alias: 'n'
-    })
-    .options('config', {
-        describe: 'Path to a configuration file to read',
-        alias: 'c'
     })
     .options('localize', {
         describe: 'Automatically localize template to AWS China',
@@ -36,9 +27,12 @@ var argv = optimist
 
 if (argv.help) return optimist.showHelp();
 
-config.configStack(argv, function(err, stack) {
-    if (err) throw err;
-    config.writeConfiguration(argv.template, stack.configuration, function(err) {
-        if (err) return console.error(err);
-    });
+config.readFile(argv, function(err, template) {
+    if (err) return (err);
+    if (argv.localize && argv.region.match(/^cn-/)) {
+        config.localize(argv, template, function(err,localizedTemplate) {
+            if (err) throw err;
+            console.log(JSON.stringify(localizedTemplate));
+        });
+    }
 });

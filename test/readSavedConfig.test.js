@@ -25,14 +25,9 @@ tape('setup MockS3', function(assert) {
 
 
 tape('read saved config', function(assert) {
-    console.log('before::: ' + JSON.stringify(config.env));
-
     config.env = {};
     delete process.env.AWS_REGION;
     config.setCredentials('test', 'test', 'test');
-    console.log('after::: ' + JSON.stringify(config.env));
-
-    console.log("HHHHH: "+process.env.AWS_REGION);
     readSavedConfig('valid.template', function(err, data) {
         assert.comment(data);
         assert.ifError(err);
