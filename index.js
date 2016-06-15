@@ -158,7 +158,9 @@ config.configStack = function(options, callback) {
         if (err) return callback(new Error('Failed to read template file: ' + err.message));
         else if (options.localize && options.region.match(/^cn-/)) {
             config.localize(options, template, function(err, localizedTemplate) {
-                if (err) return callback(new Error('Failed to localize template file: ' + err.message));
+                if (err) {
+                    return callback(new Error('Failed to localize template file: ' + err.message));
+                }
                 processStack(localizedTemplate);
             });
         } else {
