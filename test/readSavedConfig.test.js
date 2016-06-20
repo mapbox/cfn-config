@@ -23,8 +23,8 @@ tape('setup MockS3', function(assert) {
     assert.end();
 });
 
-config.setCredentials('test', 'test', 'test');
 tape('read saved config', function(assert) {
+    config.setCredentials('test', 'test', 'test');
     readSavedConfig('valid.template', function(err, data) {
         assert.ifError(err);
         assert.deepEqual(data, {

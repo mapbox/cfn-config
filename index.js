@@ -6,10 +6,10 @@ var AWS = require('aws-sdk');
 var url = require('url');
 var hat = require('hat');
 var jsdiff = require('diff');
-var env = {};
 
 var config = module.exports;
 
+var env = config.env = {};
 config.AWS = AWS;
 
 // Allow override of the default superenv credentials
@@ -17,6 +17,9 @@ config.setCredentials = function (accessKeyId, secretAccessKey, bucket, sessionT
     env.accessKeyId = accessKeyId;
     env.secretAccessKey = secretAccessKey;
     env.bucket = bucket;
+    if (process.env.AWS_REGION && process.env.AWS_REGION.match(/^cn-/)) {
+        env.bucketRegion = process.env.AWS_REGION;
+    }
     if (sessionToken) env.sessionToken = sessionToken;
 };
 
@@ -233,7 +236,7 @@ config.createStack = function(options, callback) {
         confirmAction('Ready to create this stack?', options.force, function (confirm) {
             if (!confirm) return callback();
             var templateName = path.basename(options.template);
-            getTemplateUrl(templateName, configDetails.template, options.region, function(err, url) {
+            config.getTemplateUrl(templateName, configDetails.template, options.region, function(err, url) {
                 if (err) return callback(err);
                 options.templateUrl = url;
                 cfn.createStack(cfnParams(options, configDetails), callback);
@@ -259,7 +262,7 @@ config.updateStack = function(options, callback) {
                 options.beforeUpdate(configDetails, function(err, res) {
                     if (err) return callback(err);
                     var templateName = path.basename(options.template);
-                    getTemplateUrl(templateName, configDetails.template, options.region, function(err, url) {
+                    config.getTemplateUrl(templateName, configDetails.template, options.region, function(err, url) {
                         if (err) return callback(err);
                         options.templateUrl = url;
                         cfn.updateStack(cfnParams(options, configDetails), callback);
@@ -492,7 +495,7 @@ function confirmAction(message, force, callback) {
     });
 }
 
-function getTemplateUrl(templateName, templateBody, region, callback) {
+config.getTemplateUrl = function(templateName, templateBody, region, callback) {
     var s3 = new config.AWS.S3(_(env).extend({ region: region }));
     var iam = new config.AWS.IAM(_(env).extend({ region: region }));
 
@@ -524,9 +527,14 @@ function getTemplateUrl(templateName, templateBody, region, callback) {
                 Body: JSON.stringify(templateBody, null, 4)
             }, function(err, data) {
                 if (err) return callback(err);
-                var host = region === 'us-east-1' ?
-                    'https://s3.amazonaws.com' :
-                    'https://s3-' + region + '.amazonaws.com'
+                var host;
+                if (region == 'us-east-1') {
+                    host = 'https://s3.amazonaws.com';
+                } else if (region.match(/^cn-/)) {
+                    host = 'https://s3.' + region + '.amazonaws.com.cn';
+                } else {
+                    host = 'https://s3-' + region + '.amazonaws.com';
+                }
                 callback(null, [host, bucket, key].join('/'));
             });
         });
