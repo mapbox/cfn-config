@@ -3,6 +3,11 @@ All notable changes to this project will be documented in this file. For change 
 
 ## Unreleased
 
+## 1.0.1 - 2016-06-20
+
+- Support for AWS China
+- `cfn-dump` outputs template to stdout.
+
 ## 1.0.0 - 2016-04-11
 
 - BREAKING Change `readFile` method to accept a single options object and a callback.
@@ -22,7 +27,7 @@ All notable changes to this project will be documented in this file. For change 
 
 ## 0.8.3 - 2016-02-19
 
-- `cfn-update -f` checking improved, no longer overriddes other options in other `cfn-config` commands like `cfn-create -c -f` 
+- `cfn-update -f` checking improved, no longer overriddes other options in other `cfn-config` commands like `cfn-create -c -f`
 - `cfn-delete` outputs full progress
 
 ## 0.8.2 - 2016-01-27

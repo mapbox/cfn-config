@@ -51,6 +51,7 @@ instructions.
 - `cfn-update` - Configures a stack's parameters based on a CFN template file.
   Writes the configuration to disk and updates the given stack to use the new
   parameters and template.
+- `cfn-dump` - Dumps the template to stdout. Useful for viewing JS templates.
 
 ## Library
 
@@ -110,4 +111,3 @@ Finds details about a running Cloudformation stack
 - name: Required. Name of the Cloudformation stack
 - region: The AWS region to deploy into
 - resources: Defaults to false. Gets information about resources in the stack
-
