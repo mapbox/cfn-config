@@ -504,7 +504,7 @@ config.localize = function localize(options, template, callback) {
     if (region.match(/^cn-/)) {
         var arnRegex = /arn:aws:/g;
         var endpointRegex = /([^"\/]*)amazonaws.com(?!.cn)/;
-        var unavail = /lambda|kms|route53/i;
+        var unavail = /lambda|kms|route53/ig;
         var localizeError;
 
         traverse(template).forEach(function(x) {
@@ -534,7 +534,7 @@ config.localize = function localize(options, template, callback) {
                         this.update(x.replace(endpointRegex, service[1] + '.' + region + '.' + cnRoot));
                     } else if (endpoint[1].match(/[\w-]+\./)) {
                         // found global service endpoint, ec2.amazonaws.com
-                        this.update(x.replace(endpointRegex,endpoint[1] + region + '.' + cnRoot));
+                        this.update(x.replace(endpointRegex,endpoint[1] + cnRoot));
                     } else {
                         localizeError = ('Unknown and unmatched: ' + x);
                     }
