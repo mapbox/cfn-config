@@ -281,18 +281,11 @@ config.updateStack = function(options, callback) {
             var oldParameters = stack.Parameters;
             config.compareParameters(oldParameters, newParameters);
             config.compareTemplates(options, function(err, diff) {
-                if (!diff) {
-                    console.log('Templates are identical');
-                    finalize();
-                } else {
-                    confirmAction('Templates are different, view patch?', options.force, function(confirm) {
-                        if (!confirm) finalize();
-                        else {
-                            console.log(diff);
-                            finalize();
-                        }
-                    });
+                if (diff) {
+                    console.log('Template changes');
+                    console.log(diff);
                 }
+                finalize();
             });
         });
     });
