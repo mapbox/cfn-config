@@ -6,8 +6,10 @@ var compareParameters = config.compareParameters;
 tape('compareParameters', function(assert) {
     var origLog = console.log;
     var lastLog = null;
-    console.log = function() {
-        origLog.apply(console, arguments);
+    console.log = function(arg) {
+        if (!(/^(Parameter changes| {)/).test(arg)) {
+            origLog.apply(console, arguments);
+        }
         lastLog = util.format.apply(util, arguments);
     };
 
@@ -29,15 +31,17 @@ tape('compareParameters', function(assert) {
 
     lastLog = null;
     compareParameters({ fruit: 'banana' }, { fruit: 'orange' });
-    assert.deepEqual(lastLog, 'Change parameter fruit from banana to orange', '-banana, +orange');
+    assert.ok(
+        lastLog.indexOf('-  fruit: "banana"') !== -1 &&
+        lastLog.indexOf('+  fruit: "orange"') !== -1, '- banana, + orange');
 
     lastLog = null;
     compareParameters({}, { fruit: 'orange' });
-    assert.deepEqual(lastLog, 'Add parameter fruit with value orange', '+orange');
+    assert.ok(lastLog.indexOf('+  fruit: "orange"') !== -1, '+ orange');
 
     lastLog = null;
     compareParameters({ fruit: 'banana' }, {});
-    assert.deepEqual(lastLog, 'Remove parameter fruit with value banana', '-banana');
+    assert.ok(lastLog.indexOf('-  fruit: "banana"') !== -1, '- banana');
 
     console.log = origLog;
     assert.end();

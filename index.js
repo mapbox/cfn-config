@@ -5,7 +5,7 @@ var path = require('path');
 var AWS = require('aws-sdk');
 var url = require('url');
 var hat = require('hat');
-var jsdiff = require('diff');
+var jsonDiff = require('json-diff');
 
 var config = module.exports;
 
@@ -394,22 +394,9 @@ config.stackInfo = function(options, callback) {
 };
 
 config.compareParameters = function(lhs, rhs) {
-    // Determine deleted parameters and value differences
-    _(lhs).each(function(value, key) {
-        if (value == rhs[key]) {
-            // skip, match on nulls
-        } else if (!rhs[key])
-            console.log('Remove parameter %s with value %s', key, value);
-        else if (value != rhs[key])
-            console.log('Change parameter %s from %s to %s', key, value, rhs[key]);
-    });
-    // Determine new parameters
-    _(rhs).each(function(value, key) {
-        if (value == lhs[key]) {
-            // skip, match on nulls
-        } else if (!lhs[key])
-            console.log('Add parameter %s with value %s', key, value);
-    });
+    if (_(lhs).isEqual(rhs)) return;
+    console.log('Parameter changes');
+    console.log(jsonDiff.diffString(lhs, rhs));
 };
 
 config.compareTemplates = function(options, callback) {
@@ -420,14 +407,14 @@ config.compareTemplates = function(options, callback) {
     }));
     readFile(options, function(err, data) {
         if (err) return callback(err);
-        lhs = JSON.stringify(data, null, 4);
+        lhs = data;
         cfn.getTemplate({StackName: options.name}, onLoad);
     });
     function onLoad(err, data) {
         if (err) return callback(err);
-        rhs = JSON.stringify(JSON.parse(data.TemplateBody), null, 4);
-        if (lhs === rhs) return callback(null, false);
-        else return callback(null, jsdiff.createPatch('template', rhs, lhs, options.name, options.template));
+        rhs = JSON.parse(data.TemplateBody);
+        if (_(lhs).isEqual(rhs)) return callback(null, false);
+        else return callback(null, jsonDiff.diffString(lhs, rhs));
     }
 };
 
