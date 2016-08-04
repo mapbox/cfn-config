@@ -254,7 +254,11 @@ config.updateStack = function(options, callback) {
     options.beforeUpdate = options.beforeUpdate || function(configDetails, next) {
         next();
     };
-    config.configStack(options, function(err, configDetails) {
+
+    // Don't prompt for a configuration on updates.
+    var configOptions = _({ force: true }).defaults(options);
+
+    config.configStack(configOptions, function(err, configDetails) {
         if (err) return callback(err);
         var finalize = function() {
             confirmAction('Ready to update the stack?', options.force, function (confirm) {
