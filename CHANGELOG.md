@@ -3,6 +3,11 @@ All notable changes to this project will be documented in this file. For change 
 
 ## Unreleased
 
+## 1.1.0 - 2016-08-04
+
+- Remove Config file prompt when updating a stack
+- Update to `json-diff` for colored diff output
+
 ## 1.0.1 - 2016-06-20
 
 - Support for AWS China
