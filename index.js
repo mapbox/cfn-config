@@ -173,7 +173,7 @@ config.configStack = function(options, callback) {
                 afterFileLoad(configuration);
             });
         // In force mode, skip interactivity
-        } else if (options.force) {
+        } else if (options.force || options.config === false) {
             afterFileLoad({});
         // No config file, prompt for configuration
         } else if (!options.force) {
@@ -254,6 +254,11 @@ config.updateStack = function(options, callback) {
     options.beforeUpdate = options.beforeUpdate || function(configDetails, next) {
         next();
     };
+
+    // Unles config is explicitly provided, set to `false` to skip
+    // picking a configuration file on updates.
+    options.config = options.config || false;
+
     config.configStack(options, function(err, configDetails) {
         if (err) return callback(err);
         var finalize = function() {
