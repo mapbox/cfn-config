@@ -3,6 +3,10 @@ All notable changes to this project will be documented in this file. For change 
 
 ## Unreleased
 
+## 1.1.1 - 2016-08-04
+
+- Fix bug with template diff
+
 ## 1.1.0 - 2016-08-04
 
 - Remove Config file prompt when updating a stack
