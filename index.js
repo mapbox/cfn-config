@@ -400,12 +400,12 @@ config.compareTemplates = function(options, callback) {
     }));
     readFile(options, function(err, data) {
         if (err) return callback(err);
-        lhs = data;
+        rhs = data;
         cfn.getTemplate({StackName: options.name}, onLoad);
     });
     function onLoad(err, data) {
         if (err) return callback(err);
-        rhs = JSON.parse(data.TemplateBody);
+        lhs = JSON.parse(data.TemplateBody);
         if (_(lhs).isEqual(rhs)) return callback(null, false);
         else return callback(null, jsonDiff.diffString(lhs, rhs));
     }

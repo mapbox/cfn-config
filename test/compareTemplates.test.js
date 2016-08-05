@@ -28,7 +28,7 @@ tape('compareTemplates', function(assert) {
     }, function(err, data) {
         assert.ifError(err);
         assert.equal(typeof data, 'string');
-        assert.equal(data.indexOf('+  Outputs') !== -1, true);
+        assert.equal(data.indexOf('-  Outputs') !== -1, true);
         assert.end();
     });
 });
@@ -41,7 +41,7 @@ tape('compareTemplates.js', function(assert) {
     }, function(err, data) {
         assert.ifError(err);
         assert.equal(typeof data, 'string');
-        assert.equal(data.indexOf('+  Outputs') !== -1, true);
+        assert.equal(data.indexOf('-  Outputs') !== -1, true);
         assert.end();
     });
 });
