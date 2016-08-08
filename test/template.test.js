@@ -23,6 +23,13 @@ test('[template.read] local file cannot be parsed', function(assert) {
   });
 });
 
+test('[template.read] local js file cannot be parsed', function(assert) {
+  template.read(path.resolve(__dirname, 'fixtures', 'malformed-template.js'), function(err) {
+    assert.ok(err instanceof template.InvalidTemplateError, 'returned expected error');
+    assert.end();
+  });
+});
+
 test('[template.read] S3 no access', function(assert) {
   template.read('s3://mapbox/fake', function(err) {
     assert.ok(err instanceof template.NotFoundError, 'returned expected error');

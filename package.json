@@ -4,7 +4,7 @@
   "description": "Quickly configure and start AWS CloudFormation stacks",
   "main": "index.js",
   "scripts": {
-    "pretest": "eslint index.js bin lib test",
+    "pretest": "eslint index.js bin lib test/*.js",
     "test": "nyc tape test/*.test.js",
     "coverage": "nyc --reporter html tape test/*.test.js && opener coverage/index.html"
   },
