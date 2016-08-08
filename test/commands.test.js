@@ -16,7 +16,7 @@ var opts = {
 
 var basicContext = commands.commandContext(opts, 'testing', [], function() {});
 
-test('[commands.create]', function(assert) {
+test('[commands.create] no overrides', function(assert) {
   function whenDone() {}
 
   sinon.stub(commands, 'commandContext', function(config, suffix, operations, callback) {
@@ -25,19 +25,44 @@ test('[commands.create]', function(assert) {
     assert.ok(operations.every(function(op) { return typeof op === 'function'; }), 'instantiate context with array of operations');
     assert.equal(callback, whenDone, 'instantiate context with final callback function');
 
-    var context = {
+    var context = Object.assign({}, basicContext, {
       next: function() {
         assert.pass('called next to begin process');
         assert.equal(context.templatePath, path.resolve('templatePath'), 'set absolute context.templatePath');
         commands.commandContext.restore();
         assert.end();
       }
-    };
+    });
 
     return context;
   });
 
   commands(opts).create('testing', 'templatePath', whenDone);
+});
+
+test('[commands.create] with overrides', function(assert) {
+  function whenDone() {}
+
+  sinon.stub(commands, 'commandContext', function(config, suffix, operations, callback) {
+    assert.deepEqual(config, opts, 'instantiate context with expected config');
+    assert.deepEqual(suffix, 'testing', 'instantiate context with expected suffix');
+    assert.ok(operations.every(function(op) { return typeof op === 'function'; }), 'instantiate context with array of operations');
+    assert.equal(callback, whenDone, 'instantiate context with final callback function');
+
+    var context = Object.assign({}, basicContext, {
+      next: function() {
+        assert.pass('called next to begin process');
+        assert.equal(context.templatePath, path.resolve('templatePath'), 'set absolute context.templatePath');
+        assert.deepEqual(context.overrides, { some: 'overrides' }, 'sets context.overrides');
+        commands.commandContext.restore();
+        assert.end();
+      }
+    });
+
+    return context;
+  });
+
+  commands(opts).create('testing', 'templatePath', { some: 'overrides' }, whenDone);
 });
 
 test('[commands.update] force-mode', function(assert) {
@@ -49,7 +74,7 @@ test('[commands.update] force-mode', function(assert) {
     assert.ok(operations.every(function(op) { return typeof op === 'function'; }), 'instantiate context with array of operations');
     assert.equal(callback, whenDone, 'instantiate context with final callback function');
 
-    var context = {
+    var context = Object.assign({}, basicContext, {
       next: function() {
         assert.pass('called next to begin process');
         assert.equal(context.templatePath, path.resolve('templatePath'), 'set absolute context.templatePath');
@@ -57,7 +82,7 @@ test('[commands.update] force-mode', function(assert) {
         commands.commandContext.restore();
         assert.end();
       }
-    };
+    });
 
     return context;
   });
@@ -74,7 +99,7 @@ test('[commands.update] not force-mode', function(assert) {
     assert.ok(operations.every(function(op) { return typeof op === 'function'; }), 'instantiate context with array of operations');
     assert.equal(callback, whenDone, 'instantiate context with final callback function');
 
-    var context = {
+    var context = Object.assign({}, basicContext, {
       next: function() {
         assert.pass('called next to begin process');
         assert.equal(context.templatePath, path.resolve('templatePath'), 'set absolute context.templatePath');
@@ -82,7 +107,7 @@ test('[commands.update] not force-mode', function(assert) {
         commands.commandContext.restore();
         assert.end();
       }
-    };
+    });
 
     return context;
   });
@@ -99,13 +124,13 @@ test('[commands.delete]', function(assert) {
     assert.ok(operations.every(function(op) { return typeof op === 'function'; }), 'instantiate context with array of operations');
     assert.equal(callback, whenDone, 'instantiate context with final callback function');
 
-    var context = {
+    var context = Object.assign({}, basicContext, {
       next: function() {
         assert.pass('called next to begin process');
         commands.commandContext.restore();
         assert.end();
       }
-    };
+    });
 
     return context;
   });
@@ -136,14 +161,14 @@ test('[commands.save] kms-mode', function(assert) {
     assert.ok(operations.every(function(op) { return typeof op === 'function'; }), 'instantiate context with array of operations');
     assert.equal(callback, whenDone, 'instantiate context with final callback function');
 
-    var context = {
+    var context = Object.assign({}, basicContext, {
       next: function() {
         assert.pass('called next to begin process');
         assert.equal(context.kms, true, 'sets context.kms');
         commands.commandContext.restore();
         assert.end();
       }
-    };
+    });
 
     return context;
   });
@@ -160,14 +185,14 @@ test('[commands.save] not kms-mode', function(assert) {
     assert.ok(operations.every(function(op) { return typeof op === 'function'; }), 'instantiate context with array of operations');
     assert.equal(callback, whenDone, 'instantiate context with final callback function');
 
-    var context = {
+    var context = Object.assign({}, basicContext, {
       next: function() {
         assert.pass('called next to begin process');
         assert.equal(context.kms, false, 'sets context.kms');
         commands.commandContext.restore();
         assert.end();
       }
-    };
+    });
 
     return context;
   });
@@ -183,6 +208,8 @@ test('[commands.commandContext] sets context', function(assert) {
   assert.equal(context.stackRegion, opts.region, 'sets stackRegion');
   assert.equal(context.configBucket, opts.configBucket, 'sets configBucket');
   assert.equal(context.templateBucket, opts.templateBucket, 'sets templateBucket');
+  assert.deepEqual(context.overrides, {}, 'sets empty overrides');
+  assert.deepEqual(context.oldParameters, {}, 'sets empty oldParameters');
   assert.equal(typeof context.abort, 'function', 'sets abort function');
   assert.equal(typeof context.next, 'function', 'sets next function');
   assert.end();
@@ -454,7 +481,7 @@ test('[commands.operations.promptParameters] force-mode', function(assert) {
     assert.fail('should not build questions');
   });
 
-  var context = {
+  var context = Object.assign({}, basicContext, {
     oldParameters: { old: 'parameters' },
     force: true,
     next: function(err) {
@@ -463,7 +490,7 @@ test('[commands.operations.promptParameters] force-mode', function(assert) {
       template.questions.restore();
       assert.end();
     }
-  };
+  });
 
   commands.operations.promptParameters(context);
 });
@@ -483,7 +510,7 @@ test('[commands.operations.promptParameters] not force-mode', function(assert) {
     callback(null, answers);
   });
 
-  var context = {
+  var context = Object.assign({}, basicContext, {
     newTemplate: { new: 'template' },
     oldParameters: { old: 'parameters' },
     next: function(err) {
@@ -493,20 +520,45 @@ test('[commands.operations.promptParameters] not force-mode', function(assert) {
       prompt.parameters.restore();
       assert.end();
     }
-  };
+  });
+
+  commands.operations.promptParameters(context);
+});
+
+test('[commands.operations.promptParameters] with parameter overrides', function(assert) {
+  sinon.stub(template, 'questions', function(template, overrides) {
+    assert.deepEqual(overrides, { defaults: { old: 'overriden' } }, 'uses override parameters');
+    return { parameter: 'questions' };
+  });
+
+  sinon.stub(prompt, 'parameters', function(questions, callback) {
+    callback({ the: 'answers' });
+  });
+
+  var context = Object.assign({}, basicContext, {
+    newTemplate: { new: 'template' },
+    oldParameters: { old: 'parameters' },
+    overrides: { parameters: { old: 'overriden' } },
+    next: function(err) {
+      assert.ifError(err, 'success');
+      template.questions.restore();
+      prompt.parameters.restore();
+      assert.end();
+    }
+  });
 
   commands.operations.promptParameters(context);
 });
 
 test('[commands.operations.confirmParameters] no difference', function(assert) {
-  var context = {
+  var context = Object.assign({}, basicContext, {
     oldParameters: { old: 'parameters' },
     newParameters: { old: 'parameters' },
     next: function() {
       assert.pass('skipped prompting');
       assert.end();
     }
-  };
+  });
 
   commands.operations.confirmParameters(context);
 });
@@ -519,7 +571,7 @@ test('[commands.operations.confirmParameters] rejected', function(assert) {
     callback(null, false);
   });
 
-  var context = {
+  var context = Object.assign({}, basicContext, {
     oldParameters: { old: 'parameters' },
     newParameters: { new: 'parameters' },
     next: function() {
@@ -529,7 +581,7 @@ test('[commands.operations.confirmParameters] rejected', function(assert) {
       assert.ifError(err, 'aborted');
       prompt.confirm.restore();
     }
-  };
+  });
 
   commands.operations.confirmParameters(context);
 });
@@ -542,7 +594,7 @@ test('[commands.operations.confirmParameters] accepted', function(assert) {
     callback(null, true);
   });
 
-  var context = {
+  var context = Object.assign({}, basicContext, {
     oldParameters: { old: 'parameters' },
     newParameters: { new: 'parameters' },
     next: function(err) {
@@ -552,26 +604,26 @@ test('[commands.operations.confirmParameters] accepted', function(assert) {
     abort: function() {
       assert.fail('should proceed');
     }
-  };
+  });
 
   commands.operations.confirmParameters(context);
 });
 
 test('[commands.operations.confirmTemplate] no difference', function(assert) {
-  var context = {
+  var context = Object.assign({}, basicContext, {
     oldTemplate: { old: 'template' },
     newTemplate: { old: 'template' },
     next: function() {
       assert.pass('skipped prompting');
       assert.end();
     }
-  };
+  });
 
   commands.operations.confirmTemplate(context);
 });
 
 test('[commands.operations.confirmTemplate] template change in force-mode', function(assert) {
-  var context = {
+  var context = Object.assign({}, basicContext, {
     oldTemplate: { old: 'template' },
     newTemplate: { new: 'template' },
     force: true,
@@ -582,7 +634,7 @@ test('[commands.operations.confirmTemplate] template change in force-mode', func
       assert.equal(err.message, 'Cannot change template with --force', 'expected error message');
       assert.end();
     }
-  };
+  });
 
   commands.operations.confirmTemplate(context);
 });
@@ -595,7 +647,7 @@ test('[commands.operations.confirmTemplate] rejected', function(assert) {
     callback(null, false);
   });
 
-  var context = {
+  var context = Object.assign({}, basicContext, {
     oldTemplate: { old: 'template' },
     newTemplate: { new: 'template' },
     next: function() {
@@ -605,7 +657,7 @@ test('[commands.operations.confirmTemplate] rejected', function(assert) {
       assert.ifError(err, 'aborted');
       prompt.confirm.restore();
     }
-  };
+  });
 
   commands.operations.confirmTemplate(context);
 });
@@ -618,7 +670,7 @@ test('[commands.operations.confirmTemplate] accepted', function(assert) {
     callback(null, true);
   });
 
-  var context = {
+  var context = Object.assign({}, basicContext, {
     oldTemplate: { old: 'template' },
     newTemplate: { new: 'template' },
     next: function(err) {
@@ -629,7 +681,7 @@ test('[commands.operations.confirmTemplate] accepted', function(assert) {
     abort: function() {
       assert.fail('should not abort');
     }
-  };
+  });
 
   commands.operations.confirmTemplate(context);
 });
@@ -1093,7 +1145,7 @@ test('[commands.operations.loadConfig] no saved config', function(assert) {
   var context = Object.assign({}, basicContext, {
     next: function(err) {
       assert.ifError(err, 'success');
-      assert.notOk(context.oldParameters, 'does not set context.oldParameters');
+      assert.deepEqual(context.oldParameters, {}, 'does not set context.oldParameters');
       assert.end();
     }
   });
