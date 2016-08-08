@@ -110,10 +110,18 @@ test('[template.read] local sync JS', function(assert) {
   });
 });
 
-test('[template.read] local async JS', function(assert) {
+test('[template.read] local async JS with options', function(assert) {
+  template.read(path.resolve(__dirname, 'fixtures', 'template-async.js'), { some: 'options' }, function(err, found) {
+    assert.ifError(err, 'success');
+    assert.deepEqual(found, { some: 'options' }, 'got template JSON');
+    assert.end();
+  });
+});
+
+test('[template.read] local async JS without options', function(assert) {
   template.read(path.resolve(__dirname, 'fixtures', 'template-async.js'), function(err, found) {
     assert.ifError(err, 'success');
-    assert.deepEqual(found, expected, 'got template JSON');
+    assert.deepEqual(found, {}, 'got template JSON');
     assert.end();
   });
 });

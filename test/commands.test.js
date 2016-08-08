@@ -985,7 +985,7 @@ test('[commands.operations.executeChangeSet] success', function(assert) {
 });
 
 test('[commands.operations.createPreamble] template not found', function(assert) {
-  sinon.stub(template, 'read', function(templatePath, callback) {
+  sinon.stub(template, 'read', function(templatePath, options, callback) {
     callback(new template.NotFoundError('failure'));
   });
 
@@ -1008,7 +1008,7 @@ test('[commands.operations.createPreamble] template not found', function(assert)
 });
 
 test('[commands.operations.createPreamble] template invalid', function(assert) {
-  sinon.stub(template, 'read', function(templatePath, callback) {
+  sinon.stub(template, 'read', function(templatePath, options, callback) {
     callback(new template.InvalidTemplateError('failure'));
   });
 
@@ -1031,7 +1031,7 @@ test('[commands.operations.createPreamble] template invalid', function(assert) {
 });
 
 test('[commands.operations.createPreamble] config bucket not found', function(assert) {
-  sinon.stub(template, 'read', function(templatePath, callback) {
+  sinon.stub(template, 'read', function(templatePath, options, callback) {
     callback();
   });
 
@@ -1054,7 +1054,7 @@ test('[commands.operations.createPreamble] config bucket not found', function(as
 });
 
 test('[commands.operations.createPreamble] failed to read configurations', function(assert) {
-  sinon.stub(template, 'read', function(templatePath, callback) {
+  sinon.stub(template, 'read', function(templatePath, options, callback) {
     callback();
   });
 
@@ -1077,7 +1077,7 @@ test('[commands.operations.createPreamble] failed to read configurations', funct
 });
 
 test('[commands.operations.createPreamble] success', function(assert) {
-  sinon.stub(template, 'read', function(templatePath, callback) {
+  sinon.stub(template, 'read', function(templatePath, options, callback) {
     assert.equal(templatePath, context.templatePath, 'read correct template');
     callback(null, { new: 'template' });
   });
