@@ -497,6 +497,89 @@ test('[lookup.configuration] success', function(assert) {
   });
 });
 
+test('[lookup.defaultConfiguration] bucket location error', function(assert) {
+  AWS.mock('S3', 'getBucketLocation', function(params, callback) {
+    callback(new Error('failure'));
+  });
+
+  lookup.defaultConfiguration('s3://my-bucket/my-config.cfn.json', function(err, info) {
+    assert.ifError(err, 'ignored error');
+    assert.deepEqual(info, {}, 'provided blank info');
+    AWS.restore('S3', 'getBucketLocation');
+    assert.end();
+  });
+});
+
+test('[lookup.defaultConfiguration] requested configuration does not exist', function(assert) {
+  AWS.mock('S3', 'getBucketLocation', function(params, callback) {
+    callback(null, 'us-east-1');
+  });
+
+  AWS.mock('S3', 'getObject', function(params, callback) {
+    var err = new Error('The specified key does not exist.');
+    err.code = 'NoSuchKey';
+    callback(err);
+  });
+
+  lookup.defaultConfiguration('s3://my-bucket/my-config.cfn.json', function(err, info) {
+    assert.ifError(err, 'ignored error');
+    assert.deepEqual(info, {}, 'provided blank info');
+    AWS.restore('S3', 'getBucketLocation');
+    AWS.restore('S3', 'getObject');
+    assert.end();
+  });
+});
+
+test('[lookup.defaultConfiguration] cannot parse object data', function(assert) {
+  AWS.mock('S3', 'getBucketLocation', function(params, callback) {
+    callback(null, 'us-east-1');
+  });
+
+  AWS.mock('S3', 'getObject', function(params, callback) {
+    callback(null, { Body: new Buffer('invalid') });
+  });
+
+  lookup.defaultConfiguration('s3://my-bucket/my-config.cfn.json', function(err, info) {
+    assert.ifError(err, 'ignored error');
+    assert.deepEqual(info, {}, 'provided blank info');
+    AWS.restore('S3', 'getBucketLocation');
+    AWS.restore('S3', 'getObject');
+    assert.end();
+  });
+});
+
+test('[lookup.defaultConfiguration] success', function(assert) {
+  var info = {
+    Name: 'Chuck',
+    Age: 18,
+    Handedness: 'left',
+    Pets: 'Duck,Wombat',
+    LuckyNumbers: '3,7,42',
+    SecretPassword: 'secret'
+  };
+
+  AWS.mock('S3', 'getBucketLocation', function(params, callback) {
+    callback(null, 'us-east-1');
+  });
+
+  AWS.mock('S3', 'getObject', function(params, callback) {
+    assert.deepEqual(params, {
+      Bucket: 'my-bucket',
+      Key: 'my-config.cfn.json'
+    }, 'requested expected default configuration');
+
+    callback(null, { Body: new Buffer(JSON.stringify(info)) });
+  });
+
+  lookup.defaultConfiguration('s3://my-bucket/my-config.cfn.json', function(err, configuration) {
+    assert.ifError(err, 'success');
+    assert.deepEqual(configuration, info, 'returned expected stack info');
+    AWS.restore('S3', 'getBucketLocation');
+    AWS.restore('S3', 'getObject');
+    assert.end();
+  });
+});
+
 test('[lookup.bucketRegion] no bucket', function(assert) {
   AWS.mock('S3', 'getBucketLocation', function(params, callback) {
     var err = new Error('failure');

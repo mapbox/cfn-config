@@ -1141,11 +1141,30 @@ test('[commands.operations.selectConfig] saved config', function(assert) {
   commands.operations.selectConfig(context);
 });
 
-test('[commands.operations.loadConfig] no saved config', function(assert) {
+test('[commands.operations.loadConfig] no saved config, no default', function(assert) {
   var context = Object.assign({}, basicContext, {
     next: function(err) {
       assert.ifError(err, 'success');
       assert.deepEqual(context.oldParameters, {}, 'does not set context.oldParameters');
+      assert.end();
+    }
+  });
+
+  commands.operations.loadConfig(context);
+});
+
+test('[commands.operations.loadConfig] no saved config, has default', function(assert) {
+  sinon.stub(lookup, 'defaultConfiguration', function(s3url, callback) {
+    assert.equal(s3url, 's3://my-bucket/my-default.cfn.json', 'requested correct configuration');
+    callback(null, { default: 'configuration' });
+  });
+
+  var context = Object.assign({}, basicContext, {
+    overrides: { defaultConfig: 's3://my-bucket/my-default.cfn.json' },
+    next: function(err) {
+      assert.ifError(err, 'success');
+      assert.deepEqual(context.oldParameters, { default: 'configuration' }, 'sets context.oldParameters');
+      lookup.defaultConfiguration.restore();
       assert.end();
     }
   });
