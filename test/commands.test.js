@@ -65,7 +65,7 @@ test('[commands.create] with overrides', function(assert) {
   commands(opts).create('testing', 'templatePath', { some: 'overrides' }, whenDone);
 });
 
-test('[commands.update] force-mode', function(assert) {
+test('[commands.update] with overrides', function(assert) {
   function whenDone() {}
 
   sinon.stub(commands, 'commandContext', function(config, suffix, operations, callback) {
@@ -78,7 +78,7 @@ test('[commands.update] force-mode', function(assert) {
       next: function() {
         assert.pass('called next to begin process');
         assert.equal(context.templatePath, path.resolve('templatePath'), 'set absolute context.templatePath');
-        assert.equal(context.force, true, 'sets context.force');
+        assert.deepEqual(context.overrides, { force: true }, 'sets context.overrides');
         commands.commandContext.restore();
         assert.end();
       }
@@ -87,10 +87,10 @@ test('[commands.update] force-mode', function(assert) {
     return context;
   });
 
-  commands(opts).update('testing', 'templatePath', true, whenDone);
+  commands(opts).update('testing', 'templatePath', { force: true }, whenDone);
 });
 
-test('[commands.update] not force-mode', function(assert) {
+test('[commands.update] no overrides', function(assert) {
   function whenDone() {}
 
   sinon.stub(commands, 'commandContext', function(config, suffix, operations, callback) {
@@ -103,7 +103,7 @@ test('[commands.update] not force-mode', function(assert) {
       next: function() {
         assert.pass('called next to begin process');
         assert.equal(context.templatePath, path.resolve('templatePath'), 'set absolute context.templatePath');
-        assert.equal(context.force, false, 'sets context.force');
+        assert.deepEqual(context.overrides, {}, 'sets empty context.overrides');
         commands.commandContext.restore();
         assert.end();
       }
@@ -265,7 +265,7 @@ test('[commands.commandContext] aborts with error', function(assert) {
 });
 
 test('[commands.operations.updatePreamble] template not found', function(assert) {
-  sinon.stub(template, 'read', function(templatePath, callback) {
+  sinon.stub(template, 'read', function(templatePath, options, callback) {
     callback(new template.NotFoundError('failure'));
   });
 
@@ -295,7 +295,7 @@ test('[commands.operations.updatePreamble] template not found', function(assert)
 });
 
 test('[commands.operations.updatePreamble] template invalid', function(assert) {
-  sinon.stub(template, 'read', function(templatePath, callback) {
+  sinon.stub(template, 'read', function(templatePath, options, callback) {
     callback(new template.InvalidTemplateError('failure'));
   });
 
@@ -325,7 +325,7 @@ test('[commands.operations.updatePreamble] template invalid', function(assert) {
 });
 
 test('[commands.operations.updatePreamble] stack not found for parameters', function(assert) {
-  sinon.stub(template, 'read', function(templatePath, callback) {
+  sinon.stub(template, 'read', function(templatePath, options, callback) {
     callback();
   });
 
@@ -355,7 +355,7 @@ test('[commands.operations.updatePreamble] stack not found for parameters', func
 });
 
 test('[commands.operations.updatePreamble] failure getting stack parameters', function(assert) {
-  sinon.stub(template, 'read', function(templatePath, callback) {
+  sinon.stub(template, 'read', function(templatePath, options, callback) {
     callback();
   });
 
@@ -385,7 +385,7 @@ test('[commands.operations.updatePreamble] failure getting stack parameters', fu
 });
 
 test('[commands.operations.updatePreamble] stack not found for template', function(assert) {
-  sinon.stub(template, 'read', function(templatePath, callback) {
+  sinon.stub(template, 'read', function(templatePath, options, callback) {
     callback();
   });
 
@@ -415,7 +415,7 @@ test('[commands.operations.updatePreamble] stack not found for template', functi
 });
 
 test('[commands.operations.updatePreamble] failure getting stack template', function(assert) {
-  sinon.stub(template, 'read', function(templatePath, callback) {
+  sinon.stub(template, 'read', function(templatePath, options, callback) {
     callback();
   });
 
@@ -445,7 +445,8 @@ test('[commands.operations.updatePreamble] failure getting stack template', func
 });
 
 test('[commands.operations.updatePreamble] success', function(assert) {
-  sinon.stub(template, 'read', function(templatePath, callback) {
+  sinon.stub(template, 'read', function(templatePath, options, callback) {
+    assert.deepEqual(options, { template: 'options' }, 'passed overrides.templateOptions');
     callback(null, { new: 'template' });
   });
 
@@ -458,6 +459,7 @@ test('[commands.operations.updatePreamble] success', function(assert) {
   });
 
   var context = Object.assign({}, basicContext, {
+    overrides: { templateOptions: { template: 'options' } },
     next: function() {
       assert.pass('calls next()');
       assert.deepEqual(context.newTemplate, { new: 'template' }, 'sets context.newTemplate');
@@ -550,6 +552,20 @@ test('[commands.operations.promptParameters] with parameter overrides', function
   commands.operations.promptParameters(context);
 });
 
+test('[commands.operations.confirmParameters] force-mode', function(assert) {
+  var context = Object.assign({}, basicContext, {
+    overrides: { force: true },
+    oldParameters: { old: 'parameters' },
+    newParameters: { old: 'parameters' },
+    next: function() {
+      assert.pass('skipped prompting');
+      assert.end();
+    }
+  });
+
+  commands.operations.confirmParameters(context);
+});
+
 test('[commands.operations.confirmParameters] no difference', function(assert) {
   var context = Object.assign({}, basicContext, {
     oldParameters: { old: 'parameters' },
@@ -622,17 +638,17 @@ test('[commands.operations.confirmTemplate] no difference', function(assert) {
   commands.operations.confirmTemplate(context);
 });
 
-test('[commands.operations.confirmTemplate] template change in force-mode', function(assert) {
+test('[commands.operations.confirmTemplate] force-mode', function(assert) {
   var context = Object.assign({}, basicContext, {
     oldTemplate: { old: 'template' },
     newTemplate: { new: 'template' },
-    force: true,
-    next: function() {
-      assert.fail('should not proceed');
+    overrides: { force: true },
+    next: function(err) {
+      assert.ifError(err, 'should proceed');
+      assert.end();
     },
     abort: function(err) {
-      assert.equal(err.message, 'Cannot change template with --force', 'expected error message');
-      assert.end();
+      assert.ifError(err, 'should not proceed');
     }
   });
 
@@ -803,6 +819,60 @@ test('[commands.operations.validateTemplate] valid', function(assert) {
   });
 
   commands.operations.validateTemplate(context);
+});
+
+test('[commands.operations.beforeUpdateHook] no hook', function(assert) {
+  var context = Object.assign({}, basicContext, {
+    abort: function() {
+      assert.fail('failed');
+    },
+    next: function(err) {
+      assert.ifError(err, 'success');
+      assert.end();
+    }
+  });
+
+  commands.operations.beforeUpdateHook(context);
+});
+
+test('[commands.operations.beforeUpdateHook] hook error', function(assert) {
+  var context = Object.assign({}, basicContext, {
+    overrides: {
+      beforeUpdate: function(context, callback) {
+        callback(new Error('failure'));
+      }
+    },
+    abort: function(err) {
+      assert.equal(err.message, 'failure', 'passed through error on abort');
+      assert.end();
+    },
+    next: function() {
+      assert.fail('should not proceed');
+    }
+  });
+
+  commands.operations.beforeUpdateHook(context);
+});
+
+test('[commands.operations.beforeUpdateHook] hook success', function(assert) {
+  assert.plan(2);
+
+  var context = Object.assign({}, basicContext, {
+    overrides: {
+      beforeUpdate: function(arg, callback) {
+        assert.deepEqual(arg, context, 'provided hook with runtime context');
+        callback();
+      }
+    },
+    abort: function(err) {
+      assert.ifError(err, 'failed');
+    },
+    next: function() {
+      assert.pass('should proceed');
+    }
+  });
+
+  commands.operations.beforeUpdateHook(context);
 });
 
 test('[commands.operations.getChangeset] failure', function(assert) {
@@ -1079,6 +1149,7 @@ test('[commands.operations.createPreamble] failed to read configurations', funct
 test('[commands.operations.createPreamble] success', function(assert) {
   sinon.stub(template, 'read', function(templatePath, options, callback) {
     assert.equal(templatePath, context.templatePath, 'read correct template');
+    assert.deepEqual(options, { template: 'options' }, 'passed overrides.templateOptions');
     callback(null, { new: 'template' });
   });
 
@@ -1090,6 +1161,7 @@ test('[commands.operations.createPreamble] success', function(assert) {
 
   var context = Object.assign({}, basicContext, {
     templatePath: '/absolute/template/path',
+    overrides: { templateOptions: { template: 'options' } },
     next: function(err) {
       assert.ifError(err, 'success');
       assert.deepEqual(context.newTemplate, { new: 'template' }, 'set context.newTemplate');
