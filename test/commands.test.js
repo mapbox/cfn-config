@@ -483,7 +483,7 @@ test('[commands.operations.promptParameters] force-mode', function(assert) {
 
   var context = Object.assign({}, basicContext, {
     oldParameters: { old: 'parameters' },
-    force: true,
+    overrides: { force: true },
     next: function(err) {
       assert.ifError(err, 'success');
       assert.deepEqual(context.newParameters, context.oldParameters, 'sets new parameters to old values');
@@ -1103,6 +1103,25 @@ test('[commands.operations.createPreamble] success', function(assert) {
   commands.operations.createPreamble(context);
 });
 
+test('[commands.operations.selectConfig] force-mode', function(assert) {
+  sinon.stub(prompt, 'configuration', function(configs, callback) {
+    assert.fail('should not prompt');
+    callback(new Error('failure'));
+  });
+
+  var context = Object.assign({}, basicContext, {
+    overrides: { force: true },
+    next: function(err) {
+      assert.ifError(err, 'success');
+      assert.notOk(context.configName, 'does not set context.configName');
+      prompt.configuration.restore();
+      assert.end();
+    }
+  });
+
+  commands.operations.selectConfig(context);
+});
+
 test('[commands.operations.selectConfig] new config', function(assert) {
   sinon.stub(prompt, 'configuration', function(configs, callback) {
     assert.deepEqual(configs, context.configNames, 'prompted with correct config names');
@@ -1263,6 +1282,24 @@ test('[commands.operations.loadConfig] success', function(assert) {
   });
 
   commands.operations.loadConfig(context);
+});
+
+test('[commands.operations.confirmCreate] force-mode', function(assert) {
+  sinon.stub(prompt, 'confirm', function(message, callback) {
+    assert.fail('should not prompt');
+    callback(new Error('failure'));
+  });
+
+  var context = Object.assign({}, basicContext, {
+    overrides: { force: true },
+    next: function(err) {
+      assert.ifError(err, 'success');
+      prompt.confirm.restore();
+      assert.end();
+    }
+  });
+
+  commands.operations.confirmCreate(context);
 });
 
 test('[commands.operations.confirmCreate] reject', function(assert) {
