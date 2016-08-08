@@ -68,12 +68,12 @@ test('[prompt.parameters] success', function(assert) {
       questions: 'passed through'
     }, 'passes through provided questions');
 
-    return Promise.resolve({ questions: 'answers' });
+    return Promise.resolve({ questions: 'answers', needsStringify: 6 });
   });
 
   prompt.parameters({ questions: 'passed through' }, function(err, answers) {
     assert.ifError(err, 'success');
-    assert.deepEqual(answers, { questions: 'answers' }, 'received user responses');
+    assert.deepEqual(answers, { questions: 'answers', needsStringify: '6' }, 'received user responses');
     inquirer.prompt.restore();
     assert.end();
   });
