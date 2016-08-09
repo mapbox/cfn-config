@@ -1,4 +1,5 @@
 var test = require('tape');
+var queue = require('d3-queue').queue;
 var template = require('../lib/template');
 var path = require('path');
 var fs = require('fs');
@@ -157,14 +158,25 @@ test('[template.read] S3 JSON', function(assert) {
 });
 
 test('[template.questions] provides expected questions', function(assert) {
-  var questions = template.questions(expected);
+  var questions = template.questions(expected, {}, { region: 'us-east-1' });
 
   assert.equal(questions.length, 6, 'all questions provided');
+
+  var q = queue(1);
 
   var name = questions[0];
   assert.equal(name.type, 'input', 'correct type for Name');
   assert.equal(name.name, 'Name', 'correct name for Name');
   assert.equal(name.message, 'Name. Someone\'s first name:', 'correct message for Name');
+  q.defer(function(next) {
+    name.validate('Ham', function(err, encrypted) {
+      assert.ok(encrypted, 'valid success for Name');
+      // Add test that it's encrypted Ham
+      next();
+    });
+  });
+  /*
+   * We'll want to q.defer all of this
   assert.ok(name.validate('Ham'), 'valid success for Name');
   assert.notOk(name.validate('ham'), 'invalid success for Name');
   assert.notOk(name.validate('H4m'), 'invalid success for Name');
@@ -204,8 +216,11 @@ test('[template.questions] provides expected questions', function(assert) {
   assert.ok(password.validate('hibbities'), 'valid success for SecretPassword');
   assert.notOk(password.validate('ham'), 'invalid success for SecretPassword');
   assert.notOk(password.validate('hamhamhamhamhamhamhamhamham'), 'invalid success for SecretPassword');
+  */
 
-  assert.end();
+  q.awaitAll(function(err) {
+    assert.end(err);
+  });
 });
 
 test('[template.questions] respects overrides', function(assert) {
@@ -215,7 +230,7 @@ test('[template.questions] respects overrides', function(assert) {
     choices: { Handedness: ['top', 'bottom'] }
   };
 
-  var questions = template.questions(expected, overrides);
+  var questions = template.questions(expected, overrides, { region: 'us-east-1' });
 
   var name = questions[0];
   assert.equal(name.default, 'Chuck', 'overriden default for Name');
