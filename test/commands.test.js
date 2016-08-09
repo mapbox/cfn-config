@@ -165,14 +165,30 @@ test('[commands.delete] with overrides', function(assert) {
   commands(opts).delete('testing', { force: true }, whenDone);
 });
 
-test('[commands.info] success', function(assert) {
-  sinon.stub(lookup, 'info', function(name, region, callback) {
+test('[commands.info] success w/o resources', function(assert) {
+  sinon.stub(lookup, 'info', function(name, region, resources, callback) {
     assert.equal(name, 'my-stack-testing', 'lookup.info expected stack name');
     assert.equal(region, 'us-east-1', 'lookup.info expected region');
+    assert.notOk(resources, 'lookup.info no resources');
     callback();
   });
 
   commands(opts).info('testing', function(err) {
+    assert.ifError(err, 'success');
+    lookup.info.restore();
+    assert.end();
+  });
+});
+
+test('[commands.info] success w/ resources', function(assert) {
+  sinon.stub(lookup, 'info', function(name, region, resources, callback) {
+    assert.equal(name, 'my-stack-testing', 'lookup.info expected stack name');
+    assert.equal(region, 'us-east-1', 'lookup.info expected region');
+    assert.ok(resources, 'lookup.info no resources');
+    callback();
+  });
+
+  commands(opts).info('testing', true, function(err) {
     assert.ifError(err, 'success');
     lookup.info.restore();
     assert.end();

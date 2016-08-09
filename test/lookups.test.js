@@ -78,10 +78,11 @@ test('[lookup.info] success', function(assert) {
   };
 
   var expected = {
-    id: stackInfo.StackId,
-    name: stackInfo.StackName,
-    description: stackInfo.Description,
-    parameters: {
+    StackId: 'stack-id',
+    StackName: 'my-stack',
+    Description: 'test-stack',
+    Region: 'us-east-1',
+    Parameters: {
       Name: 'Chuck',
       Age: 18,
       Handedness: 'left',
@@ -89,11 +90,15 @@ test('[lookup.info] success', function(assert) {
       LuckyNumbers: '3,7,42',
       SecretPassword: 'secret'
     },
-    created: stackInfo.CreationTime.toISOString(),
-    updated: stackInfo.LastUpdatedTime.toISOString(),
-    status: stackInfo.StackStatus,
-    outputs: { Blah: 'blah' },
-    tags: { Category: 'Peeps' }
+    CreationTime: new Date(),
+    LastUpdatedTime: new Date(),
+    StackStatus: 'CREATE_COMPLETE',
+    DisableRollback: false,
+    NotificationARNs: ['some-arn'],
+    TimeoutInMinutes: 10,
+    Capabilities: 'CAPABILITY_IAM',
+    Outputs: { Blah: 'blah' },
+    Tags: { Category: 'Peeps' }
   };
 
   AWS.mock('CloudFormation', 'describeStacks', function(params, callback) {
@@ -108,67 +113,37 @@ test('[lookup.info] success', function(assert) {
   });
 });
 
-test('[lookup.info] success (never updated)', function(assert) {
-  var stackInfo = {
-    StackId: 'stack-id',
-    StackName: 'my-stack',
-    Description: 'test-stack',
-    Parameters: [
-      { ParameterKey: 'Name', ParameterValue: 'Chuck' },
-      { ParameterKey: 'Age', ParameterValue: 18 },
-      { ParameterKey: 'Handedness', ParameterValue: 'left' },
-      { ParameterKey: 'Pets', ParameterValue: 'Duck,Wombat' },
-      { ParameterKey: 'LuckyNumbers', ParameterValue: '3,7,42' },
-      { ParameterKey: 'SecretPassword', ParameterValue: 'secret' }
-    ],
-    CreationTime: new Date(),
-    StackStatus: 'CREATE_COMPLETE',
-    DisableRollback: false,
-    NotificationARNs: ['some-arn'],
-    TimeoutInMinutes: 10,
-    Capabilities: 'CAPABILITY_IAM',
-    Outputs: [
-      {
-        OutputKey: 'Blah',
-        OutputValue: 'blah',
-        Description: 'nothing'
-      }
-    ],
-    Tags: [
-      {
-        Key: 'Category',
-        Value: 'Peeps'
-      }
-    ]
-  };
-
-  var expected = {
-    id: stackInfo.StackId,
-    name: stackInfo.StackName,
-    description: stackInfo.Description,
-    parameters: {
-      Name: 'Chuck',
-      Age: 18,
-      Handedness: 'left',
-      Pets: 'Duck,Wombat',
-      LuckyNumbers: '3,7,42',
-      SecretPassword: 'secret'
-    },
-    created: stackInfo.CreationTime.toISOString(),
-    updated: stackInfo.CreationTime.toISOString(),
-    status: stackInfo.StackStatus,
-    outputs: { Blah: 'blah' },
-    tags: { Category: 'Peeps' }
-  };
-
+test('[lookup.info] with resources', function(assert) {
   AWS.mock('CloudFormation', 'describeStacks', function(params, callback) {
-    callback(null, { Stacks: [stackInfo] });
+    callback(null, { Stacks: [{}] });
   });
 
-  lookup.info('my-stack', 'us-east-1', function(err, info) {
+  AWS.mock('CloudFormation', 'describeStackResources', function(params, callback) {
+    callback(null, { StackResources: [{ stack: 'resources' }] });
+  });
+
+  lookup.info('my-stack', 'us-east-1', true, function(err, info) {
     assert.ifError(err, 'success');
-    assert.deepEqual(info, expected, 'expected info returned');
+    assert.deepEqual(info.StackResources, [{ stack: 'resources' }], 'added stack resources');
     AWS.restore('CloudFormation', 'describeStacks');
+    AWS.restore('CloudFormation', 'describeStackResources');
+    assert.end();
+  });
+});
+
+test('[lookup.info] resource lookup failure', function(assert) {
+  AWS.mock('CloudFormation', 'describeStacks', function(params, callback) {
+    callback(null, { Stacks: [{}] });
+  });
+
+  AWS.mock('CloudFormation', 'describeStackResources', function(params, callback) {
+    callback(new Error('failure'));
+  });
+
+  lookup.info('my-stack', 'us-east-1', true, function(err) {
+    assert.ok(err instanceof lookup.CloudFormationError, 'expected error returned');
+    AWS.restore('CloudFormation', 'describeStacks');
+    AWS.restore('CloudFormation', 'describeStackResources');
     assert.end();
   });
 });
