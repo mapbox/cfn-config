@@ -115,7 +115,7 @@ test('[commands.update] no overrides', function(assert) {
   commands(opts).update('testing', 'templatePath', whenDone);
 });
 
-test('[commands.delete]', function(assert) {
+test('[commands.delete] no overrides', function(assert) {
   function whenDone() {}
 
   sinon.stub(commands, 'commandContext', function(config, suffix, operations, callback) {
@@ -127,6 +127,8 @@ test('[commands.delete]', function(assert) {
     var context = Object.assign({}, basicContext, {
       next: function() {
         assert.pass('called next to begin process');
+        assert.equal(context.monitorInterval, 5000, 'sets monitorInterval');
+        assert.deepEqual(context.overrides, {}, 'sets empty overrides');
         commands.commandContext.restore();
         assert.end();
       }
@@ -136,6 +138,31 @@ test('[commands.delete]', function(assert) {
   });
 
   commands(opts).delete('testing', whenDone);
+});
+
+test('[commands.delete] with overrides', function(assert) {
+  function whenDone() {}
+
+  sinon.stub(commands, 'commandContext', function(config, suffix, operations, callback) {
+    assert.deepEqual(config, opts, 'instantiate context with expected config');
+    assert.deepEqual(suffix, 'testing', 'instantiate context with expected suffix');
+    assert.ok(operations.every(function(op) { return typeof op === 'function'; }), 'instantiate context with array of operations');
+    assert.equal(callback, whenDone, 'instantiate context with final callback function');
+
+    var context = Object.assign({}, basicContext, {
+      next: function() {
+        assert.pass('called next to begin process');
+        assert.equal(context.monitorInterval, 5000, 'sets monitorInterval');
+        assert.deepEqual(context.overrides, { force: true }, 'sets empty overrides');
+        commands.commandContext.restore();
+        assert.end();
+      }
+    });
+
+    return context;
+  });
+
+  commands(opts).delete('testing', { force: true }, whenDone);
 });
 
 test('[commands.info] success', function(assert) {
@@ -1463,6 +1490,18 @@ test('[commands.operations.createStack] success', function(assert) {
   commands.operations.createStack(context);
 });
 
+test('[commands.operations.confirmDelete] force-mode', function(assert) {
+  var context = Object.assign({}, basicContext, {
+    overrides: { force: true },
+    next: function(err) {
+      assert.ifError(err, 'no prompt');
+      assert.end();
+    }
+  });
+
+  commands.operations.confirmDelete(context);
+});
+
 test('[commands.operations.confirmDelete] reject', function(assert) {
   sinon.stub(prompt, 'confirm', function(message, callback) {
     callback(null, false);
@@ -1556,7 +1595,7 @@ test('[commands.operations.monitorStack] success', function(assert) {
   });
 
   var context = Object.assign({}, basicContext, {
-    overrides: { monitorInterval: 5000 },
+    monitorInterval: 5000,
     next: function(err) {
       assert.ifError(err, 'success');
       actions.monitor.restore();
