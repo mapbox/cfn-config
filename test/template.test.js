@@ -158,67 +158,114 @@ test('[template.read] S3 JSON', function(assert) {
 });
 
 test('[template.questions] provides expected questions', function(assert) {
+  AWS.mock('KMS', 'encrypt', function(params, callback) {
+    assert.equal(params.KeyId, 'alias/cloudformation', 'used keyId');
+    assert.ok(params.Plaintext);
+    return callback(null, { CiphertextBlob: new Buffer(params.Plaintext) });
+  });
+
   var questions = template.questions(expected, {}, { region: 'us-east-1' });
 
   assert.equal(questions.length, 6, 'all questions provided');
 
   var q = queue(1);
 
-  var name = questions[0];
-  assert.equal(name.type, 'input', 'correct type for Name');
-  assert.equal(name.name, 'Name', 'correct name for Name');
-  assert.equal(name.message, 'Name. Someone\'s first name:', 'correct message for Name');
   q.defer(function(next) {
-    name.validate('Ham', function(err, encrypted) {
-      assert.ok(encrypted, 'valid success for Name');
-      // Add test that it's encrypted Ham
-      next();
-    });
+    var name = questions[0];
+    assert.equal(name.type, 'input', 'correct type for Name');
+    assert.equal(name.name, 'Name', 'correct name for Name');
+    assert.equal(name.message, 'Name. Someone\'s first name:', 'correct message for Name');
+    assert.ok(name.validate('Ham'), 'valid success for Name');
+    assert.notOk(name.validate('ham'), 'invalid success for Name');
+    assert.notOk(name.validate('H4m'), 'invalid success for Name');
+    name.async = function() {
+      return function(err, encrypted) {
+        assert.ok(encrypted, 'filter success for Name');
+        assert.equal(encrypted.slice(0, 7), 'secure:', 'starts with secure:');
+        assert.equal((new Buffer(encrypted.slice(7), 'base64')).toString('utf8'), 'Ham', 'encrypts correctly');
+        next();
+      };
+    };
+    name.filter('Ham');
   });
-  /*
-   * We'll want to q.defer all of this
-  assert.ok(name.validate('Ham'), 'valid success for Name');
-  assert.notOk(name.validate('ham'), 'invalid success for Name');
-  assert.notOk(name.validate('H4m'), 'invalid success for Name');
 
-  var age = questions[1];
-  assert.equal(age.type, 'input', 'correct type for Age');
-  assert.equal(age.name, 'Age', 'correct name for Age');
-  assert.equal(age.message, 'Age:', 'correct message for Age');
-  assert.ok(age.validate('30'), 'valid success for Age');
-  assert.notOk(age.validate('ham'), 'invalid success for Age');
-  assert.notOk(age.validate('180'), 'invalid success for Age');
-  assert.notOk(age.validate('-180'), 'invalid success for Age');
+  q.defer(function(next) {
+    var age = questions[1];
+    assert.equal(age.type, 'input', 'correct type for Age');
+    assert.equal(age.name, 'Age', 'correct name for Age');
+    assert.equal(age.message, 'Age:', 'correct message for Age');
+    assert.ok(age.validate('30'), 'valid success for Age');
+    assert.notOk(age.validate('ham'), 'invalid success for Age');
+    assert.notOk(age.validate('180'), 'invalid success for Age');
+    assert.notOk(age.validate('-180'), 'invalid success for Age');
+    age.async = function() {
+      return function(err, encrypted) {
+        assert.ok(encrypted, 'filter success for Age');
+        assert.equal(encrypted.slice(0, 7), 'secure:', 'starts with secure:');
+        assert.equal((new Buffer(encrypted.slice(7), 'base64')).toString('utf8'), '30', 'encrypts correctly');
+        next();
+      };
+    };
+    age.filter('30');
+  });
 
-  var handedness = questions[2];
-  assert.equal(handedness.type, 'list', 'correct type for Handedness');
-  assert.equal(handedness.name, 'Handedness', 'correct name for Handedness');
-  assert.equal(handedness.message, 'Handedness. Their dominant hand:', 'correct message for Handedness');
-  assert.equal(handedness.default, 'right', 'correct default value for Handedness');
-  assert.deepEqual(handedness.choices, ['left', 'right'], 'correct choices for Handedness');
+  q.defer(function(next) {
+    var handedness = questions[2];
+    assert.equal(handedness.type, 'list', 'correct type for Handedness');
+    assert.equal(handedness.name, 'Handedness', 'correct name for Handedness');
+    assert.equal(handedness.message, 'Handedness. Their dominant hand:', 'correct message for Handedness');
+    assert.equal(handedness.default, 'right', 'correct default value for Handedness');
+    assert.deepEqual(handedness.choices, ['left', 'right'], 'correct choices for Handedness');
+    next();
+  });
 
-  var pets = questions[3];
-  assert.equal(pets.type, 'input', 'correct type for Pets');
-  assert.equal(pets.name, 'Pets', 'correct name for Pets');
-  assert.equal(pets.message, 'Pets. The names of their pets:', 'correct message for Pets');
+  q.defer(function(next) {
+    var pets = questions[3];
+    assert.equal(pets.type, 'input', 'correct type for Pets');
+    assert.equal(pets.name, 'Pets', 'correct name for Pets');
+    assert.equal(pets.message, 'Pets. The names of their pets:', 'correct message for Pets');
+    next();
+  });
 
-  var numbers = questions[4];
-  assert.equal(numbers.type, 'input', 'correct type for LuckyNumbers');
-  assert.equal(numbers.name, 'LuckyNumbers', 'correct name for LuckyNumbers');
-  assert.equal(numbers.message, 'LuckyNumbers. Their lucky numbers:', 'correct message for LuckyNumbers');
-  assert.ok(numbers.validate('30,40'), 'valid success for LuckyNumbers');
-  assert.notOk(numbers.validate('ham,40'), 'invalid success for LuckyNumbers');
+  q.defer(function(next) {
+    var numbers = questions[4];
+    assert.equal(numbers.type, 'input', 'correct type for LuckyNumbers');
+    assert.equal(numbers.name, 'LuckyNumbers', 'correct name for LuckyNumbers');
+    assert.equal(numbers.message, 'LuckyNumbers. Their lucky numbers:', 'correct message for LuckyNumbers');
+    assert.ok(numbers.validate('30,40'), 'valid success for LuckyNumbers');
+    assert.notOk(numbers.validate('ham,40'), 'invalid success for LuckyNumbers');
+    numbers.async = function() {
+      return function(err, encrypted) {
+        assert.ok(encrypted, 'filter success for LuckyNumbers');
+        assert.equal(encrypted.slice(0, 7), 'secure:', 'starts with secure:');
+        assert.equal((new Buffer(encrypted.slice(7), 'base64')).toString('utf8'), '30,40', 'encrypts correctly');
+        next();
+      };
+    };
+    numbers.filter('30,40');
+  });
 
-  var password = questions[5];
-  assert.equal(password.type, 'password', 'correct type for SecretPassword');
-  assert.equal(password.name, 'SecretPassword', 'correct name for SecretPassword');
-  assert.equal(password.message, 'SecretPassword. Their secret password:', 'correct message for SecretPassword');
-  assert.ok(password.validate('hibbities'), 'valid success for SecretPassword');
-  assert.notOk(password.validate('ham'), 'invalid success for SecretPassword');
-  assert.notOk(password.validate('hamhamhamhamhamhamhamhamham'), 'invalid success for SecretPassword');
-  */
+  q.defer(function(next) {
+    var password = questions[5];
+    assert.equal(password.type, 'password', 'correct type for SecretPassword');
+    assert.equal(password.name, 'SecretPassword', 'correct name for SecretPassword');
+    assert.equal(password.message, 'SecretPassword. Their secret password:', 'correct message for SecretPassword');
+    assert.ok(password.validate('hibbities'), 'valid success for SecretPassword');
+    assert.notOk(password.validate('ham'), 'invalid success for SecretPassword');
+    assert.notOk(password.validate('hamhamhamhamhamhamhamhamham'), 'invalid success for SecretPassword');
+    password.async = function() {
+      return function(err, encrypted) {
+        assert.ok(encrypted, 'filter success for SecretPassword');
+        assert.equal(encrypted.slice(0, 7), 'secure:', 'starts with secure:');
+        assert.equal((new Buffer(encrypted.slice(7), 'base64')).toString('utf8'), 'hibbities', 'encrypts correctly');
+        next();
+      };
+    };
+    password.filter('hibbities');
+  });
 
   q.awaitAll(function(err) {
+    AWS.restore('KMS');
     assert.end(err);
   });
 });
