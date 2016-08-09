@@ -927,6 +927,21 @@ test('[commands.operations.getChangeset] success', function(assert) {
   commands.operations.getChangeset(context);
 });
 
+test('[commands.operations.confirmChangeset] force-mode', function(assert) {
+  var context = Object.assign({}, basicContext, {
+    overrides: { force: true },
+    next: function() {
+      assert.pass('accepted with no prompt');
+      assert.end();
+    },
+    abort: function(err) {
+      assert.ifError(err, 'should not abort');
+    }
+  });
+
+  commands.operations.confirmChangeset(context);
+});
+
 test('[commands.operations.confirmChangeset] rejected', function(assert) {
   sinon.stub(prompt, 'confirm', function(message, callback) {
     callback(null, false);
