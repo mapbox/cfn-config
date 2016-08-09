@@ -1532,7 +1532,7 @@ test('[commands.operations.deleteStack] success', function(assert) {
 });
 
 test('[commands.operations.monitorStack] failure', function(assert) {
-  sinon.stub(actions, 'monitor', function(name, region, callback) {
+  sinon.stub(actions, 'monitor', function(name, region, pollInterval, callback) {
     callback(new actions.CloudFormationError('failure'));
   });
 
@@ -1548,13 +1548,15 @@ test('[commands.operations.monitorStack] failure', function(assert) {
 });
 
 test('[commands.operations.monitorStack] success', function(assert) {
-  sinon.stub(actions, 'monitor', function(name, region, callback) {
+  sinon.stub(actions, 'monitor', function(name, region, pollInterval, callback) {
     assert.equal(name, context.stackName, 'monitor expected stack');
     assert.equal(region, context.stackRegion, 'monitor in expected region');
+    assert.equal(pollInterval, 5000, 'monitor with overriden pollInterval');
     callback();
   });
 
   var context = Object.assign({}, basicContext, {
+    overrides: { monitorInterval: 5000 },
     next: function(err) {
       assert.ifError(err, 'success');
       actions.monitor.restore();

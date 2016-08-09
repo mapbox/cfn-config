@@ -951,3 +951,66 @@ test('[actions.monitor] success', function(assert) {
     assert.end();
   });
 });
+
+test('[actions.monitor] success w/ slow polling', function(assert) {
+  var once = true;
+
+  AWS.mock('CloudFormation', 'describeStacks', function(params, callback) {
+    setTimeout(callback, 1000, null, {
+      Stacks: [
+        { StackStatus: 'CREATE_COMPLETE' }
+      ]
+    });
+
+    return new events.EventEmitter();
+  });
+
+  AWS.mock('CloudFormation', 'describeStackEvents', function(params, callback) {
+    if (!once) {
+      callback(null, { StackEvents: [] });
+    } else {
+      callback(null, {
+        StackEvents: [
+          {
+            EventId: 'done',
+            LogicalResourceId: 'my-stack',
+            ResourceType: 'AWS::CloudFormation::Stack',
+            ResourceStatus: 'CREATE_COMPLETE'
+          },
+          {
+            EventId: 'built',
+            LogicalResourceId: 'Topic',
+            ResourceStatus: 'CREATE_COMPLETE'
+          },
+          {
+            EventId: 'continue',
+            LogicalResourceId: 'Topic',
+            ResourceStatus: 'CREATE_IN_PROGRESS',
+            ResourceStatusReason: 'Creation has begun'
+          },
+          {
+            EventId: 'start',
+            LogicalResourceId: 'Topic',
+            ResourceStatus: 'CREATE_IN_PROGRESS'
+          },
+          {
+            EventId: 'create',
+            LogicalResourceId: 'my-stack',
+            ResourceType: 'AWS::CloudFormation::Stack',
+            ResourceStatus: 'CREATE_IN_PROGRESS',
+            ResourceStatusReason: 'User Initiated'
+          }
+        ]
+      });
+    }
+    once = false;
+    return new events.EventEmitter();
+  });
+
+  actions.monitor('my-stack', 'us-east-1', 20000, function(err) {
+    assert.ifError(err, 'success');
+    AWS.restore('CloudFormation', 'describeStacks');
+    AWS.restore('CloudFormation', 'describeStackEvents');
+    assert.end();
+  });
+});
