@@ -110,6 +110,16 @@ test('[template.read] local sync JS', function(assert) {
   });
 });
 
+test('[template.read] local sync JS (relative path)', function(assert) {
+  var relativePath = path.resolve(__dirname, 'fixtures', 'template-sync.js').replace(process.cwd(), '').substr(1);
+  assert.equal(relativePath[0] !== '/', true, 'relative path: ' + relativePath);
+  template.read(relativePath, function(err, found) {
+    assert.ifError(err, 'success');
+    assert.deepEqual(found, expected, 'got template JSON');
+    assert.end();
+  });
+});
+
 test('[template.read] local async JS with options', function(assert) {
   template.read(path.resolve(__dirname, 'fixtures', 'template-async.js'), { some: 'options' }, function(err, found) {
     assert.ifError(err, 'success');
