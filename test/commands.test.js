@@ -527,7 +527,7 @@ test('[commands.operations.promptParameters] force-mode', function(assert) {
   });
 
   var context = Object.assign({}, basicContext, {
-    newTemplate: { Parameters: { old:{} } },
+    newTemplate: { Parameters: { old: {} } },
     oldParameters: { old: 'parameters', extra: 'value' },
     overrides: { force: true },
     next: function(err) {
