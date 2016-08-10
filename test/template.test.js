@@ -334,3 +334,23 @@ test('[template.questions] no parameters', function(assert) {
   assert.deepEqual(questions, [], 'no further questions');
   assert.end();
 });
+
+test('[template.questions] handles failure during kms encryption', function(assert) {
+  AWS.mock('KMS', 'encrypt', function(params, callback) {
+    return callback(new Error('Bad encryption error'));
+  });
+
+  var questions = template.questions(expected, { kms: true });
+
+  var password = questions[5];
+  password.async = function() {
+    return function(err, encrypted) {
+      assert.ok(err, 'encryption callback got the error');
+      assert.equal(err.toString(), 'Error: Bad encryption error', 'correct error');
+      assert.equal(encrypted, undefined, 'no encrypted return value');
+      AWS.restore('KMS');
+      assert.end();
+    };
+  };
+  password.filter('hibbities');
+});
