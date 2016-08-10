@@ -159,12 +159,12 @@ test('[template.read] S3 JSON', function(assert) {
 
 test('[template.questions] provides expected questions', function(assert) {
   AWS.mock('KMS', 'encrypt', function(params, callback) {
-    assert.equal(params.KeyId, 'alias/cloudformation', 'used keyId');
+    assert.equal(params.KeyId, 'alias/cloudformation', 'used default keyId');
     assert.ok(params.Plaintext);
     return callback(null, { CiphertextBlob: new Buffer(params.Plaintext) });
   });
 
-  var questions = template.questions(expected, {}, { region: 'us-east-1' });
+  var questions = template.questions(expected, { kms: true, region: 'us-east-1' });
 
   assert.equal(questions.length, 6, 'all questions provided');
 
@@ -181,8 +181,7 @@ test('[template.questions] provides expected questions', function(assert) {
     name.async = function() {
       return function(err, encrypted) {
         assert.ok(encrypted, 'filter success for Name');
-        assert.equal(encrypted.slice(0, 7), 'secure:', 'starts with secure:');
-        assert.equal((new Buffer(encrypted.slice(7), 'base64')).toString('utf8'), 'Ham', 'encrypts correctly');
+        assert.equal(encrypted, 'Ham', 'passes through non-secret parameters');
         next();
       };
     };
@@ -198,15 +197,7 @@ test('[template.questions] provides expected questions', function(assert) {
     assert.notOk(age.validate('ham'), 'invalid success for Age');
     assert.notOk(age.validate('180'), 'invalid success for Age');
     assert.notOk(age.validate('-180'), 'invalid success for Age');
-    age.async = function() {
-      return function(err, encrypted) {
-        assert.ok(encrypted, 'filter success for Age');
-        assert.equal(encrypted.slice(0, 7), 'secure:', 'starts with secure:');
-        assert.equal((new Buffer(encrypted.slice(7), 'base64')).toString('utf8'), '30', 'encrypts correctly');
-        next();
-      };
-    };
-    age.filter('30');
+    next();
   });
 
   q.defer(function(next) {
@@ -234,22 +225,14 @@ test('[template.questions] provides expected questions', function(assert) {
     assert.equal(numbers.message, 'LuckyNumbers. Their lucky numbers:', 'correct message for LuckyNumbers');
     assert.ok(numbers.validate('30,40'), 'valid success for LuckyNumbers');
     assert.notOk(numbers.validate('ham,40'), 'invalid success for LuckyNumbers');
-    numbers.async = function() {
-      return function(err, encrypted) {
-        assert.ok(encrypted, 'filter success for LuckyNumbers');
-        assert.equal(encrypted.slice(0, 7), 'secure:', 'starts with secure:');
-        assert.equal((new Buffer(encrypted.slice(7), 'base64')).toString('utf8'), '30,40', 'encrypts correctly');
-        next();
-      };
-    };
-    numbers.filter('30,40');
+    next();
   });
 
   q.defer(function(next) {
     var password = questions[5];
     assert.equal(password.type, 'password', 'correct type for SecretPassword');
     assert.equal(password.name, 'SecretPassword', 'correct name for SecretPassword');
-    assert.equal(password.message, 'SecretPassword. Their secret password:', 'correct message for SecretPassword');
+    assert.equal(password.message, 'SecretPassword. [secure] Their secret password:', 'correct message for SecretPassword');
     assert.ok(password.validate('hibbities'), 'valid success for SecretPassword');
     assert.notOk(password.validate('ham'), 'invalid success for SecretPassword');
     assert.notOk(password.validate('hamhamhamhamhamhamhamhamham'), 'invalid success for SecretPassword');
@@ -274,10 +257,11 @@ test('[template.questions] respects overrides', function(assert) {
   var overrides = {
     defaults: { Name: 'Chuck' },
     messages: { Name: 'Somebody' },
-    choices: { Handedness: ['top', 'bottom'] }
+    choices: { Handedness: ['top', 'bottom'] },
+    kms: false
   };
 
-  var questions = template.questions(expected, overrides, { region: 'us-east-1' });
+  var questions = template.questions(expected, overrides);
 
   var name = questions[0];
   assert.equal(name.default, 'Chuck', 'overriden default for Name');
