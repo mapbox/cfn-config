@@ -207,7 +207,7 @@ test('[commands.save] kms-mode', function(assert) {
     var context = Object.assign({}, basicContext, {
       next: function() {
         assert.pass('called next to begin process');
-        assert.equal(context.overrides.kms, true, 'sets context.overrides.kms');
+        assert.equal(context.kms, true, 'sets context.kms');
         commands.commandContext.restore();
         assert.end();
       }
@@ -216,7 +216,7 @@ test('[commands.save] kms-mode', function(assert) {
     return context;
   });
 
-  commands(opts).save('testing', { kms: true }, whenDone);
+  commands(opts).save('testing', true, whenDone);
 });
 
 test('[commands.save] not kms-mode', function(assert) {
@@ -231,8 +231,7 @@ test('[commands.save] not kms-mode', function(assert) {
     var context = Object.assign({}, basicContext, {
       next: function() {
         assert.pass('called next to begin process');
-        assert.equal(context.overrides.savedName, 'testing', 'sets default context.overrides.savedName');
-        assert.notOk(context.overrides.kms, 'sets context.kms');
+        assert.equal(context.kms, false, 'sets context.kms');
         commands.commandContext.restore();
         assert.end();
       }
@@ -242,30 +241,6 @@ test('[commands.save] not kms-mode', function(assert) {
   });
 
   commands(opts).save('testing', whenDone);
-});
-
-test('[commands.save] assigns a custom config name', function(assert) {
-  function whenDone() {}
-
-  sinon.stub(commands, 'commandContext', function(config, suffix, operations, callback) {
-    assert.deepEqual(config, opts, 'instantiate context with expected config');
-    assert.deepEqual(suffix, 'testing', 'instantiate context with expected suffix');
-    assert.ok(operations.every(function(op) { return typeof op === 'function'; }), 'instantiate context with array of operations');
-    assert.equal(callback, whenDone, 'instantiate context with final callback function');
-
-    var context = Object.assign({}, basicContext, {
-      next: function() {
-        assert.pass('called next to begin process');
-        assert.equal(context.overrides.savedName, 'custom', 'sets context.overrides.savedName');
-        commands.commandContext.restore();
-        assert.end();
-      }
-    });
-
-    return context;
-  });
-
-  commands(opts).save('testing', { savedName: 'custom' }, whenDone);
 });
 
 test('[commands.commandContext] sets context', function(assert) {
@@ -1719,12 +1694,11 @@ test('[commands.operations.confirmSaveConfig] reject', function(assert) {
 
 test('[commands.operations.confirmSaveConfig] accept', function(assert) {
   sinon.stub(prompt, 'confirm', function(message, callback) {
-    assert.equal(message, 'Save this configuration as "' + context.overrides.savedName + '"?', 'expected message');
+    assert.equal(message, 'Save this configuration as "' + context.suffix + '"?', 'expected message');
     callback(null, true);
   });
 
   var context = Object.assign({}, basicContext, {
-    overrides: { savedName: 'custom' },
     oldParameters: { old: 'parameters' },
     next: function(err) {
       assert.ifError(err, 'success');
@@ -1778,15 +1752,15 @@ test('[commands.operations.saveConfig] success', function(assert) {
   sinon.stub(actions, 'saveConfiguration', function(name, bucket, config, parameters, kms, callback) {
     assert.equal(name, context.baseName, 'save under correct stack name');
     assert.equal(bucket, context.configBucket, 'save in correct bucket');
-    assert.equal(config, context.overrides.savedName, 'save correct config name');
+    assert.equal(config, context.suffix, 'save correct config name');
     assert.deepEqual(parameters, { old: 'parameters' }, 'save correct config');
     assert.equal(kms, true, 'use appropriate kms setting');
     callback();
   });
 
   var context = Object.assign({}, basicContext, {
-    overrides: { savedName: 'custom', kms: true },
     oldParameters: { old: 'parameters' },
+    kms: true,
     next: function(err) {
       assert.ifError(err, 'success');
       actions.saveConfiguration.restore();
