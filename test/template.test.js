@@ -157,14 +157,8 @@ test('[template.read] S3 JSON', function(assert) {
   });
 });
 
-test('[template.questions] provides expected questions', function(assert) {
-  AWS.mock('KMS', 'encrypt', function(params, callback) {
-    assert.equal(params.KeyId, 'alias/cloudformation', 'used default keyId');
-    assert.ok(params.Plaintext);
-    return callback(null, { CiphertextBlob: new Buffer(params.Plaintext) });
-  });
-
-  var questions = template.questions(expected, { kms: true, region: 'us-east-1' });
+test('[template.questions] provides expected questions without encryption', function(assert) {
+  var questions = template.questions(expected);
 
   assert.equal(questions.length, 6, 'all questions provided');
 
@@ -178,14 +172,7 @@ test('[template.questions] provides expected questions', function(assert) {
     assert.ok(name.validate('Ham'), 'valid success for Name');
     assert.notOk(name.validate('ham'), 'invalid success for Name');
     assert.notOk(name.validate('H4m'), 'invalid success for Name');
-    name.async = function() {
-      return function(err, encrypted) {
-        assert.ok(encrypted, 'filter success for Name');
-        assert.equal(encrypted, 'Ham', 'passes through non-secret parameters');
-        next();
-      };
-    };
-    name.filter('Ham');
+    next();
   });
 
   q.defer(function(next) {
@@ -237,14 +224,81 @@ test('[template.questions] provides expected questions', function(assert) {
     assert.notOk(password.validate('ham'), 'invalid success for SecretPassword');
     assert.notOk(password.validate('hamhamhamhamhamhamhamhamham'), 'invalid success for SecretPassword');
     password.async = function() {
-      return function(err, encrypted) {
-        assert.ok(encrypted, 'filter success for SecretPassword');
-        assert.equal(encrypted.slice(0, 7), 'secure:', 'starts with secure:');
-        assert.equal((new Buffer(encrypted.slice(7), 'base64')).toString('utf8'), 'hibbities', 'encrypts correctly');
+      return function(err, unencrypted) {
+        assert.equal(unencrypted, 'hibbities', 'passes through secret when kms is falsy');
         next();
       };
     };
     password.filter('hibbities');
+  });
+
+  q.awaitAll(function(err) {
+    assert.end(err);
+  });
+});
+
+test('[template.questions] respects overrides', function(assert) {
+  AWS.mock('KMS', 'encrypt', function(params, callback) {
+    assert.equal(params.KeyId, 'this is a bomb key', 'used custom keyId');
+    assert.ok(params.Plaintext);
+    return callback(null, { CiphertextBlob: new Buffer(params.Plaintext) });
+  });
+
+  var overrides = {
+    defaults: { Name: 'Chuck' },
+    messages: { Name: 'Somebody' },
+    choices: { Handedness: ['top', 'bottom'] },
+    kms: 'this is a bomb key'
+  };
+
+  var questions = template.questions(expected, overrides);
+
+  var q = queue(1);
+
+  q.defer(function(next) {
+    var name = questions[0];
+    assert.equal(name.default, 'Chuck', 'overriden default for Name');
+    assert.equal(name.message, 'Somebody', 'overriden message for Name');
+    name.async = function() {
+      return function(err, encrypted) {
+        assert.ok(encrypted, 'filter success for Name');
+        assert.equal(encrypted, 'Ham', 'passes through non-secret parameters');
+        next();
+      };
+    };
+    name.filter('Ham');
+  });
+
+  q.defer(function(next) {
+    var handedness = questions[2];
+    assert.deepEqual(handedness.choices, ['top', 'bottom'], 'overriden choices for Handedness');
+    next();
+  });
+
+
+  q.defer(function(next) {
+    var password = questions[5];
+    password.async = function() {
+      return function(err, encrypted) {
+        assert.ifError(err, 'encryption doesn\'t cause errors');
+        assert.equal(encrypted.slice(0, 7), 'secure:', 'encrypted var starts with secure:');
+        assert.equal((new Buffer(encrypted.slice(7), 'base64')).toString('utf8'), 'hibbities', 'decrypts correctly');
+        next();
+      };
+    };
+    password.filter('hibbities');
+  });
+
+  q.defer(function(next) {
+    var password = questions[5];
+    password.async = function() {
+      return function(err, encrypted) {
+        assert.ifError(err, 'encryption doesn\'t cause errors');
+        assert.equal(encrypted, 'secure:neverchange', 'passes over secure vars');
+        next();
+      };
+    };
+    password.filter('secure:neverchange');
   });
 
   q.awaitAll(function(err) {
@@ -253,24 +307,26 @@ test('[template.questions] provides expected questions', function(assert) {
   });
 });
 
-test('[template.questions] respects overrides', function(assert) {
-  var overrides = {
-    defaults: { Name: 'Chuck' },
-    messages: { Name: 'Somebody' },
-    choices: { Handedness: ['top', 'bottom'] },
-    kms: false
+test('[template.questions] defaults kms key to correct default', function(assert) {
+  AWS.mock('KMS', 'encrypt', function(params, callback) {
+    assert.equal(params.KeyId, 'alias/cloudformation', 'used default keyId');
+    assert.ok(params.Plaintext);
+    return callback(null, { CiphertextBlob: new Buffer(params.Plaintext) });
+  });
+
+  var questions = template.questions(expected, { kms: true });
+
+  var password = questions[5];
+  password.async = function() {
+    return function(err, encrypted) {
+      assert.ifError(err, 'encryption doesn\'t cause errors');
+      assert.equal(encrypted.slice(0, 7), 'secure:', 'encrypted var starts with secure:');
+      assert.equal((new Buffer(encrypted.slice(7), 'base64')).toString('utf8'), 'hibbities', 'decrypts correctly');
+      AWS.restore('KMS');
+      assert.end();
+    };
   };
-
-  var questions = template.questions(expected, overrides);
-
-  var name = questions[0];
-  assert.equal(name.default, 'Chuck', 'overriden default for Name');
-  assert.equal(name.message, 'Somebody', 'overriden message for Name');
-
-  var handedness = questions[2];
-  assert.deepEqual(handedness.choices, ['top', 'bottom'], 'overriden choices for Handedness');
-
-  assert.end();
+  password.filter('hibbities');
 });
 
 test('[template.questions] no parameters', function(assert) {
