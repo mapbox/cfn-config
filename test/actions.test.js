@@ -764,14 +764,14 @@ test('[actions.templateUrl] us-east-1', function(assert) {
 
 test('[actions.templateUrl] cn-north-1', function(assert) {
   var url = actions.templateUrl('my-bucket', 'cn-north-1', 'my-stack');
-  var re = /https:\/\/s3.cn-north-1.amazonaws.com.cn\/my-bucket\/.*-my-stack.template.json/;
+  var re = /https:\/\/s3-cn-north-1.amazonaws.com.cn\/my-bucket\/.*-my-stack.template.json/;
   assert.ok(re.test(url), 'expected url');
   assert.end();
 });
 
 test('[actions.templateUrl] eu-central-1', function(assert) {
   var url = actions.templateUrl('my-bucket', 'eu-central-1', 'my-stack');
-  var re = /https:\/\/s3.eu-central-1.amazonaws.com\/my-bucket\/.*-my-stack.template.json/;
+  var re = /https:\/\/s3-eu-central-1.amazonaws.com\/my-bucket\/.*-my-stack.template.json/;
   assert.ok(re.test(url), 'expected url');
   assert.end();
 });
