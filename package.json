@@ -28,7 +28,7 @@
   },
   "dependencies": {
     "aws-sdk": "^2.4.3",
-    "cfn-stack-event-stream": "0.0.5",
+    "cfn-stack-event-stream": "https://github.com/mapbox/cfn-stack-event-stream/archive/arnold-palmer.tar.gz",
     "colors": "^1.1.2",
     "cuid": "^1.3.8",
     "d3-queue": "^3.0.2",
