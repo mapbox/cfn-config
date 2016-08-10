@@ -1675,6 +1675,26 @@ test('[commands.operations.getOldParameters] success', function(assert) {
   commands.operations.getOldParameters(context);
 });
 
+test('[commands.operations.promptSaveConfig]', function(assert) {
+  sinon.stub(prompt, 'input', function(message, def, callback) {
+    assert.equal(message, 'Name for saved configuration:', 'expected prompt');
+    assert.equal(def, context.suffix, 'expected default value');
+    callback(null, 'chuck');
+  });
+
+  var context = Object.assign({}, basicContext, {
+    oldParameters: { old: 'parameters' },
+    next: function(err) {
+      assert.ifError(err, 'success');
+      assert.equal(context.saveName, 'chuck', 'sets context.saveName');
+      prompt.input.restore();
+      assert.end();
+    }
+  });
+
+  commands.operations.promptSaveConfig(context);
+});
+
 test('[commands.operations.confirmSaveConfig] reject', function(assert) {
   sinon.stub(prompt, 'confirm', function(message, callback) {
     callback(null, false);
@@ -1694,11 +1714,12 @@ test('[commands.operations.confirmSaveConfig] reject', function(assert) {
 
 test('[commands.operations.confirmSaveConfig] accept', function(assert) {
   sinon.stub(prompt, 'confirm', function(message, callback) {
-    assert.equal(message, 'Save this configuration as "' + context.suffix + '"?', 'expected message');
+    assert.equal(message, 'Ready to save this configuration as "hello"?', 'expected message');
     callback(null, true);
   });
 
   var context = Object.assign({}, basicContext, {
+    saveName: 'hello',
     oldParameters: { old: 'parameters' },
     next: function(err) {
       assert.ifError(err, 'success');
@@ -1752,13 +1773,14 @@ test('[commands.operations.saveConfig] success', function(assert) {
   sinon.stub(actions, 'saveConfiguration', function(name, bucket, config, parameters, kms, callback) {
     assert.equal(name, context.baseName, 'save under correct stack name');
     assert.equal(bucket, context.configBucket, 'save in correct bucket');
-    assert.equal(config, context.suffix, 'save correct config name');
+    assert.equal(config, context.saveName, 'save correct config name');
     assert.deepEqual(parameters, { old: 'parameters' }, 'save correct config');
     assert.equal(kms, true, 'use appropriate kms setting');
     callback();
   });
 
   var context = Object.assign({}, basicContext, {
+    saveName: 'chuck',
     oldParameters: { old: 'parameters' },
     kms: true,
     next: function(err) {

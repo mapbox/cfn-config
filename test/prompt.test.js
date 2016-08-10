@@ -78,3 +78,43 @@ test('[prompt.parameters] success', function(assert) {
     assert.end();
   });
 });
+
+test('[prompt.input] no default value', function(assert) {
+  sinon.stub(inquirer, 'prompt', function(questions) {
+    assert.deepEqual(questions, {
+      type: 'input',
+      name: 'data',
+      default: undefined,
+      message: 'what:'
+    }, 'asks the right question');
+
+    return Promise.resolve({ data: 'answers' });
+  });
+
+  prompt.input('what:', function(err, response) {
+    assert.ifError(err, 'success');
+    assert.equal(response, 'answers', 'received user response');
+    inquirer.prompt.restore();
+    assert.end();
+  });
+});
+
+test('[prompt.input] with default value', function(assert) {
+  sinon.stub(inquirer, 'prompt', function(questions) {
+    assert.deepEqual(questions, {
+      type: 'input',
+      name: 'data',
+      default: 'hibbity',
+      message: 'what:'
+    }, 'asks the right question');
+
+    return Promise.resolve({ data: 'answers' });
+  });
+
+  prompt.input('what:', 'hibbity', function(err, response) {
+    assert.ifError(err, 'success');
+    assert.equal(response, 'answers', 'received user response');
+    inquirer.prompt.restore();
+    assert.end();
+  });
+});
