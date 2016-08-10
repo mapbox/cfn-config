@@ -527,11 +527,12 @@ test('[commands.operations.promptParameters] force-mode', function(assert) {
   });
 
   var context = Object.assign({}, basicContext, {
-    oldParameters: { old: 'parameters' },
+    newTemplate: { Parameters: { old:{} } },
+    oldParameters: { old: 'parameters', extra: 'value' },
     overrides: { force: true },
     next: function(err) {
       assert.ifError(err, 'success');
-      assert.deepEqual(context.newParameters, context.oldParameters, 'sets new parameters to old values');
+      assert.deepEqual(context.newParameters, { old: 'parameters' }, 'sets new parameters to old values, excluding values not present in template');
       template.questions.restore();
       assert.end();
     }
