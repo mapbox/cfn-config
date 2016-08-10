@@ -37,6 +37,6 @@
     "inquirer": "^1.1.0",
     "json-diff": "^0.3.1",
     "meow": "^3.7.0",
-    "s3urls": "^1.5.1"
+    "s3urls": "https://github.com/mapbox/s3urls/archive/hopes-dashed.tar.gz"
   }
 }
