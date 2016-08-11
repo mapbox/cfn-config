@@ -195,6 +195,19 @@ test('[commands.info] success w/ resources', function(assert) {
   });
 });
 
+test('[commands.info] null provided as suffix', function(assert) {
+  sinon.stub(lookup, 'info', function(name, region, resources, callback) {
+    assert.equal(name, 'my-stack', 'no trailing - on stack name');
+    callback();
+  });
+
+  commands(opts).info(null, true, function(err) {
+    assert.ifError(err, 'success');
+    lookup.info.restore();
+    assert.end();
+  });
+});
+
 test('[commands.save] kms-mode', function(assert) {
   function whenDone() {}
 
@@ -255,6 +268,12 @@ test('[commands.commandContext] sets context', function(assert) {
   assert.deepEqual(context.oldParameters, {}, 'sets empty oldParameters');
   assert.equal(typeof context.abort, 'function', 'sets abort function');
   assert.equal(typeof context.next, 'function', 'sets next function');
+  assert.end();
+});
+
+test('[commands.commandContext] handles null suffix', function(assert) {
+  var context = commands.commandContext(opts, null, opts, function() {});
+  assert.equal(context.stackName, opts.name, 'sets stackName without trailing -');
   assert.end();
 });
 
@@ -527,12 +546,13 @@ test('[commands.operations.promptParameters] force-mode', function(assert) {
   });
 
   var context = Object.assign({}, basicContext, {
-    newTemplate: { Parameters: { old: {} } },
+    newTemplate: { Parameters: { old: {}, new: {} } },
     oldParameters: { old: 'parameters', extra: 'value' },
     overrides: { force: true },
     next: function(err) {
       assert.ifError(err, 'success');
       assert.deepEqual(context.newParameters, { old: 'parameters' }, 'sets new parameters to old values, excluding values not present in template');
+      assert.notOk(context.newParameters.new, 'does not provide a parameter value if no default for it was found');
       template.questions.restore();
       assert.end();
     }
@@ -589,6 +609,20 @@ test('[commands.operations.promptParameters] with parameter overrides', function
       assert.ifError(err, 'success');
       template.questions.restore();
       prompt.parameters.restore();
+      assert.end();
+    }
+  });
+
+  commands.operations.promptParameters(context);
+});
+
+test('[commands.operations.promptParameters] force-mode with no parameters in new template', function(assert) {
+  var context = Object.assign({}, basicContext, {
+    newTemplate: { new: 'template' },
+    overrides: { force: true },
+    next: function(err) {
+      assert.ifError(err, 'success');
+      assert.deepEqual(context.newParameters, {}, 'sets context.newParameters to empty');
       assert.end();
     }
   });

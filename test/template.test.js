@@ -226,3 +226,9 @@ test('[template.questions] respects overrides', function(assert) {
 
   assert.end();
 });
+
+test('[template.questions] no parameters', function(assert) {
+  var questions = template.questions({});
+  assert.deepEqual(questions, [], 'no further questions');
+  assert.end();
+});
