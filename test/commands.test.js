@@ -591,7 +591,7 @@ test('[commands.operations.promptParameters] not force-mode', function(assert) {
   commands.operations.promptParameters(context);
 });
 
-test('[commands.operations.promptParameters] with parameter overrides', function(assert) {
+test('[commands.operations.promptParameters] with parameter and kms overrides', function(assert) {
   sinon.stub(template, 'questions', function(template, overrides) {
     assert.deepEqual(overrides, { defaults: { old: 'overriden' }, kmsKeyId: 'this is a bomb key', region: 'us-west-2' }, 'uses override parameters');
     return { parameter: 'questions' };
@@ -605,7 +605,7 @@ test('[commands.operations.promptParameters] with parameter overrides', function
     region: 'us-west-2',
     newTemplate: { new: 'template' },
     oldParameters: { old: 'parameters' },
-    overrides: { parameters: { old: 'overriden' }, kmsKeyId: 'this is a bomb key' },
+    overrides: { parameters: { old: 'overriden' }, kms: 'this is a bomb key' },
     next: function(err) {
       assert.ifError(err, 'success');
       template.questions.restore();
@@ -1818,7 +1818,7 @@ test('[commands.operations.saveConfig] success', function(assert) {
   var context = Object.assign({}, basicContext, {
     saveName: 'chuck',
     oldParameters: { old: 'parameters' },
-    kms: true,
+    overrides: { kms: true },
     next: function(err) {
       assert.ifError(err, 'success');
       actions.saveConfiguration.restore();

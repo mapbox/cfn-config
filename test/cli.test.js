@@ -27,7 +27,7 @@ test('[cli.parse] aliases and defaults', function(assert) {
     c: 'config',
     configBucket: 'config'
   }, 'provided expected options');
-  assert.deepEqual(parsed.overrides, { force: false }, 'provided expected overrides');
+  assert.deepEqual(parsed.overrides, { force: false, kms: false }, 'provided expected overrides');
   assert.ok(parsed.help, 'provides help text');
   assert.end();
 });
@@ -61,20 +61,7 @@ test('[cli.parse] sets options', function(assert) {
     c: 'config',
     configBucket: 'config'
   }, 'provided expected options');
-  assert.deepEqual(parsed.overrides, { force: true }, 'provided expected overrides');
-
-  assert.end();
-});
-
-test('[cli.parse] kms options', function(assert) {
-  var parsed = cli.parse(['info', 'testing', '-k', true], {});
-  assert.equal(parsed.options.kms, 'alias/cloudformation', '--kms as a true flag --> default key id');
-
-  parsed = cli.parse(['info', 'testing', '-k', 'my-key'], {});
-  assert.equal(parsed.options.kms, 'my-key', '--kms as a flag with a value --> provided key id');
-
-  parsed = cli.parse(['info', 'testing'], {});
-  assert.equal(parsed.options.kms, false, '--kms defaults to false');
+  assert.deepEqual(parsed.overrides, { force: true, kms: 'kms-id' }, 'provided expected overrides');
 
   assert.end();
 });
@@ -261,14 +248,14 @@ test('[cli.main] save (with kms)', function(assert) {
     return {
       save: function(suffix, kms, callback) {
         assert.equal(suffix, base.environment, 'provides correct suffix');
-        assert.deepEqual(kms, base.options.kms, 'provides correct kms boolean');
+        assert.deepEqual(kms, base.overrides.kms, 'provides correct kms boolean');
         callback();
       }
     };
   });
 
   var parsed = Object.assign({}, base, { command: 'save' });
-  parsed.options.kms = true;
+  parsed.overrides.kms = true;
 
   cli.main(parsed, function(err) {
     assert.ifError(err, 'success');

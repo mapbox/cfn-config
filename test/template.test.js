@@ -337,7 +337,9 @@ test('[template.questions] no parameters', function(assert) {
 
 test('[template.questions] handles failure during kms encryption', function(assert) {
   AWS.mock('KMS', 'encrypt', function(params, callback) {
-    return callback(new Error('Bad encryption error'));
+    var err = new Error('Bad encryption error');
+    err.code = 'Whoops';
+    return callback(err);
   });
 
   var questions = template.questions(expected, { kmsKeyId: true });
@@ -345,8 +347,8 @@ test('[template.questions] handles failure during kms encryption', function(asse
   var password = questions[5];
   password.async = function() {
     return function(err, encrypted) {
-      assert.ok(err, 'encryption callback got the error');
-      assert.equal(err.toString(), 'Error: Bad encryption error', 'correct error');
+      assert.ok(err instanceof template.KmsError, 'expected error type');
+      assert.equal(err.toString(), 'KmsError: Whoops: Bad encryption error', 'correct error');
       assert.equal(encrypted, undefined, 'no encrypted return value');
       AWS.restore('KMS');
       assert.end();
@@ -367,8 +369,8 @@ test('[template.questions] handles kms key lookup failure during kms encryption 
   var password = questions[5];
   password.async = function() {
     return function(err, encrypted) {
-      assert.ok(err, 'encryption callback got the error');
-      assert.equal(err.toString(), 'Error: Unable to find KMS encryption key "garbage"', 'correct error');
+      assert.ok(err instanceof template.NotFoundError, 'expected error type');
+      assert.equal(err.toString(), 'NotFoundError: Unable to find KMS encryption key "garbage"', 'correct error');
       assert.equal(encrypted, undefined, 'no encrypted return value');
       AWS.restore('KMS');
       assert.end();
