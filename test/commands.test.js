@@ -567,7 +567,7 @@ test('[commands.operations.promptParameters] not force-mode', function(assert) {
 
   sinon.stub(template, 'questions', function(template, overrides) {
     assert.deepEqual(template, { new: 'template' }, 'builds questions for new template');
-    assert.deepEqual(overrides, { defaults: { old: 'parameters' }, kms: undefined, region: undefined }, 'uses old parameters as default values');
+    assert.deepEqual(overrides, { defaults: { old: 'parameters' }, kmsKeyId: undefined, region: undefined }, 'uses old parameters as default values');
     return questions;
   });
 
@@ -593,7 +593,7 @@ test('[commands.operations.promptParameters] not force-mode', function(assert) {
 
 test('[commands.operations.promptParameters] with parameter overrides', function(assert) {
   sinon.stub(template, 'questions', function(template, overrides) {
-    assert.deepEqual(overrides, { defaults: { old: 'overriden' }, kms: 'this is a bomb key', region: 'us-west-2' }, 'uses override parameters');
+    assert.deepEqual(overrides, { defaults: { old: 'overriden' }, kmsKeyId: 'this is a bomb key', region: 'us-west-2' }, 'uses override parameters');
     return { parameter: 'questions' };
   });
 
@@ -605,7 +605,7 @@ test('[commands.operations.promptParameters] with parameter overrides', function
     region: 'us-west-2',
     newTemplate: { new: 'template' },
     oldParameters: { old: 'parameters' },
-    overrides: { parameters: { old: 'overriden' }, kms: 'this is a bomb key' },
+    overrides: { parameters: { old: 'overriden' }, kmsKeyId: 'this is a bomb key' },
     next: function(err) {
       assert.ifError(err, 'success');
       template.questions.restore();

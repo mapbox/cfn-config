@@ -248,7 +248,7 @@ test('[template.questions] respects overrides', function(assert) {
     defaults: { Name: 'Chuck' },
     messages: { Name: 'Somebody' },
     choices: { Handedness: ['top', 'bottom'] },
-    kms: 'this is a bomb key'
+    kmsKeyId: 'this is a bomb key'
   };
 
   var questions = template.questions(expected, overrides);
@@ -314,7 +314,7 @@ test('[template.questions] defaults kms key to correct default', function(assert
     return callback(null, { CiphertextBlob: new Buffer(params.Plaintext) });
   });
 
-  var questions = template.questions(expected, { kms: true });
+  var questions = template.questions(expected, { kmsKeyId: true });
 
   var password = questions[5];
   password.async = function() {
@@ -340,13 +340,35 @@ test('[template.questions] handles failure during kms encryption', function(asse
     return callback(new Error('Bad encryption error'));
   });
 
-  var questions = template.questions(expected, { kms: true });
+  var questions = template.questions(expected, { kmsKeyId: true });
 
   var password = questions[5];
   password.async = function() {
     return function(err, encrypted) {
       assert.ok(err, 'encryption callback got the error');
       assert.equal(err.toString(), 'Error: Bad encryption error', 'correct error');
+      assert.equal(encrypted, undefined, 'no encrypted return value');
+      AWS.restore('KMS');
+      assert.end();
+    };
+  };
+  password.filter('hibbities');
+});
+
+test('[template.questions] handles kms key lookup failure during kms encryption with special message', function(assert) {
+  AWS.mock('KMS', 'encrypt', function(params, callback) {
+    var error = new Error('Invalid key');
+    error.code = 'NotFoundException';
+    return callback(error);
+  });
+
+  var questions = template.questions(expected, { kmsKeyId: 'garbage' });
+
+  var password = questions[5];
+  password.async = function() {
+    return function(err, encrypted) {
+      assert.ok(err, 'encryption callback got the error');
+      assert.equal(err.toString(), 'Error: Unable to find KMS encryption key "garbage"', 'correct error');
       assert.equal(encrypted, undefined, 'no encrypted return value');
       AWS.restore('KMS');
       assert.end();
