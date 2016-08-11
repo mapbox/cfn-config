@@ -27,7 +27,7 @@ module.exports = {
     },
     SecretPassword: {
       Type: 'String',
-      Description: 'Their secret password',
+      Description: '[secure] Their secret password',
       MinLength: 8,
       MaxLength: 24,
       NoEcho: true
