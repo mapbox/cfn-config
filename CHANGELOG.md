@@ -1,7 +1,9 @@
 # Change Log
 All notable changes to this project will be documented in this file. For change log formatting, see http://keepachangelog.com/
 
-## Unreleased
+## 2.0.0 - 2016-08-12
+
+- BREAKING Rewritten from the ground up.
 
 ## 1.1.1 - 2016-08-04
 
