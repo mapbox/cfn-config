@@ -335,6 +335,18 @@ test('[template.questions] no parameters', function(assert) {
   assert.end();
 });
 
+test('[template.questions] no description = no encryption', function(assert) {
+  var questions = template.questions({ Parameters: { Undefined: {} } }, { kmsKeyId: 'my-key' });
+  questions[0].async = function() {
+    return function(err, input) {
+      assert.ifError(err, 'success');
+      assert.equal(input, 'whatever', 'no encryption');
+      assert.end();
+    };
+  };
+  questions[0].filter('whatever');
+});
+
 test('[template.questions] handles failure during kms encryption', function(assert) {
   AWS.mock('KMS', 'encrypt', function(params, callback) {
     var err = new Error('Bad encryption error');
