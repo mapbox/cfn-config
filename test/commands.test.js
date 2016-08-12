@@ -567,7 +567,7 @@ test('[commands.operations.promptParameters] not force-mode', function(assert) {
 
   sinon.stub(template, 'questions', function(template, overrides) {
     assert.deepEqual(template, { new: 'template' }, 'builds questions for new template');
-    assert.deepEqual(overrides, { defaults: { old: 'parameters' }, kmsKeyId: undefined, region: undefined }, 'uses old parameters as default values');
+    assert.deepEqual(overrides, { defaults: { old: 'parameters' }, kmsKeyId: undefined, region: 'us-east-1' }, 'uses old parameters as default values');
     return questions;
   });
 
@@ -602,7 +602,7 @@ test('[commands.operations.promptParameters] with parameter and kms overrides', 
   });
 
   var context = Object.assign({}, basicContext, {
-    region: 'us-west-2',
+    stackRegion: 'us-west-2',
     newTemplate: { new: 'template' },
     oldParameters: { old: 'parameters' },
     overrides: { parameters: { old: 'overriden' }, kms: 'this is a bomb key' },
