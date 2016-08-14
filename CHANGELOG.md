@@ -1,6 +1,10 @@
 # Change Log
 All notable changes to this project will be documented in this file. For change log formatting, see http://keepachangelog.com/
 
+## 2.0.2 - 2016-08-14
+
+- During update, ignore overridden parameters that aren't in either the old or new template
+
 ## 2.0.1 - 2016-08-12
 
 - Fix a bug where region for KMS encryption was not passed properly
