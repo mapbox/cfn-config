@@ -631,6 +631,26 @@ test('[commands.operations.promptParameters] force-mode with no parameters in ne
   commands.operations.promptParameters(context);
 });
 
+test('[commands.operations.promptParameters] reject overrides that are not in old or new template', function(assert) {
+  sinon.stub(prompt, 'parameters', function(questions, callback) {
+    callback(null, { some: 'answers' });
+  });
+
+  var context = Object.assign({}, basicContext, {
+    newTemplate: { Parameters: { Name: {} } },
+    oldParameters: { Name: 'name', Age: 'age' },
+    overrides: { parameters: { Name: 'overriden', Born: 'ignored' } },
+    next: function(err) {
+      assert.ifError(err, 'success');
+      assert.notOk(context.oldParameters.Born, 'excludes extraneous parameter override');
+      prompt.parameters.restore();
+      assert.end();
+    }
+  });
+
+  commands.operations.promptParameters(context);
+});
+
 test('[commands.operations.confirmParameters] force-mode', function(assert) {
   var context = Object.assign({}, basicContext, {
     overrides: { force: true },
