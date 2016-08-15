@@ -390,3 +390,12 @@ test('[template.questions] handles kms key lookup failure during kms encryption 
   };
   password.filter('hibbities');
 });
+
+test('[template.questions] reject defaults that are not in a list of allowed values', function(assert) {
+  var parameters = { List: { Type: 'String', AllowedValues: ['one', 'two'] } };
+  var overrides = { defaults: { List: 'three' } };
+
+  var questions = template.questions({ Parameters: parameters }, overrides);
+  assert.notEqual(questions[0].default, 'three', 'rejected disallowed default value');
+  assert.end();
+});
