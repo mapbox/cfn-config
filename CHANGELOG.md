@@ -1,6 +1,10 @@
 # Change Log
 All notable changes to this project will be documented in this file. For change log formatting, see http://keepachangelog.com/
 
+## 2.0.3 - 2016-08-15
+
+- Fixes a bug in parameter prompting where a saved configuration that specifies a default value outside the parameter's allowed values caused a crash.
+
 ## 2.0.2 - 2016-08-14
 
 - During update, ignore overridden parameters that aren't in either the old or new template
