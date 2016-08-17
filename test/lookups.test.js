@@ -43,6 +43,8 @@ test('[lookup.info] stack info not returned', function(assert) {
 });
 
 test('[lookup.info] success', function(assert) {
+  var date = new Date();
+
   var stackInfo = {
     StackId: 'stack-id',
     StackName: 'my-stack',
@@ -55,8 +57,8 @@ test('[lookup.info] success', function(assert) {
       { ParameterKey: 'LuckyNumbers', ParameterValue: '3,7,42' },
       { ParameterKey: 'SecretPassword', ParameterValue: 'secret' }
     ],
-    CreationTime: new Date(),
-    LastUpdatedTime: new Date(),
+    CreationTime: date,
+    LastUpdatedTime: date,
     StackStatus: 'CREATE_COMPLETE',
     DisableRollback: false,
     NotificationARNs: ['some-arn'],
@@ -90,8 +92,8 @@ test('[lookup.info] success', function(assert) {
       LuckyNumbers: '3,7,42',
       SecretPassword: 'secret'
     },
-    CreationTime: new Date(),
-    LastUpdatedTime: new Date(),
+    CreationTime: date,
+    LastUpdatedTime: date,
     StackStatus: 'CREATE_COMPLETE',
     DisableRollback: false,
     NotificationARNs: ['some-arn'],
@@ -156,6 +158,109 @@ test('[lookup.parameters] lookup.info error', function(assert) {
   lookup.parameters('my-stack', 'us-east-1', function(err) {
     assert.ok(err instanceof lookup.StackNotFoundError, 'expected error returned');
     AWS.restore('CloudFormation', 'describeStacks');
+    assert.end();
+  });
+});
+
+test('[lookup.info] secure', function(assert) {
+  var date = new Date();
+
+  var stackInfo = {
+    StackId: 'stack-id',
+    StackName: 'my-stack',
+    Description: 'test-stack',
+    Parameters: [
+      { ParameterKey: 'PlainText', ParameterValue: 'Hello world!' },
+      { ParameterKey: 'SecureVarA', ParameterValue: 'secure:' + (new Buffer('EncryptedValue1')).toString('base64') },
+      { ParameterKey: 'SecureVarB', ParameterValue: 'secure:' + (new Buffer('EncryptedValue2')).toString('base64') }
+    ],
+    CreationTime: date,
+    LastUpdatedTime: date,
+    StackStatus: 'CREATE_COMPLETE',
+    DisableRollback: false,
+    NotificationARNs: ['some-arn'],
+    TimeoutInMinutes: 10,
+    Capabilities: 'CAPABILITY_IAM',
+    Outputs: [],
+    Tags: []
+  };
+
+  var expected = {
+    StackId: 'stack-id',
+    StackName: 'my-stack',
+    Description: 'test-stack',
+    Region: 'us-east-1',
+    Parameters: {
+      PlainText: 'Hello world!',
+      SecureVarA: 'DecryptedValue1',
+      SecureVarB: 'DecryptedValue2'
+    },
+    CreationTime: date,
+    LastUpdatedTime: date,
+    StackStatus: 'CREATE_COMPLETE',
+    DisableRollback: false,
+    NotificationARNs: ['some-arn'],
+    TimeoutInMinutes: 10,
+    Capabilities: 'CAPABILITY_IAM',
+    Outputs: {},
+    Tags: {}
+  };
+
+  AWS.mock('CloudFormation', 'describeStacks', function(params, callback) {
+    callback(null, { Stacks: [stackInfo] });
+  });
+
+  AWS.mock('KMS', 'decrypt', function(params, callback) {
+    var encrypted = new Buffer(params.CiphertextBlob, 'base64').toString('utf8');
+    if (encrypted === 'EncryptedValue1')
+      return callback(null, { Plaintext: (new Buffer('DecryptedValue1')).toString('base64') });
+    if (encrypted === 'EncryptedValue2')
+      return callback(null, { Plaintext: (new Buffer('DecryptedValue2')).toString('base64') });
+    assert.fail('Unrecognized encrypted value ' + encrypted);
+  });
+
+  lookup.info('my-stack', 'us-east-1', false, true, function(err, info) {
+    assert.ifError(err, 'success');
+    assert.deepEqual(info, expected, 'expected info returned');
+    AWS.restore('CloudFormation', 'describeStacks');
+    AWS.restore('KMS', 'decrypt');
+    assert.end();
+  });
+});
+
+test('[lookup.info] secure error', function(assert) {
+  var stackInfo = {
+    StackId: 'stack-id',
+    StackName: 'my-stack',
+    Description: 'test-stack',
+    Parameters: [
+      { ParameterKey: 'PlainText', ParameterValue: 'Hello world!' },
+      { ParameterKey: 'SecureVarA', ParameterValue: 'secure:' + (new Buffer('EncryptedValue1')).toString('base64') },
+      { ParameterKey: 'SecureVarB', ParameterValue: 'secure:' + (new Buffer('EncryptedValue2')).toString('base64') }
+    ],
+    CreationTime: new Date(),
+    LastUpdatedTime: new Date(),
+    StackStatus: 'CREATE_COMPLETE',
+    DisableRollback: false,
+    NotificationARNs: ['some-arn'],
+    TimeoutInMinutes: 10,
+    Capabilities: 'CAPABILITY_IAM',
+    Outputs: [],
+    Tags: []
+  };
+
+  AWS.mock('CloudFormation', 'describeStacks', function(params, callback) {
+    callback(null, { Stacks: [stackInfo] });
+  });
+
+  AWS.mock('KMS', 'decrypt', function(params, callback) {
+    callback(new Error('KMS decryption error'));
+  });
+
+  lookup.info('my-stack', 'us-east-1', false, true, function(err) {
+    assert.ok(err instanceof lookup.DecryptParametersError, 'expected error returned');
+    AWS.restore('CloudFormation', 'describeStacks');
+    AWS.restore('KMS', 'decrypt');
     assert.end();
   });
 });
@@ -581,3 +686,59 @@ test('[lookup.bucketRegion] failure', function(assert) {
     assert.end();
   });
 });
+
+test('[lookup.bucketRegion] no bucket', function(assert) {
+  AWS.mock('S3', 'getBucketLocation', function(params, callback) {
+    var err = new Error('failure');
+    err.code = 'NoSuchBucket';
+    callback(err);
+  });
+
+  lookup.bucketRegion('my-bucket', function(err) {
+    assert.ok(err instanceof lookup.BucketNotFoundError, 'expected error type');
+    AWS.restore('S3', 'getBucketLocation');
+    assert.end();
+  });
+});
+
+test('[lookup.decryptParameters] failure', function(assert) {
+  AWS.mock('KMS', 'decrypt', function(params, callback) {
+    var err = new Error('failure');
+    callback(err);
+  });
+
+  lookup.decryptParameters({
+    ValueA: 'secure:0123456789'
+  }, 'us-west-1', function(err) {
+    assert.ok(err instanceof lookup.DecryptParametersError, 'expected error type');
+    AWS.restore('KMS', 'decrypt');
+    assert.end();
+  });
+});
+
+test('[lookup.decryptParameters] success', function(assert) {
+  AWS.mock('KMS', 'decrypt', function(params, callback) {
+    var encrypted = new Buffer(params.CiphertextBlob, 'base64').toString('utf8');
+    if (encrypted === 'EncryptedValue1')
+      return callback(null, { Plaintext: (new Buffer('DecryptedValue1')).toString('base64') });
+    if (encrypted === 'EncryptedValue2')
+      return callback(null, { Plaintext: (new Buffer('DecryptedValue2')).toString('base64') });
+    assert.fail('Unrecognized encrypted value ' + encrypted);
+  });
+
+  lookup.decryptParameters({
+    PlainText: 'Hello world!',
+    SecureVarA: 'secure:' + (new Buffer('EncryptedValue1')).toString('base64'),
+    SecureVarB: 'secure:' + (new Buffer('EncryptedValue2')).toString('base64')
+  }, 'us-west-1', function(err, decryptedParams) {
+    assert.ifError(err, 'success');
+    assert.deepEqual(decryptedParams, {
+      PlainText: 'Hello world!',
+      SecureVarA: 'DecryptedValue1',
+      SecureVarB: 'DecryptedValue2'
+    }, 'decryptes secure parameters');
+    AWS.restore('KMS', 'decrypt');
+    assert.end();
+  });
+});
+
