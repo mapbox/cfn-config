@@ -12,6 +12,8 @@ test('[cli.parse] aliases and defaults', function(assert) {
   assert.equal(parsed.environment, 'testing', 'contains environment');
   assert.equal(parsed.templatePath, path.resolve('relative/path'), 'contains absolute template path');
   assert.deepEqual(parsed.options, {
+    d: false,
+    decrypt: false,
     e: false,
     extended: false,
     f: false,
@@ -37,7 +39,7 @@ test('[cli.parse] sets options', function(assert) {
     'create', 'testing', 'relative/path',
     '-c', 'config',
     '-t', 'template',
-    '-e', '-f',
+    '-e', '-f', '-d',
     '-k', 'kms-id',
     '-n', 'my-stack',
     '-r', 'eu-west-1'
@@ -46,6 +48,8 @@ test('[cli.parse] sets options', function(assert) {
   var parsed = cli.parse(args, {});
 
   assert.deepEqual(parsed.options, {
+    d: true,
+    decrypt: true,
     e: true,
     extended: true,
     f: true,
@@ -225,9 +229,10 @@ test('[cli.main] info', function(assert) {
   sinon.stub(cfnConfig, 'commands', function(options) {
     assert.deepEqual(options, base.options, 'provided commands constructor with correct options');
     return {
-      info: function(suffix, resources, callback) {
+      info: function(suffix, resources, decrypt, callback) {
         assert.equal(suffix, base.environment, 'provides correct suffix');
         assert.deepEqual(resources, base.options.extended, 'provides correct resources boolean');
+        assert.deepEqual(decrypt, base.options.decrypt, 'provides correct resources boolean');
         callback();
       }
     };

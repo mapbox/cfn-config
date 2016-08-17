@@ -166,10 +166,11 @@ test('[commands.delete] with overrides', function(assert) {
 });
 
 test('[commands.info] success w/o resources', function(assert) {
-  sinon.stub(lookup, 'info', function(name, region, resources, callback) {
+  sinon.stub(lookup, 'info', function(name, region, resources, decrypt, callback) {
     assert.equal(name, 'my-stack-testing', 'lookup.info expected stack name');
     assert.equal(region, 'us-east-1', 'lookup.info expected region');
     assert.notOk(resources, 'lookup.info no resources');
+    assert.notOk(decrypt, 'lookup.info decrypt=false');
     callback();
   });
 
@@ -181,10 +182,11 @@ test('[commands.info] success w/o resources', function(assert) {
 });
 
 test('[commands.info] success w/ resources', function(assert) {
-  sinon.stub(lookup, 'info', function(name, region, resources, callback) {
+  sinon.stub(lookup, 'info', function(name, region, resources, decrypt, callback) {
     assert.equal(name, 'my-stack-testing', 'lookup.info expected stack name');
     assert.equal(region, 'us-east-1', 'lookup.info expected region');
     assert.ok(resources, 'lookup.info no resources');
+    assert.notOk(decrypt, 'lookup.info decrypt=false');
     callback();
   });
 
@@ -195,8 +197,40 @@ test('[commands.info] success w/ resources', function(assert) {
   });
 });
 
+test('[commands.info] success w/o decrypt', function(assert) {
+  sinon.stub(lookup, 'info', function(name, region, resources, decrypt, callback) {
+    assert.equal(name, 'my-stack-testing', 'lookup.info expected stack name');
+    assert.equal(region, 'us-east-1', 'lookup.info expected region');
+    assert.ok(resources, 'lookup.info resources');
+    assert.notOk(decrypt, 'lookup.info decrypt=false');
+    callback();
+  });
+
+  commands(opts).info('testing', true, function(err) {
+    assert.ifError(err, 'success');
+    lookup.info.restore();
+    assert.end();
+  });
+});
+
+test('[commands.info] success w/ decrypt', function(assert) {
+  sinon.stub(lookup, 'info', function(name, region, resources, decrypt, callback) {
+    assert.equal(name, 'my-stack-testing', 'lookup.info expected stack name');
+    assert.equal(region, 'us-east-1', 'lookup.info expected region');
+    assert.ok(resources, 'lookup.info resources');
+    assert.ok(decrypt, 'lookup.info decrypt=true');
+    callback();
+  });
+
+  commands(opts).info('testing', true, true, function(err) {
+    assert.ifError(err, 'success');
+    lookup.info.restore();
+    assert.end();
+  });
+});
+
 test('[commands.info] null provided as suffix', function(assert) {
-  sinon.stub(lookup, 'info', function(name, region, resources, callback) {
+  sinon.stub(lookup, 'info', function(name, region, resources, decrypt, callback) {
     assert.equal(name, 'my-stack', 'no trailing - on stack name');
     callback();
   });
