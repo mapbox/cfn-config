@@ -326,8 +326,9 @@ test('[commands.commandContext] iterates through operations', function(assert) {
     }
   ];
 
-  var context = commands.commandContext(opts, 'testing', ops, function(err) {
+  var context = commands.commandContext(opts, 'testing', ops, function(err, performed) {
     assert.ifError(err, 'success');
+    assert.equal(performed, true, 'the requested command was performed');
     assert.end();
   });
 
@@ -339,8 +340,9 @@ test('[commands.commandContext] aborts', function(assert) {
     function(context) { context.abort(); }
   ];
 
-  var context = commands.commandContext(opts, 'testing', ops, function(err) {
+  var context = commands.commandContext(opts, 'testing', ops, function(err, performed) {
     assert.ifError(err, 'success');
+    assert.equal(performed, false, 'the requested command was not performed');
     assert.end();
   });
 
@@ -352,8 +354,9 @@ test('[commands.commandContext] aborts with error', function(assert) {
     function(context) { context.abort(new Error('failure')); }
   ];
 
-  var context = commands.commandContext(opts, 'testing', ops, function(err) {
+  var context = commands.commandContext(opts, 'testing', ops, function(err, performed) {
     assert.equal(err.message, 'failure', 'success');
+    assert.equal(performed, false, 'the requested command was not performed');
     assert.end();
   });
 
