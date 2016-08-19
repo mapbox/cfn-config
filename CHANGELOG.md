@@ -1,6 +1,10 @@
 # Change Log
 All notable changes to this project will be documented in this file. For change log formatting, see http://keepachangelog.com/
 
+## 2.1.1 - 2016-08-19
+
+- Update region handling of S3 URLs for dash syntax. Fixes deploys to `eu-central-1`
+
 ## 2.1.0 - 2016-08-17
 
 - Adds `--decrypt` flag to `info` command and related APIs to decrypt secure stack parameters.
