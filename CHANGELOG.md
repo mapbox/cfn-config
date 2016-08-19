@@ -1,6 +1,10 @@
 # Change Log
 All notable changes to this project will be documented in this file. For change log formatting, see http://keepachangelog.com/
 
+## 2.2.0 - 2016-08-19
+
+- Commands that are aborted by the user (e.g. a rejected diff) will provide `false` as the second argument the callback function. If the command was entirely completed, `true` will be provided.
+
 ## 2.1.1 - 2016-08-19
 
 - Update region handling of S3 URLs for dash syntax. Fixes deploys to `eu-central-1`
