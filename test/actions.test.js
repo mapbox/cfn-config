@@ -779,16 +779,21 @@ test('[actions.templateUrl] eu-central-1', function(assert) {
 test('[actions.saveTemplate] bucket does not exist', function(assert) {
   var url = 'https://s3.amazonaws.com/my-bucket/cirjpj94c0000s5nzc1j452o7-my-stack.template.json';
   var template = fs.readFileSync(path.resolve(__dirname, 'fixtures', 'template.json'));
+  var AWS = require('aws-sdk');
+  var S3 = AWS.S3;
 
-  AWS.mock('S3', 'putObject', function(params, callback) {
+  AWS.S3 = function(params) {
+    assert.deepEqual(params, { region: 'us-east-1' });
+  };
+  AWS.S3.prototype.putObject = function(params, callback) {
     var err = new Error('The specified bucket does not exist');
     err.code = 'NoSuchBucket';
     callback(err);
-  });
+  };
 
   actions.saveTemplate(url, template, function(err) {
     assert.ok(err instanceof actions.BucketNotFoundError, 'expected error returned');
-    AWS.restore('S3', 'putObject');
+    AWS.S3 = S3;
     assert.end();
   });
 });
@@ -831,47 +836,51 @@ test('[actions.saveTemplate] us-east-1', function(assert) {
 });
 
 test('[actions.saveTemplate] cn-north-1', function(assert) {
-  var url = 'https://s3.cn-north-1.amazonaws.com.cn/my-bucket/cirjpj94c0000s5nzc1j452o7-my-stack.template.json';
+  var url = 'https://s3-cn-north-1.amazonaws.com.cn/my-bucket/cirjpj94c0000s5nzc1j452o7-my-stack.template.json';
   var template = fs.readFileSync(path.resolve(__dirname, 'fixtures', 'template.json'));
+  var AWS = require('aws-sdk');
+  var S3 = AWS.S3;
 
-  // really need a way to mock the client constructor
-
-  AWS.mock('S3', 'putObject', function(params, callback) {
+  AWS.S3 = function(params) {
+    assert.deepEqual(params, { region: 'cn-north-1' }, 'parses cn-north-1 from s3 url');
+  };
+  AWS.S3.prototype.putObject = function(params, callback) {
     assert.deepEqual(params, {
       Bucket: 'my-bucket',
       Key: 'cirjpj94c0000s5nzc1j452o7-my-stack.template.json',
       Body: template
     }, 'template put to expected s3 destination');
-
     callback();
-  });
+  };
 
   actions.saveTemplate(url, template, function(err) {
     assert.ifError(err, 'success');
-    AWS.restore('S3', 'putObject');
+    AWS.S3 = S3;
     assert.end();
   });
 });
 
 test('[actions.saveTemplate] eu-central-1', function(assert) {
-  var url = 'https://s3.eu-central-1.amazonaws.com/my-bucket/cirjpj94c0000s5nzc1j452o7-my-stack.template.json';
+  var url = 'https://s3-eu-central-1.amazonaws.com/my-bucket/cirjpj94c0000s5nzc1j452o7-my-stack.template.json';
   var template = fs.readFileSync(path.resolve(__dirname, 'fixtures', 'template.json'));
+  var AWS = require('aws-sdk');
+  var S3 = AWS.S3;
 
-  // really need a way to mock the client constructor
-
-  AWS.mock('S3', 'putObject', function(params, callback) {
+  AWS.S3 = function(params) {
+    assert.deepEqual(params, { region: 'eu-central-1' }, 'parses eu-central-1 from s3 url');
+  };
+  AWS.S3.prototype.putObject = function(params, callback) {
     assert.deepEqual(params, {
       Bucket: 'my-bucket',
       Key: 'cirjpj94c0000s5nzc1j452o7-my-stack.template.json',
       Body: template
     }, 'template put to expected s3 destination');
-
     callback();
-  });
+  };
 
   actions.saveTemplate(url, template, function(err) {
     assert.ifError(err, 'success');
-    AWS.restore('S3', 'putObject');
+    AWS.S3 = S3;
     assert.end();
   });
 });
