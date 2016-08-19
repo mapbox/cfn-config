@@ -842,7 +842,7 @@ test('[actions.saveTemplate] cn-north-1', function(assert) {
   var S3 = AWS.S3;
 
   AWS.S3 = function(params) {
-    assert.deepEqual(params, { region: 'cn-north-1' });
+    assert.deepEqual(params, { region: 'cn-north-1' }, 'parses cn-north-1 from s3 url');
   };
   AWS.S3.prototype.putObject = function(params, callback) {
     assert.deepEqual(params, {
@@ -867,7 +867,7 @@ test('[actions.saveTemplate] eu-central-1', function(assert) {
   var S3 = AWS.S3;
 
   AWS.S3 = function(params) {
-    assert.deepEqual(params, { region: 'eu-central-1' });
+    assert.deepEqual(params, { region: 'eu-central-1' }, 'parses eu-central-1 from s3 url');
   };
   AWS.S3.prototype.putObject = function(params, callback) {
     assert.deepEqual(params, {
