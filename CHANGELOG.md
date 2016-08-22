@@ -1,6 +1,10 @@
 # Change Log
 All notable changes to this project will be documented in this file. For change log formatting, see http://keepachangelog.com/
 
+## 2.2.1 - 2016-08-22
+
+- Changes s3 templateUrl for `cn` region to use a `.` instead of a `-`
+
 ## 2.2.0 - 2016-08-19
 
 - Commands that are aborted by the user (e.g. a rejected diff) will provide `false` as the second argument the callback function. If the command was entirely completed, `true` will be provided.
