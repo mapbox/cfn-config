@@ -774,6 +774,19 @@ test('[commands.operations.confirmTemplate] no difference', function(assert) {
   commands.operations.confirmTemplate(context);
 });
 
+test('[commands.operations.confirmTemplate] undefined', function(assert) {
+  var context = Object.assign({}, basicContext, {
+    oldTemplate: { Parameters: { old: undefined } },
+    newTemplate: { Parameters: {} },
+    next: function() {
+      assert.pass('skipped prompting');
+      assert.end();
+    }
+  });
+
+  commands.operations.confirmTemplate(context);
+});
+
 test('[commands.operations.confirmTemplate] force-mode', function(assert) {
   var context = Object.assign({}, basicContext, {
     oldTemplate: { old: 'template' },
