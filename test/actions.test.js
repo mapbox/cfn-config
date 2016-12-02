@@ -95,7 +95,7 @@ test('[actions.create] success', function(assert) {
   AWS.mock('CloudFormation', 'createStack', function(params, callback) {
     assert.deepEqual(params, {
       StackName: 'my-stack',
-      Capabilities: ['CAPABILITY_IAM'],
+      Capabilities: ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
       TemplateURL: url,
       Parameters: [
         { ParameterKey: 'Name', ParameterValue: 'Chuck' },
@@ -215,7 +215,7 @@ test('[actions.update] success', function(assert) {
   AWS.mock('CloudFormation', 'updateStack', function(params, callback) {
     assert.deepEqual(params, {
       StackName: 'my-stack',
-      Capabilities: ['CAPABILITY_IAM'],
+      Capabilities: ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
       TemplateURL: url,
       Parameters: [
         { ParameterKey: 'Name', ParameterValue: 'Chuck' },
@@ -431,7 +431,7 @@ test('[actions.diff] success', function(assert) {
     assert.deepEqual(params, {
       ChangeSetName: params.ChangeSetName,
       StackName: 'my-stack',
-      Capabilities: ['CAPABILITY_IAM'],
+      Capabilities: ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
       Parameters: [
         { ParameterKey: 'Name', ParameterValue: 'Chuck' },
         { ParameterKey: 'Age', ParameterValue: 18 },
