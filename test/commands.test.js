@@ -1898,3 +1898,23 @@ test('[commands.operations.saveConfig] success', function(assert) {
 
   commands.operations.saveConfig(context);
 });
+
+test('[commands.operations.mergeMetadata]', function(assert) {
+  var context = Object.assign({}, basicContext, {
+    stackRegion: 'us-west-2',
+    newTemplate: { new: 'template' },
+    oldParameters: { old: 'parameters' },
+    overrides: {
+      metadata: {
+        LastDeploy: 'cooper'
+      }
+    },
+    next: function(err) {
+      assert.ifError(err, 'success');
+      assert.deepEqual(context.newTemplate.Metadata, { LastDeploy: 'cooper' });
+      assert.end();
+    }
+  });
+  commands.operations.mergeMetadata(context);
+});
+
