@@ -78,7 +78,7 @@ test('[commands.update] with overrides', function(assert) {
       next: function() {
         assert.pass('called next to begin process');
         assert.equal(context.templatePath, path.resolve('templatePath'), 'set absolute context.templatePath');
-        assert.deepEqual(context.overrides, { force: true }, 'sets context.overrides');
+        assert.deepEqual(context.overrides, { force: true , masterConfig: 'test'}, 'sets context.overrides');
         commands.commandContext.restore();
         assert.end();
       }
@@ -87,7 +87,7 @@ test('[commands.update] with overrides', function(assert) {
     return context;
   });
 
-  commands(opts).update('testing', 'templatePath', { force: true }, whenDone);
+  commands(opts).update('testing', 'templatePath', { force: true, masterConfig: 'test' }, whenDone);
 });
 
 test('[commands.update] no overrides', function(assert) {
