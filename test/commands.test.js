@@ -90,6 +90,31 @@ test('[commands.update] with overrides', function(assert) {
   commands(opts).update('testing', 'templatePath', { force: true }, whenDone);
 });
 
+test('[commands.update] with multiple overrides', function(assert) {
+  function whenDone() {}
+
+  sinon.stub(commands, 'commandContext', function(config, suffix, operations, callback) {
+    assert.deepEqual(config, opts, 'instantiate context with expected config');
+    assert.deepEqual(suffix, 'testing', 'instantiate context with expected suffix');
+    assert.ok(operations.every(function(op) { return typeof op === 'function'; }), 'instantiate context with array of operations');
+    assert.equal(callback, whenDone, 'instantiate context with final callback function');
+
+    var context = Object.assign({}, basicContext, {
+      next: function() {
+        assert.pass('called next to begin process');
+        assert.equal(context.templatePath, path.resolve('templatePath'), 'set absolute context.templatePath');
+        assert.deepEqual(context.overrides, { force: true, masterConfig: 's3://chill' }, 'sets context.overrides');
+        commands.commandContext.restore();
+        assert.end();
+      }
+    });
+    return context;
+  });
+
+  commands(opts).update('testing', 'templatePath', { force: true, masterConfig: 's3://chill' }, whenDone);
+
+});
+
 test('[commands.update] no overrides', function(assert) {
   function whenDone() {}
 
@@ -575,6 +600,122 @@ test('[commands.operations.updatePreamble] success', function(assert) {
   });
 
   commands.operations.updatePreamble(context);
+});
+
+test('[commands.operations.getMasterConfig] success', function(assert) {
+
+  sinon.stub(lookup, 'defaultConfiguration', function(s3Url, callback) {
+    callback(null, { old: 'fresh' });
+  });
+
+  var context = Object.assign({}, basicContext, {
+    overrides: { masterConfig: 's3://chill.cfn.json' },
+    next: function() {
+      assert.pass('calls next()');
+      assert.deepEqual(context.oldParameters, { old: 'fresh' }, 'sets context.oldParameters');
+      lookup.defaultConfiguration.restore();
+      assert.end();
+    },
+    abort: function(err) {
+      assert.ifError(err, 'failed');
+    }
+  });
+
+  context.oldParameters = { old: 'stale' };
+  commands.operations.getMasterConfig(context);
+});
+
+test('[commands.operations.getMasterConfig] no-op', function(assert) {
+
+  sinon.stub(lookup, 'defaultConfiguration', function(s3Url, callback) {
+    callback(null, { old: 'fresh' });
+  });
+
+  var context = Object.assign({}, basicContext, {
+    overrides: {},
+    next: function() {
+      assert.pass('calls next()');
+      assert.deepEqual(context.oldParameters, { old: 'stale' }, 'context.oldParameters stays the same');
+      lookup.defaultConfiguration.restore();
+      assert.end();
+    },
+    abort: function(err) {
+      assert.ifError(err, 'failed');
+    }
+  });
+
+  context.oldParameters = { old: 'stale' };
+  commands.operations.getMasterConfig(context);
+});
+
+test('[commands.operations.getMasterConfig] failed', function(assert) {
+
+  sinon.stub(lookup, 'defaultConfiguration', function(s3Url, callback) {
+    callback(new Error(), {});
+  });
+
+  var context = Object.assign({}, basicContext, {
+    overrides: { masterConfig: 's3://unchill.cfn.json' },
+    next: function() {
+      assert.fail('should not call next');
+    },
+    abort: function() {
+      lookup.defaultConfiguration.restore();
+      assert.end();
+    }
+  });
+
+  context.oldParameters = { old: 'stale' };
+  commands.operations.getMasterConfig(context);
+});
+
+test('[commands.operations.getMasterConfig] no matching oldParameters does not put masterConfig keys into oldParameters for better looking diff at the end', function(assert) {
+
+  sinon.stub(lookup, 'defaultConfiguration', function(s3Url, callback) {
+    callback(null, { bingo: 'fresh' });
+  });
+
+  var context = Object.assign({}, basicContext, {
+    overrides: { masterConfig: 's3://chill.cfn.json' },
+    next: function() {
+      assert.pass('calls next()');
+      assert.deepEqual(context.oldParameters, { old: 'stale' }, 'leaves context.oldParameters alone');
+      lookup.defaultConfiguration.restore();
+      assert.end();
+    },
+    abort: function(err) {
+      assert.ifError(err, 'failed');
+    }
+  });
+
+  context.oldParameters = { old: 'stale' };
+  commands.operations.getMasterConfig(context);
+});
+
+test('[commands.operations.getMasterConfig] adding a newParameter that matches masterConfig parameter does not get overwritten, so that user is intentional in adding newParameters', function(assert) {
+
+  sinon.stub(lookup, 'defaultConfiguration', function(s3Url, callback) {
+    callback(null, { old: 'fresh' });
+  });
+
+  var context = Object.assign({}, basicContext, {
+    overrides: { masterConfig: 's3://chill.cfn.json' },
+    next: function() {
+      assert.pass('calls next()');
+      assert.deepEqual(context.oldParameters, { hello: 'goodbye' }, 'no matching keys between oldParameters and masterConfig, no oldParameters are replaced');
+      assert.deepEqual(context.newTemplate.Parameters, { old: 'special whale' }, 'newParameters are not replaced despite matching keys');
+      lookup.defaultConfiguration.restore();
+      assert.end();
+    },
+    abort: function(err) {
+      assert.ifError(err, 'failed');
+    }
+  });
+
+  context.oldParameters = { hello: 'goodbye' };
+  context.newTemplate = {};
+  context.newTemplate.Parameters = { old: 'special whale' };
+  commands.operations.getMasterConfig(context);
 });
 
 test('[commands.operations.promptParameters] force-mode', function(assert) {
