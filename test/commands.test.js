@@ -703,7 +703,7 @@ test('[commands.operations.getMasterConfig] adding a newParameter that matches m
     next: function() {
       assert.pass('calls next()');
       assert.deepEqual(context.oldParameters, { hello: 'goodbye' }, 'no matching keys between oldParameters and masterConfig, no oldParameters are replaced');
-      assert.deepEqual(context.newParameters, { old: 'special whale' }, 'newParameters are not replaced despite matching keys');
+      assert.deepEqual(context.newTemplate.Parameters, { old: 'special whale' }, 'newParameters are not replaced despite matching keys');
       lookup.defaultConfiguration.restore();
       assert.end();
     },
@@ -713,7 +713,8 @@ test('[commands.operations.getMasterConfig] adding a newParameter that matches m
   });
 
   context.oldParameters = { hello: 'goodbye' };
-  context.newParameters = { old: 'special whale' };
+  context.newTemplate = {};
+  context.newTemplate.Parameters = { old : 'special whale' };
   commands.operations.getMasterConfig(context);
 });
 
