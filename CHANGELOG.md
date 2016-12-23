@@ -1,6 +1,13 @@
 # Change Log
 All notable changes to this project will be documented in this file. For change log formatting, see http://keepachangelog.com/
 
+## 2.5.0 - 2-16-12-23
+
+- Package is on @mapbox namespace
+- Includes new Cloudformation capabilities(https://github.com/mapbox/cfn-config/pull/126)
+- V4 signatureVersion on aws-sdk requests
+- Specifying a masterConfig will replace default (oldParameters) values
+
 ## 2.3.0 - 2016-10-20
 
 - Add recognition + color-coding for previously unrecognized CloudFormation ROLLBACK states
