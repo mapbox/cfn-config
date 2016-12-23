@@ -648,6 +648,27 @@ test('[commands.operations.getMasterConfig] no-op', function(assert) {
   commands.operations.getMasterConfig(context);
 });
 
+test('[commands.operations.getMasterConfig] failed', function(assert) {
+
+  sinon.stub(lookup, 'defaultConfiguration', function(s3Url, callback) {
+    callback(new Error(), {});
+  });
+
+  var context = Object.assign({}, basicContext, {
+    overrides: { masterConfig: 's3://unchill.cfn.json' },
+    next: function() {
+      assert.fail('should not call next');
+    },
+    abort: function() {
+      lookup.defaultConfiguration.restore();
+      assert.end();
+    }
+  });
+
+  context.oldParameters = { old: 'stale' };
+  commands.operations.getMasterConfig(context);
+});
+
 test('[commands.operations.promptParameters] force-mode', function(assert) {
   sinon.stub(template, 'questions', function() {
     assert.fail('should not build questions');
