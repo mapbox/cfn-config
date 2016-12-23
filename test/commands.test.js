@@ -625,6 +625,29 @@ test('[commands.operations.getMasterConfig] success', function(assert) {
   commands.operations.getMasterConfig(context);
 });
 
+test('[commands.operations.getMasterConfig] no-op', function(assert) {
+
+  sinon.stub(lookup, 'defaultConfiguration', function(s3Url, callback) {
+    callback(null, { old: 'fresh' });
+  });
+
+  var context = Object.assign({}, basicContext, {
+    overrides: {},
+    next: function() {
+      assert.pass('calls next()');
+      assert.deepEqual(context.oldParameters, { old: 'stale' }, 'context.oldParameters stays the same');
+      lookup.defaultConfiguration.restore();
+      assert.end();
+    },
+    abort: function(err) {
+      assert.ifError(err, 'failed');
+    }
+  });
+
+  context.oldParameters = { old: 'stale' };
+  commands.operations.getMasterConfig(context);
+});
+
 test('[commands.operations.promptParameters] force-mode', function(assert) {
   sinon.stub(template, 'questions', function() {
     assert.fail('should not build questions');
