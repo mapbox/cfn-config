@@ -1,6 +1,10 @@
 # Change Log
 All notable changes to this project will be documented in this file. For change log formatting, see http://keepachangelog.com/
 
+## 2.3.0 - 2016-10-20
+
+- Add recognition + color-coding for previously unrecognized CloudFormation ROLLBACK states
+
 ## 2.2.1 - 2016-08-22
 
 - Changes s3 templateUrl for `cn` region to use a `.` instead of a `-`
