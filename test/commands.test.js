@@ -78,7 +78,7 @@ test('[commands.update] with overrides', function(assert) {
       next: function() {
         assert.pass('called next to begin process');
         assert.equal(context.templatePath, path.resolve('templatePath'), 'set absolute context.templatePath');
-        assert.deepEqual(context.overrides, { force: true , masterConfig: 'test'}, 'sets context.overrides');
+        assert.deepEqual(context.overrides, { force: true }, 'sets context.overrides');
         commands.commandContext.restore();
         assert.end();
       }
@@ -87,7 +87,43 @@ test('[commands.update] with overrides', function(assert) {
     return context;
   });
 
-  commands(opts).update('testing', 'templatePath', { force: true, masterConfig: 'test' }, whenDone);
+  commands(opts).update('testing', 'templatePath', { force: true }, whenDone);
+});
+
+test('[commands.update] with masterConfigJson overrides', function(assert) {
+  function whenDone() {}
+
+  sinon.stub(commands, 'commandContext', function(config, suffix, operations, callback) {
+    assert.deepEqual(config, opts, 'instantiate context with expected config');
+    assert.deepEqual(suffix, 'testing', 'instantiate context with expected suffix');
+    assert.ok(operations.every(function(op) { return typeof op === 'function'; }), 'instantiate context with array of operations');
+    assert.equal(callback, whenDone, 'instantiate context with final callback function');
+
+    var expectedOldParams = { hello: 'bellows', goodbye: 'yellow' };
+    var masterConfigJson = { hello: 'bellows' };
+    var context = Object.assign({}, basicContext, {
+      next: function() {
+        assert.pass('called next to begin process');
+        assert.equal(context.templatePath, path.resolve('templatePath'), 'set absolute context.templatePath');
+        assert.deepEqual(context.overrides, { force: true, masterConfig: 's3://chill' }, 'sets context.overrides');
+
+        if (context.overrides.masterConfig) {
+          Object.keys(masterConfigJson).forEach(function(key) {
+            if (context.oldParameters[key])
+              context.oldParameters[key] = masterConfigJson[key];
+          });
+          assert.deepEqual(context.oldParameters, expectedOldParams, 'updated correctly');
+        }
+        commands.commandContext.restore();
+        assert.end();
+      }
+    });
+    context.oldParameters = { hello: 'mellow', goodbye: 'yellow' };
+    return context;
+  });
+
+  commands(opts).update('testing', 'templatePath', { force: true, masterConfig: 's3://chill' }, whenDone);
+
 });
 
 test('[commands.update] no overrides', function(assert) {
