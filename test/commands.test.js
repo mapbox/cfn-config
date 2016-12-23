@@ -669,6 +669,29 @@ test('[commands.operations.getMasterConfig] failed', function(assert) {
   commands.operations.getMasterConfig(context);
 });
 
+test('[commands.operations.getMasterConfig] no matching oldParameters', function(assert) {
+
+  sinon.stub(lookup, 'defaultConfiguration', function(s3Url, callback) {
+    callback(null, { bingo: 'fresh' });
+  });
+
+  var context = Object.assign({}, basicContext, {
+    overrides: { masterConfig: 's3://chill.cfn.json' },
+    next: function() {
+      assert.pass('calls next()');
+      assert.deepEqual(context.oldParameters, { old: 'stale' }, 'leaves context.oldParameters alone');
+      lookup.defaultConfiguration.restore();
+      assert.end();
+    },
+    abort: function(err) {
+      assert.ifError(err, 'failed');
+    }
+  });
+
+  context.oldParameters = { old: 'stale' };
+  commands.operations.getMasterConfig(context);
+});
+
 test('[commands.operations.promptParameters] force-mode', function(assert) {
   sinon.stub(template, 'questions', function() {
     assert.fail('should not build questions');
