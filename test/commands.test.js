@@ -669,17 +669,18 @@ test('[commands.operations.getMasterConfig] failed', function(assert) {
   commands.operations.getMasterConfig(context);
 });
 
-test('[commands.operations.getMasterConfig] no matching oldParameters', function(assert) {
+test('[commands.operations.getMasterConfig] adding a newParameter that matches masterConfig parameter does not get overwritten, so that user is intentional in adding newParameters', function(assert) {
 
   sinon.stub(lookup, 'defaultConfiguration', function(s3Url, callback) {
-    callback(null, { bingo: 'fresh' });
+    callback(null, { old: 'fresh' });
   });
 
   var context = Object.assign({}, basicContext, {
     overrides: { masterConfig: 's3://chill.cfn.json' },
     next: function() {
       assert.pass('calls next()');
-      assert.deepEqual(context.oldParameters, { old: 'stale' }, 'leaves context.oldParameters alone');
+      assert.deepEqual(context.oldParameters, { hello: 'goodbye' }, 'no matching keys between oldParameters and masterConfig, no oldParameters are replaced');
+      assert.deepEqual(context.newParameters, { old: 'special whale' }, 'newParameters are not replaced despite matching keys');
       lookup.defaultConfiguration.restore();
       assert.end();
     },
@@ -688,7 +689,8 @@ test('[commands.operations.getMasterConfig] no matching oldParameters', function
     }
   });
 
-  context.oldParameters = { old: 'stale' };
+  context.oldParameters = { hello: 'goodbye' };
+  context.newParameters = { old: 'special whale' };
   commands.operations.getMasterConfig(context);
 });
 
