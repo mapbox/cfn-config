@@ -1,6 +1,6 @@
 {
   "name": "@mapbox/cfn-config",
-  "version": "2.4.0",
+  "version": "2.5.0",
   "description": "Quickly configure and start AWS CloudFormation stacks",
   "main": "index.js",
   "scripts": {
