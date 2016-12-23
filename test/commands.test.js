@@ -714,7 +714,7 @@ test('[commands.operations.getMasterConfig] adding a newParameter that matches m
 
   context.oldParameters = { hello: 'goodbye' };
   context.newTemplate = {};
-  context.newTemplate.Parameters = { old : 'special whale' };
+  context.newTemplate.Parameters = { old: 'special whale' };
   commands.operations.getMasterConfig(context);
 });
 
