@@ -669,6 +669,29 @@ test('[commands.operations.getMasterConfig] failed', function(assert) {
   commands.operations.getMasterConfig(context);
 });
 
+test('[commands.operations.getMasterConfig] no matching oldParameters does not put masterConfig keys into oldParameters for better looking diff at the end', function(assert) {
+
+  sinon.stub(lookup, 'defaultConfiguration', function(s3Url, callback) {
+    callback(null, { bingo: 'fresh' });
+  });
+
+  var context = Object.assign({}, basicContext, {
+    overrides: { masterConfig: 's3://chill.cfn.json' },
+    next: function() {
+      assert.pass('calls next()');
+      assert.deepEqual(context.oldParameters, { old: 'stale' }, 'leaves context.oldParameters alone');
+      lookup.defaultConfiguration.restore();
+      assert.end();
+    },
+    abort: function(err) {
+      assert.ifError(err, 'failed');
+    }
+  });
+
+  context.oldParameters = { old: 'stale' };
+  commands.operations.getMasterConfig(context);
+});
+
 test('[commands.operations.getMasterConfig] adding a newParameter that matches masterConfig parameter does not get overwritten, so that user is intentional in adding newParameters', function(assert) {
 
   sinon.stub(lookup, 'defaultConfiguration', function(s3Url, callback) {
