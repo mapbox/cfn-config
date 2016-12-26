@@ -2039,3 +2039,41 @@ test('[commands.operations.saveConfig] success', function(assert) {
 
   commands.operations.saveConfig(context);
 });
+
+test('[commands.operations.mergeMetadata]', function(assert) {
+  var context = Object.assign({}, basicContext, {
+    stackRegion: 'us-west-2',
+    newTemplate: { new: 'template' },
+    oldParameters: { old: 'parameters' },
+    overrides: {
+      metadata: {
+        LastDeploy: 'cooper'
+      }
+    },
+    next: function(err) {
+      assert.ifError(err, 'success');
+      assert.deepEqual(context.newTemplate.Metadata, { LastDeploy: 'cooper' });
+      assert.end();
+    }
+  });
+  commands.operations.mergeMetadata(context);
+});
+
+test('[commands.operations.mergeMetadata] error', function(assert) {
+  var context = Object.assign({}, basicContext, {
+    stackRegion: 'us-west-2',
+    newTemplate: { new: 'template', Metadata: { LastDeploy: 'jane' } },
+    oldParameters: { old: 'parameters' },
+    overrides: {
+      metadata: {
+        LastDeploy: 'cooper'
+      }
+    },
+    next: function(err) {
+      assert.equal(err && err.toString(), 'Error: Metadata.LastDeploy already exists in template');
+      assert.end();
+    }
+  });
+  commands.operations.mergeMetadata(context);
+});
+
