@@ -20,6 +20,7 @@ test('[template.read] local file does not exist', function(assert) {
 test('[template.read] local file cannot be parsed', function(assert) {
   template.read(path.resolve(__dirname, 'fixtures', 'malformed-template.json'), function(err) {
     assert.ok(err instanceof template.InvalidTemplateError, 'returned expected error');
+    assert.ok(/Failed to parse .*: Unexpected end of input/.test(err.message), 'passthrough parse error');
     assert.end();
   });
 });
@@ -27,6 +28,7 @@ test('[template.read] local file cannot be parsed', function(assert) {
 test('[template.read] local js file cannot be parsed', function(assert) {
   template.read(path.resolve(__dirname, 'fixtures', 'malformed-template.js'), function(err) {
     assert.ok(err instanceof template.InvalidTemplateError, 'returned expected error');
+    assert.ok(/Failed to parse .*: Unexpected token \)/.test(err.message), 'passthrough parse error');
     assert.end();
   });
 });
