@@ -1,6 +1,10 @@
 # Change Log
 All notable changes to this project will be documented in this file. For change log formatting, see http://keepachangelog.com/
 
+## 2.6.1 - 2017-01-17
+
+- Bump to 2.0.0 version of Inquirer
+
 ## 2.6.0 - 2016-12-26
 
 - Adds optional `overrides.metadata` option for setting arbitrary Metadata key/value pairs on a CloudFormation template.
