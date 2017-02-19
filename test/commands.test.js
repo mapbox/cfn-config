@@ -949,7 +949,7 @@ test('[commands.operations.confirmTemplate] rejected', function(assert) {
   assert.plan(2);
 
   sinon.stub(prompt, 'confirm', function(message, callback) {
-    assert.equal(message, ' {\n\x1b[31m-  old: "template"\x1b[39m\n\x1b[32m+  new: "template"\x1b[39m\n }\n\nAccept template changes?', 'prompted appropriate message');
+    assert.equal(message, '\x1b[90m {\n\x1b[39m\x1b[31m-  "old": "template"\n\x1b[39m\x1b[32m+  "new": "template"\n\x1b[39m\x1b[90m }\x1b[39m\nAccept template changes?', 'prompted appropriate message');
     callback(null, false);
   });
 
@@ -972,13 +972,111 @@ test('[commands.operations.confirmTemplate] accepted', function(assert) {
   assert.plan(2);
 
   sinon.stub(prompt, 'confirm', function(message, callback) {
-    assert.equal(message, ' {\n\x1b[31m-  old: "template"\x1b[39m\n\x1b[32m+  new: "template"\x1b[39m\n }\n\nAccept template changes?', 'prompted appropriate message');
+    assert.equal(message, '\x1b[90m {\n\x1b[39m\x1b[31m-  "old": "template"\n\x1b[39m\x1b[32m+  "new": "template"\n\x1b[39m\x1b[90m }\x1b[39m\nAccept template changes?', 'prompted appropriate message');
     callback(null, true);
   });
 
   var context = Object.assign({}, basicContext, {
     oldTemplate: { old: 'template' },
     newTemplate: { new: 'template' },
+    next: function(err) {
+      assert.ifError(err, 'success');
+      prompt.confirm.restore();
+
+    },
+    abort: function() {
+      assert.fail('should not abort');
+    }
+  });
+
+  commands.operations.confirmTemplate(context);
+});
+
+test('[commands.operations.confirmTemplate] lengthy diff, first unchanged section ignored', function(assert) {
+  assert.plan(2);
+
+  sinon.stub(prompt, 'confirm', function(message, callback) {
+    assert.equal(message, '\x1b[90m   "i": "lines",\n   "j": "lines",\n   "k": "lines",\n\x1b[39m\x1b[31m-  "this": "will change",\n\x1b[39m\x1b[32m+  "this": "has changed",\n\x1b[39m\x1b[90m   "l": "lines",\n   "m": "lines",\n   "n": "lines",\n\x1b[39m\x1b[90m\n---------------------------------------------\n\n\x1b[39m\x1b[90m   "t": "lines",\n   "u": "lines",\n   "v": "lines",\n\x1b[39m\x1b[31m-  "and": "will change too",\n\x1b[39m\x1b[32m+  "and": "has changed",\n\x1b[39m\x1b[90m   "aa": "lines",\n   "ba": "lines",\n   "ca": "lines",\n\x1b[39m\nAccept template changes?', 'prompted appropriate message');
+    callback(null, true);
+  });
+
+  var context = Object.assign({}, basicContext, {
+    oldTemplate: {
+      old: 'template',
+      a: 'lines',
+      b: 'lines',
+      c: 'lines',
+      d: 'lines',
+      e: 'lines',
+      f: 'lines',
+      g: 'lines',
+      h: 'lines',
+      i: 'lines',
+      j: 'lines',
+      k: 'lines',
+      this: 'will change',
+      l: 'lines',
+      m: 'lines',
+      n: 'lines',
+      o: 'lines',
+      p: 'lines',
+      q: 'lines',
+      r: 'lines',
+      s: 'lines',
+      t: 'lines',
+      u: 'lines',
+      v: 'lines',
+      and: 'will change too',
+      aa: 'lines',
+      ba: 'lines',
+      ca: 'lines',
+      da: 'lines',
+      ea: 'lines',
+      fa: 'lines',
+      ga: 'lines',
+      ha: 'lines',
+      ia: 'lines',
+      ja: 'lines',
+      ka: 'lines'
+    },
+    newTemplate: {
+      old: 'template',
+      a: 'lines',
+      b: 'lines',
+      c: 'lines',
+      d: 'lines',
+      e: 'lines',
+      f: 'lines',
+      g: 'lines',
+      h: 'lines',
+      i: 'lines',
+      j: 'lines',
+      k: 'lines',
+      this: 'has changed',
+      l: 'lines',
+      m: 'lines',
+      n: 'lines',
+      o: 'lines',
+      p: 'lines',
+      q: 'lines',
+      r: 'lines',
+      s: 'lines',
+      t: 'lines',
+      u: 'lines',
+      v: 'lines',
+      and: 'has changed',
+      aa: 'lines',
+      ba: 'lines',
+      ca: 'lines',
+      da: 'lines',
+      ea: 'lines',
+      fa: 'lines',
+      ga: 'lines',
+      ha: 'lines',
+      ia: 'lines',
+      ja: 'lines',
+      ka: 'lines'
+    },
     next: function(err) {
       assert.ifError(err, 'success');
       prompt.confirm.restore();
@@ -2076,4 +2174,3 @@ test('[commands.operations.mergeMetadata] error', function(assert) {
   });
   commands.operations.mergeMetadata(context);
 });
-
