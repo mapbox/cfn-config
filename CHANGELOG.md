@@ -1,6 +1,10 @@
 # Change Log
 All notable changes to this project will be documented in this file. For change log formatting, see http://keepachangelog.com/
 
+## 2.6.2 - 2017-02-23
+
+- Fixes a bug in displaying the differences in templates during an UpdateStack command
+
 ## 2.6.1 - 2017-01-17
 
 - Bump to 2.0.0 version of Inquirer
