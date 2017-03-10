@@ -27,9 +27,11 @@ test('[cli.parse] aliases and defaults', function(assert) {
     t: 'template',
     templateBucket: 'template',
     c: 'config',
-    configBucket: 'config'
+    configBucket: 'config',
+    p: undefined,
+    parameters: undefined
   }, 'provided expected options');
-  assert.deepEqual(parsed.overrides, { force: false, kms: false }, 'provided expected overrides');
+  assert.deepEqual(parsed.overrides, { force: false, kms: false, parameters: undefined }, 'provided expected overrides');
   assert.ok(parsed.help, 'provides help text');
   assert.end();
 });
@@ -42,7 +44,8 @@ test('[cli.parse] sets options', function(assert) {
     '-e', '-f', '-d',
     '-k', 'kms-id',
     '-n', 'my-stack',
-    '-r', 'eu-west-1'
+    '-r', 'eu-west-1',
+    '-p', '{}'
   ];
 
   var parsed = cli.parse(args, {});
@@ -63,9 +66,11 @@ test('[cli.parse] sets options', function(assert) {
     t: 'template',
     templateBucket: 'template',
     c: 'config',
-    configBucket: 'config'
+    configBucket: 'config',
+    p: {},
+    parameters: {}
   }, 'provided expected options');
-  assert.deepEqual(parsed.overrides, { force: true, kms: 'kms-id' }, 'provided expected overrides');
+  assert.deepEqual(parsed.overrides, { force: true, kms: 'kms-id', parameters: {} }, 'provided expected overrides');
 
   assert.end();
 });
