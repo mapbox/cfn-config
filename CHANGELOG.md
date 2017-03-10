@@ -1,6 +1,10 @@
 # Change Log
 All notable changes to this project will be documented in this file. For change log formatting, see http://keepachangelog.com/
 
+## 2.7.0 - 2017-03-10
+
+- Add `--parameters` flag to cfn-config command for providing stack parameters as JSON
+
 ## 2.6.2 - 2017-02-23
 
 - Fixes a bug in displaying the differences in templates during an UpdateStack command
