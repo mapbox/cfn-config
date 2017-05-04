@@ -623,7 +623,7 @@ test('[commands.operations.getMasterConfig] success', function(assert) {
   });
 
   AWS.stub('KMS', 'decrypt', function(params, data) {
-    callback(null, 'fresh');
+    return 'data';
   });
 
   context.oldParameters = { old: 'secure:staleelats' };
