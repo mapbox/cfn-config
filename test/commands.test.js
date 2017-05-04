@@ -6,6 +6,7 @@ var prompt = require('../lib/prompt');
 var actions = require('../lib/actions');
 var lookup = require('../lib/lookup');
 var template = require('../lib/template');
+var AWS = require('@mapbox/mock-aws-sdk-js');
 
 var opts = {
   name: 'my-stack',
@@ -621,7 +622,12 @@ test('[commands.operations.getMasterConfig] success', function(assert) {
     }
   });
 
-  context.oldParameters = { old: 'stale' };
+  AWS.stub('KMS', 'decrypt', function(params, data) {
+    callback(null, 'fresh');
+  });
+
+  context.oldParameters = { old: 'secure:staleelats' };
+  context.overrides = { templateOptions : { AWS_DEFAULT_REGION : 'us-east-1'}};
   commands.operations.getMasterConfig(context);
 });
 
