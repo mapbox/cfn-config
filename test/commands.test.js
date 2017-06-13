@@ -612,7 +612,7 @@ test('[commands.operations.getMasterConfig] success', function(assert) {
     overrides: { masterConfig: 's3://chill.cfn.json' },
     next: function() {
       assert.pass('calls next()');
-      assert.deepEqual(context.oldParameters, { old: 'fresh' }, 'sets context.oldParameters');
+      assert.deepEqual(context.oldParameters, { old: 'secure:staleelats' }, 'sets context.oldParameters');
       lookup.defaultConfiguration.restore();
       assert.end();
     },
@@ -621,7 +621,8 @@ test('[commands.operations.getMasterConfig] success', function(assert) {
     }
   });
 
-  context.oldParameters = { old: 'stale' };
+
+  context.oldParameters = { old: 'secure:staleelats' };
   commands.operations.getMasterConfig(context);
 });
 
@@ -949,7 +950,10 @@ test('[commands.operations.confirmTemplate] rejected', function(assert) {
   assert.plan(2);
 
   sinon.stub(prompt, 'confirm', function(message, callback) {
-    assert.equal(message, '\x1b[90m {\n\x1b[39m\x1b[31m-  "old": "template"\n\x1b[39m\x1b[32m+  "new": "template"\n\x1b[39m\x1b[90m }\x1b[39m\nAccept template changes?', 'prompted appropriate message');
+    assert.equal(
+      message,
+      '\x1b[90m {\n\x1b[39m\x1b[31m-  "old": "template"\n\x1b[39m\x1b[32m+  "new": "template"\n\x1b[39m\x1b[90m }\x1b[39m\nAccept template changes?',
+      'prompted appropriate message');
     callback(null, false);
   });
 

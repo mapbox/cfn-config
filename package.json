@@ -11,6 +11,7 @@
   "author": "Mapbox",
   "version": "2.7.0",
   "dependencies": {
+    "@mapbox/mock-aws-sdk-js": "0.0.4",
     "aws-sdk": "^2.4.3",
     "cfn-stack-event-stream": "0.0.7",
     "colors": "^1.1.2",
@@ -30,12 +31,12 @@
     "coverage": "nyc --reporter html tape test/*.test.js && opener coverage/index.html"
   },
   "devDependencies": {
-    "opener": "^1.4.1",
-    "sinon": "^1.17.5",
+    "aws-sdk-mock": "1.3.0",
     "eslint": "^2.13.1",
     "nyc": "^6.6.1",
-    "aws-sdk-mock": "1.3.0",
+    "opener": "^1.4.1",
     "pinkie-promise": "^2.0.1",
+    "sinon": "^1.17.5",
     "tape": "^4.6.0"
   },
   "main": "index.js",
