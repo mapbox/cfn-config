@@ -9,7 +9,7 @@
     "type": "git"
   },
   "author": "Mapbox",
-  "version": "2.7.0",
+  "version": "2.7.1",
   "dependencies": {
     "@mapbox/mock-aws-sdk-js": "0.0.4",
     "aws-sdk": "^2.4.3",
