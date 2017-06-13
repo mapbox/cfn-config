@@ -1,6 +1,10 @@
 # Change Log
 All notable changes to this project will be documented in this file. For change log formatting, see http://keepachangelog.com/
 
+## 2.7.1 - 2017-06-13
+
+- Avoids re-encryption of `secure:` variables that are specified in a master config file
+
 ## 2.7.0 - 2017-03-10
 
 - Add `--parameters` flag to cfn-config command for providing stack parameters as JSON
