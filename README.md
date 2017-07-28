@@ -29,7 +29,7 @@ To use cfn-config, you will need to have two (or more) S3 buckets ready:
 cfn-config includes a CLI tool for working with CloudFormation stacks. Install globally with `npm` to use the CLI commands:
 
 ```
-$ npm install -g cfn-config
+$ npm install -g @mapbox/cfn-config
 ```
 
 ## CLI Usage
@@ -77,13 +77,13 @@ Quickly configure and start AWS CloudFormation stacks
 Include cfn-config into your project to incorporate/extend its functionality. Add to your project's package.json by running the following from your project's directory:
 
 ```
-$ npm install --save cfn-config
+$ npm install --save @mapbox/cfn-config
 ```
 
 Then, in your scripts:
 
 ```js
-var cfnConfig = require('cfn-config');
+var cfnConfig = require('@mapbox/cfn-config');
 ```
 
 ## JavaScript Usage
