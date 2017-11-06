@@ -1000,7 +1000,7 @@ test('[commands.operations.confirmTemplate] lengthy diff, first unchanged sectio
   assert.plan(2);
 
   sinon.stub(prompt, 'confirm', function(message, callback) {
-    assert.equal(message, '\x1b[90m   "i": "lines",\n   "j": "lines",\n   "k": "lines",\n\x1b[39m\x1b[31m-  "this": "will change",\n\x1b[39m\x1b[32m+  "this": "has changed",\n\x1b[39m\x1b[90m   "l": "lines",\n   "m": "lines",\n   "n": "lines",\n\x1b[39m\x1b[90m\n---------------------------------------------\n\n\x1b[39m\x1b[90m   "t": "lines",\n   "u": "lines",\n   "v": "lines",\n\x1b[39m\x1b[31m-  "and": "will change too",\n\x1b[39m\x1b[32m+  "and": "has changed",\n\x1b[39m\x1b[90m   "aa": "lines",\n   "ba": "lines",\n   "ca": "lines",\n\x1b[39m\nAccept template changes?', 'prompted appropriate message');
+    assert.equal(message, '\x1b[90m {\n   "a": "lines",\n   "aa": "lines",\n\x1b[39m\x1b[31m-  "and": "will change too",\n\x1b[39m\x1b[32m+  "and": "has changed",\n\x1b[39m\x1b[90m   "b": "lines",\n   "ba": "lines",\n   "c": "lines",\n\x1b[39m\x1b[90m\n---------------------------------------------\n\n\x1b[39m\x1b[90m   "r": "lines",\n   "s": "lines",\n   "t": "lines",\n\x1b[39m\x1b[31m-  "this": "will change",\n\x1b[39m\x1b[32m+  "this": "has changed",\n\x1b[39m\x1b[90m   "u": "lines",\n   "v": "lines"\n }\x1b[39m\nAccept template changes?', 'prompted appropriate message');
     callback(null, true);
   });
 
