@@ -1154,7 +1154,7 @@ test('[commands.operations.saveTemplate] success', function(assert) {
 
   sinon.stub(actions, 'saveTemplate', function(url, template, callback) {
     assert.equal(url, templateUrl, 'saved to correct url');
-    assert.equal(template, JSON.stringify(context.newTemplate), 'saved correct template');
+    assert.equal(template, '{\n  "new": "template"\n}', 'saved correct template');
     callback();
   });
 
