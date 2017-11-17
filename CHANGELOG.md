@@ -1,6 +1,8 @@
 # Change Log
 All notable changes to this project will be documented in this file. For change log formatting, see http://keepachangelog.com/
 
+## 2.7.2 - 2017-11-17
+
 - Assure stable template diffs
 
 ## 2.7.1 - 2017-06-13
