@@ -3,7 +3,7 @@ var queue = require('d3-queue').queue;
 var template = require('../lib/template');
 var path = require('path');
 var fs = require('fs');
-var AWS = require('aws-sdk-mock');
+var AWS = require('@mapbox/mock-aws-sdk-js');
 
 var expected = require('./fixtures/template.json');
 
@@ -43,7 +43,7 @@ test('[template.read] S3 no access', function(assert) {
 test('[template.read] S3 bucket does not exist', function(assert) {
   assert.plan(2);
 
-  AWS.mock('S3', 'getBucketLocation', function(params, callback) {
+  AWS.stub('S3', 'getBucketLocation', function(params, callback) {
     assert.deepEqual(params, { Bucket: 'my' }, 'requested bucket location');
     var error = new Error('Bucket does not exist');
     error.code = 'NotFoundError';
@@ -52,48 +52,48 @@ test('[template.read] S3 bucket does not exist', function(assert) {
 
   template.read('s3://my/template', function(err) {
     assert.ok(err instanceof template.NotFoundError, 'returned expected error');
-    AWS.restore('S3');
+    AWS.S3.restore();
   });
 });
 
 test('[template.read] S3 file does not exist', function(assert) {
   assert.plan(3);
 
-  AWS.mock('S3', 'getObject', function(params, callback) {
+  AWS.stub('S3', 'getObject', function(params, callback) {
     assert.deepEqual(params, { Bucket: 'my', Key: 'template' }, 'requested correct S3 object');
     var error = new Error('Object does not exist');
     error.code = 'NotFoundError';
     callback(error);
   });
 
-  AWS.mock('S3', 'getBucketLocation', function(params, callback) {
+  AWS.stub('S3', 'getBucketLocation', function(params, callback) {
     assert.deepEqual(params, { Bucket: 'my' }, 'requested bucket location');
     callback(null, { LocationConstraint: 'eu-central-1' });
   });
 
   template.read('s3://my/template', function(err) {
     assert.ok(err instanceof template.NotFoundError, 'returned expected error');
-    AWS.restore('S3');
+    AWS.S3.restore();
   });
 });
 
 test('[template.read] S3 file cannot be parsed', function(assert) {
   assert.plan(3);
 
-  AWS.mock('S3', 'getObject', function(params, callback) {
+  AWS.stub('S3', 'getObject', function(params, callback) {
     assert.deepEqual(params, { Bucket: 'my', Key: 'template' }, 'requested correct S3 object');
     var malformed = fs.readFileSync(path.resolve(__dirname, 'fixtures', 'malformed-template.json'));
     callback(null, { Body: malformed });
   });
 
-  AWS.mock('S3', 'getBucketLocation', function(params, callback) {
+  AWS.stub('S3', 'getBucketLocation', function(params, callback) {
     assert.deepEqual(params, { Bucket: 'my' }, 'requested bucket location');
     callback(null, { LocationConstraint: 'eu-central-1' });
   });
 
   template.read('s3://my/template', function(err) {
     assert.ok(err instanceof template.InvalidTemplateError, 'returned expected error');
-    AWS.restore('S3');
+    AWS.S3.restore();
   });
 });
 
@@ -142,12 +142,12 @@ test('[template.read] local async JS without options', function(assert) {
 test('[template.read] S3 JSON', function(assert) {
   assert.plan(4);
 
-  AWS.mock('S3', 'getObject', function(params, callback) {
+  AWS.stub('S3', 'getObject', function(params, callback) {
     assert.deepEqual(params, { Bucket: 'my', Key: 'template' }, 'requested correct S3 object');
     callback(null, { Body: new Buffer(JSON.stringify(expected)) });
   });
 
-  AWS.mock('S3', 'getBucketLocation', function(params, callback) {
+  AWS.stub('S3', 'getBucketLocation', function(params, callback) {
     assert.deepEqual(params, { Bucket: 'my' }, 'requested bucket location');
     callback(null, { LocationConstraint: '' });
   });
@@ -155,7 +155,7 @@ test('[template.read] S3 JSON', function(assert) {
   template.read('s3://my/template', function(err, found) {
     assert.ifError(err, 'success');
     assert.deepEqual(found, expected, 'got template JSON');
-    AWS.restore('S3');
+    AWS.S3.restore();
   });
 });
 
@@ -240,7 +240,7 @@ test('[template.questions] provides expected questions without encryption', func
 });
 
 test('[template.questions] respects overrides', function(assert) {
-  AWS.mock('KMS', 'encrypt', function(params, callback) {
+  AWS.stub('KMS', 'encrypt', function(params, callback) {
     assert.equal(params.KeyId, 'this is a bomb key', 'used custom keyId');
     assert.ok(params.Plaintext);
     return callback(null, { CiphertextBlob: new Buffer(params.Plaintext) });
@@ -304,13 +304,13 @@ test('[template.questions] respects overrides', function(assert) {
   });
 
   q.awaitAll(function(err) {
-    AWS.restore('KMS');
+    AWS.KMS.restore();
     assert.end(err);
   });
 });
 
 test('[template.questions] defaults kms key to correct default', function(assert) {
-  AWS.mock('KMS', 'encrypt', function(params, callback) {
+  AWS.stub('KMS', 'encrypt', function(params, callback) {
     assert.equal(params.KeyId, 'alias/cloudformation', 'used default keyId');
     assert.ok(params.Plaintext);
     return callback(null, { CiphertextBlob: new Buffer(params.Plaintext) });
@@ -324,7 +324,7 @@ test('[template.questions] defaults kms key to correct default', function(assert
       assert.ifError(err, 'encryption doesn\'t cause errors');
       assert.equal(encrypted.slice(0, 7), 'secure:', 'encrypted var starts with secure:');
       assert.equal((new Buffer(encrypted.slice(7), 'base64')).toString('utf8'), 'hibbities', 'decrypts correctly');
-      AWS.restore('KMS');
+      AWS.KMS.restore();
       assert.end();
     };
   };
@@ -350,7 +350,7 @@ test('[template.questions] no description = no encryption', function(assert) {
 });
 
 test('[template.questions] handles failure during kms encryption', function(assert) {
-  AWS.mock('KMS', 'encrypt', function(params, callback) {
+  AWS.stub('KMS', 'encrypt', function(params, callback) {
     var err = new Error('Bad encryption error');
     err.code = 'Whoops';
     return callback(err);
@@ -364,7 +364,7 @@ test('[template.questions] handles failure during kms encryption', function(asse
       assert.ok(err instanceof template.KmsError, 'expected error type');
       assert.equal(err.toString(), 'KmsError: Whoops: Bad encryption error', 'correct error');
       assert.equal(encrypted, undefined, 'no encrypted return value');
-      AWS.restore('KMS');
+      AWS.KMS.restore();
       assert.end();
     };
   };
@@ -372,7 +372,7 @@ test('[template.questions] handles failure during kms encryption', function(asse
 });
 
 test('[template.questions] handles kms key lookup failure during kms encryption with special message', function(assert) {
-  AWS.mock('KMS', 'encrypt', function(params, callback) {
+  AWS.stub('KMS', 'encrypt', function(params, callback) {
     var error = new Error('Invalid key');
     error.code = 'NotFoundException';
     return callback(error);
@@ -386,7 +386,7 @@ test('[template.questions] handles kms key lookup failure during kms encryption 
       assert.ok(err instanceof template.NotFoundError, 'expected error type');
       assert.equal(err.toString(), 'NotFoundError: Unable to find KMS encryption key "garbage"', 'correct error');
       assert.equal(encrypted, undefined, 'no encrypted return value');
-      AWS.restore('KMS');
+      AWS.KMS.restore();
       assert.end();
     };
   };

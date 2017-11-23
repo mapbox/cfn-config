@@ -2,11 +2,11 @@ var path = require('path');
 var fs = require('fs');
 var events = require('events');
 var test = require('tape');
-var AWS = require('aws-sdk-mock');
+var AWS = require('@mapbox/mock-aws-sdk-js');
 var actions = require('../lib/actions');
 
 test('[actions.create] invalid parameters', function(assert) {
-  AWS.mock('CloudFormation', 'createStack', function(params, callback) {
+  AWS.stub('CloudFormation', 'createStack', function(params, callback) {
     var err = new Error('Parameters: [Pets, Age, Name, LuckyNumbers, SecretPassword] must have values');
     err.code = 'ValidationError';
     callback(err);
@@ -14,13 +14,13 @@ test('[actions.create] invalid parameters', function(assert) {
 
   actions.create('my-stack', 'us-east-1', 'https://s3.amazonaws.com/bucket/key', {}, function(err) {
     assert.ok(err instanceof actions.CloudFormationError, 'returned expected error type');
-    AWS.restore('CloudFormation', 'createStack');
+    AWS.CloudFormation.restore();
     assert.end();
   });
 });
 
 test('[actions.create] stack name in use', function(assert) {
-  AWS.mock('CloudFormation', 'createStack', function(params, callback) {
+  AWS.stub('CloudFormation', 'createStack', function(params, callback) {
     var err = new Error('Stack [my-stack] already exists');
     err.code = 'AlreadyExistsException';
     callback(err);
@@ -28,13 +28,13 @@ test('[actions.create] stack name in use', function(assert) {
 
   actions.create('my-stack', 'us-east-1', 'https://s3.amazonaws.com/bucket/key', {}, function(err) {
     assert.ok(err instanceof actions.CloudFormationError, 'returned expected error type');
-    AWS.restore('CloudFormation', 'createStack');
+    AWS.CloudFormation.restore();
     assert.end();
   });
 });
 
 test('[actions.create] template url does not exist', function(assert) {
-  AWS.mock('CloudFormation', 'createStack', function(params, callback) {
+  AWS.stub('CloudFormation', 'createStack', function(params, callback) {
     var err = new Error('Template file referenced by https://s3.amazonaws.com/bucket/key does not exist.');
     err.code = 'ValidationError';
     callback(err);
@@ -42,13 +42,13 @@ test('[actions.create] template url does not exist', function(assert) {
 
   actions.create('my-stack', 'us-east-1', 'https://s3.amazonaws.com/bucket/key', {}, function(err) {
     assert.ok(err instanceof actions.CloudFormationError, 'returned expected error type');
-    AWS.restore('CloudFormation', 'createStack');
+    AWS.CloudFormation.restore();
     assert.end();
   });
 });
 
 test('[actions.create] template url is invalid', function(assert) {
-  AWS.mock('CloudFormation', 'createStack', function(params, callback) {
+  AWS.stub('CloudFormation', 'createStack', function(params, callback) {
     var err = new Error('The specified url must be an Amazon S3 URL.');
     err.code = 'ValidationError';
     callback(err);
@@ -56,13 +56,13 @@ test('[actions.create] template url is invalid', function(assert) {
 
   actions.create('my-stack', 'us-east-1', 's3://bucket/key', {}, function(err) {
     assert.ok(err instanceof actions.CloudFormationError, 'returned expected error type');
-    AWS.restore('CloudFormation', 'createStack');
+    AWS.CloudFormation.restore();
     assert.end();
   });
 });
 
 test('[actions.create] template is invalid', function(assert) {
-  AWS.mock('CloudFormation', 'createStack', function(params, callback) {
+  AWS.stub('CloudFormation', 'createStack', function(params, callback) {
     var err = new Error('Template format error: At least one Resources member must be defined.');
     err.code = 'ValidationError';
     callback(err);
@@ -70,7 +70,7 @@ test('[actions.create] template is invalid', function(assert) {
 
   actions.create('my-stack', 'us-east-1', 'https://s3.amazonaws.com/bucket/key', {}, function(err) {
     assert.ok(err instanceof actions.CloudFormationError, 'returned expected error type');
-    AWS.restore('CloudFormation', 'createStack');
+    AWS.CloudFormation.restore();
     assert.end();
   });
 });
@@ -78,13 +78,13 @@ test('[actions.create] template is invalid', function(assert) {
 test('[actions.create] unexpected cloudformation error', function(assert) {
   var url = 'https://my-bucket.s3.amazonaws.com/my-template.json';
 
-  AWS.mock('CloudFormation', 'createStack', function(params, callback) {
+  AWS.stub('CloudFormation', 'createStack', function(params, callback) {
     callback(new Error('unexpected'));
   });
 
   actions.create('my-stack', 'us-east-1', url, {}, function(err) {
     assert.ok(err instanceof actions.CloudFormationError, 'expected error returned');
-    AWS.restore('CloudFormation', 'createStack');
+    AWS.CloudFormation.restore();
     assert.end();
   });
 });
@@ -92,7 +92,7 @@ test('[actions.create] unexpected cloudformation error', function(assert) {
 test('[actions.create] success', function(assert) {
   var url = 'https://my-bucket.s3.amazonaws.com/my-template.json';
 
-  AWS.mock('CloudFormation', 'createStack', function(params, callback) {
+  AWS.stub('CloudFormation', 'createStack', function(params, callback) {
     assert.deepEqual(params, {
       StackName: 'my-stack',
       Capabilities: ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
@@ -120,13 +120,13 @@ test('[actions.create] success', function(assert) {
 
   actions.create('my-stack', 'us-east-1', url, parameters, function(err) {
     assert.ifError(err, 'success');
-    AWS.restore('CloudFormation', 'createStack');
+    AWS.CloudFormation.restore();
     assert.end();
   });
 });
 
 test('[actions.update] invalid parameters', function(assert) {
-  AWS.mock('CloudFormation', 'updateStack', function(params, callback) {
+  AWS.stub('CloudFormation', 'updateStack', function(params, callback) {
     var err = new Error('Parameters: [Pets, Age, Name, LuckyNumbers, SecretPassword] must have values');
     err.code = 'ValidationError';
     callback(err);
@@ -134,13 +134,13 @@ test('[actions.update] invalid parameters', function(assert) {
 
   actions.update('my-stack', 'us-east-1', 'https://s3.amazonaws.com/bucket/key', {}, function(err) {
     assert.ok(err instanceof actions.CloudFormationError, 'returned expected error type');
-    AWS.restore('CloudFormation', 'updateStack');
+    AWS.CloudFormation.restore();
     assert.end();
   });
 });
 
 test('[actions.update] stack does not exist', function(assert) {
-  AWS.mock('CloudFormation', 'updateStack', function(params, callback) {
+  AWS.stub('CloudFormation', 'updateStack', function(params, callback) {
     var err = new Error('Stack [my-stack] does not exist');
     err.code = 'ValidationError';
     callback(err);
@@ -148,13 +148,13 @@ test('[actions.update] stack does not exist', function(assert) {
 
   actions.update('my-stack', 'us-east-1', 'https://my-bucket.s3.amazonaws.com/my-template.json', {}, function(err) {
     assert.ok(err instanceof actions.CloudFormationError, 'expected error returned');
-    AWS.restore('CloudFormation', 'updateStack');
+    AWS.CloudFormation.restore();
     assert.end();
   });
 });
 
 test('[actions.update] template url does not exist', function(assert) {
-  AWS.mock('CloudFormation', 'updateStack', function(params, callback) {
+  AWS.stub('CloudFormation', 'updateStack', function(params, callback) {
     var err = new Error('Template file referenced by https://s3.amazonaws.com/bucket/key does not exist.');
     err.code = 'ValidationError';
     callback(err);
@@ -162,13 +162,13 @@ test('[actions.update] template url does not exist', function(assert) {
 
   actions.update('my-stack', 'us-east-1', 'https://s3.amazonaws.com/bucket/key', {}, function(err) {
     assert.ok(err instanceof actions.CloudFormationError, 'returned expected error type');
-    AWS.restore('CloudFormation', 'updateStack');
+    AWS.CloudFormation.restore();
     assert.end();
   });
 });
 
 test('[actions.update] template url is invalid', function(assert) {
-  AWS.mock('CloudFormation', 'updateStack', function(params, callback) {
+  AWS.stub('CloudFormation', 'updateStack', function(params, callback) {
     var err = new Error('The specified url must be an Amazon S3 URL.');
     err.code = 'ValidationError';
     callback(err);
@@ -176,13 +176,13 @@ test('[actions.update] template url is invalid', function(assert) {
 
   actions.update('my-stack', 'us-east-1', 's3://bucket/key', {}, function(err) {
     assert.ok(err instanceof actions.CloudFormationError, 'returned expected error type');
-    AWS.restore('CloudFormation', 'updateStack');
+    AWS.CloudFormation.restore();
     assert.end();
   });
 });
 
 test('[actions.update] template is invalid', function(assert) {
-  AWS.mock('CloudFormation', 'updateStack', function(params, callback) {
+  AWS.stub('CloudFormation', 'updateStack', function(params, callback) {
     var err = new Error('Template format error: At least one Resources member must be defined.');
     err.code = 'ValidationError';
     callback(err);
@@ -190,7 +190,7 @@ test('[actions.update] template is invalid', function(assert) {
 
   actions.update('my-stack', 'us-east-1', 'https://s3.amazonaws.com/bucket/key', {}, function(err) {
     assert.ok(err instanceof actions.CloudFormationError, 'returned expected error type');
-    AWS.restore('CloudFormation', 'updateStack');
+    AWS.CloudFormation.restore();
     assert.end();
   });
 });
@@ -198,13 +198,13 @@ test('[actions.update] template is invalid', function(assert) {
 test('[actions.update] unexpected cloudformation error', function(assert) {
   var url = 'https://my-bucket.s3.amazonaws.com/my-template.json';
 
-  AWS.mock('CloudFormation', 'updateStack', function(params, callback) {
+  AWS.stub('CloudFormation', 'updateStack', function(params, callback) {
     callback(new Error('unexpected'));
   });
 
   actions.update('my-stack', 'us-east-1', url, {}, function(err) {
     assert.ok(err instanceof actions.CloudFormationError, 'expected error returned');
-    AWS.restore('CloudFormation', 'updateStack');
+    AWS.CloudFormation.restore();
     assert.end();
   });
 });
@@ -212,7 +212,7 @@ test('[actions.update] unexpected cloudformation error', function(assert) {
 test('[actions.update] success', function(assert) {
   var url = 'https://my-bucket.s3.amazonaws.com/my-template.json';
 
-  AWS.mock('CloudFormation', 'updateStack', function(params, callback) {
+  AWS.stub('CloudFormation', 'updateStack', function(params, callback) {
     assert.deepEqual(params, {
       StackName: 'my-stack',
       Capabilities: ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
@@ -241,13 +241,13 @@ test('[actions.update] success', function(assert) {
 
   actions.update('my-stack', 'us-east-1', url, parameters, function(err) {
     assert.ifError(err, 'success');
-    AWS.restore('CloudFormation', 'updateStack');
+    AWS.CloudFormation.restore();
     assert.end();
   });
 });
 
 test('[actions.delete] stack does not exist', function(assert) {
-  AWS.mock('CloudFormation', 'deleteStack', function(params, callback) {
+  AWS.stub('CloudFormation', 'deleteStack', function(params, callback) {
     var err = new Error('Stack [my-stack] does not exist');
     err.code = 'ValidationError';
     callback(err);
@@ -255,38 +255,38 @@ test('[actions.delete] stack does not exist', function(assert) {
 
   actions.delete('my-stack', 'us-east-1', function(err) {
     assert.ok(err instanceof actions.CloudFormationError, 'expected error returned');
-    AWS.restore('CloudFormation', 'deleteStack');
+    AWS.CloudFormation.restore();
     assert.end();
   });
 });
 
 test('[actions.delete] unexpected cloudformation error', function(assert) {
-  AWS.mock('CloudFormation', 'deleteStack', function(params, callback) {
+  AWS.stub('CloudFormation', 'deleteStack', function(params, callback) {
     callback(new Error('unexpected'));
   });
 
   actions.delete('my-stack', 'us-east-1', function(err) {
     assert.ok(err instanceof actions.CloudFormationError, 'expected error returned');
-    AWS.restore('CloudFormation', 'deleteStack');
+    AWS.CloudFormation.restore();
     assert.end();
   });
 });
 
 test('[actions.delete] success', function(assert) {
-  AWS.mock('CloudFormation', 'deleteStack', function(params, callback) {
+  AWS.stub('CloudFormation', 'deleteStack', function(params, callback) {
     assert.deepEqual(params, { StackName: 'my-stack' }, 'deleteStack with expected params');
     callback();
   });
 
   actions.delete('my-stack', 'us-east-1', function(err) {
     assert.ifError(err, 'success');
-    AWS.restore('CloudFormation', 'deleteStack');
+    AWS.CloudFormation.restore();
     assert.end();
   });
 });
 
 test('[actions.diff] stack does not exist', function(assert) {
-  AWS.mock('CloudFormation', 'createChangeSet', function(params, callback) {
+  AWS.stub('CloudFormation', 'createChangeSet', function(params, callback) {
     var err = new Error('Stack [my-stack] does not exist');
     err.code = 'ValidationError';
     callback(err);
@@ -294,13 +294,13 @@ test('[actions.diff] stack does not exist', function(assert) {
 
   actions.diff('my-stack', 'us-east-1', 'https://my-bucket.s3.amazonaws.com/my-template.json', {}, function(err) {
     assert.ok(err instanceof actions.CloudFormationError, 'expected error returned');
-    AWS.restore('CloudFormation', 'createChangeSet');
+    AWS.CloudFormation.restore();
     assert.end();
   });
 });
 
 test('[actions.diff] invalid parameters', function(assert) {
-  AWS.mock('CloudFormation', 'createChangeSet', function(params, callback) {
+  AWS.stub('CloudFormation', 'createChangeSet', function(params, callback) {
     var err = new Error('Parameters: [Pets, Age, Name, LuckyNumbers, SecretPassword] must have values');
     err.code = 'ValidationError';
     callback(err);
@@ -308,13 +308,13 @@ test('[actions.diff] invalid parameters', function(assert) {
 
   actions.diff('my-stack', 'us-east-1', 'https://my-bucket.s3.amazonaws.com/my-template.json', {}, function(err) {
     assert.ok(err instanceof actions.CloudFormationError, 'expected error returned');
-    AWS.restore('CloudFormation', 'createChangeSet');
+    AWS.CloudFormation.restore();
     assert.end();
   });
 });
 
 test('[actions.diff] template url does not exist', function(assert) {
-  AWS.mock('CloudFormation', 'createChangeSet', function(params, callback) {
+  AWS.stub('CloudFormation', 'createChangeSet', function(params, callback) {
     var err = new Error('Template file referenced by https://my-bucket.s3.amazonaws.com/my-template.json does not exist.');
     err.code = 'ValidationError';
     callback(err);
@@ -322,13 +322,13 @@ test('[actions.diff] template url does not exist', function(assert) {
 
   actions.diff('my-stack', 'us-east-1', 'https://my-bucket.s3.amazonaws.com/my-template.json', {}, function(err) {
     assert.ok(err instanceof actions.CloudFormationError, 'expected error returned');
-    AWS.restore('CloudFormation', 'createChangeSet');
+    AWS.CloudFormation.restore();
     assert.end();
   });
 });
 
 test('[actions.diff] template url is invalid', function(assert) {
-  AWS.mock('CloudFormation', 'createChangeSet', function(params, callback) {
+  AWS.stub('CloudFormation', 'createChangeSet', function(params, callback) {
     var err = new Error('The specified url must be an Amazon S3 URL.');
     err.code = 'ValidationError';
     callback(err);
@@ -336,13 +336,13 @@ test('[actions.diff] template url is invalid', function(assert) {
 
   actions.diff('my-stack', 'us-east-1', 'https://my-bucket.s3.amazonaws.com/my-template.json', {}, function(err) {
     assert.ok(err instanceof actions.CloudFormationError, 'expected error returned');
-    AWS.restore('CloudFormation', 'createChangeSet');
+    AWS.CloudFormation.restore();
     assert.end();
   });
 });
 
 test('[actions.diff] template is invalid', function(assert) {
-  AWS.mock('CloudFormation', 'createChangeSet', function(params, callback) {
+  AWS.stub('CloudFormation', 'createChangeSet', function(params, callback) {
     var err = new Error('Template format error: At least one Resources member must be defined.');
     err.code = 'ValidationError';
     callback(err);
@@ -350,7 +350,7 @@ test('[actions.diff] template is invalid', function(assert) {
 
   actions.diff('my-stack', 'us-east-1', 'https://my-bucket.s3.amazonaws.com/my-template.json', {}, function(err) {
     assert.ok(err instanceof actions.CloudFormationError, 'expected error returned');
-    AWS.restore('CloudFormation', 'createChangeSet');
+    AWS.CloudFormation.restore();
     assert.end();
   });
 });
@@ -358,13 +358,13 @@ test('[actions.diff] template is invalid', function(assert) {
 test('[actions.diff] unexpected createChangeSet error', function(assert) {
   var url = 'https://my-bucket.s3.amazonaws.com/my-template.json';
 
-  AWS.mock('CloudFormation', 'createChangeSet', function(params, callback) {
+  AWS.stub('CloudFormation', 'createChangeSet', function(params, callback) {
     callback(new Error('unexpected'));
   });
 
   actions.diff('my-stack', 'us-east-1', url, {}, function(err) {
     assert.ok(err instanceof actions.CloudFormationError, 'expected error returned');
-    AWS.restore('CloudFormation', 'createChangeSet');
+    AWS.CloudFormation.restore();
     assert.end();
   });
 });
@@ -372,18 +372,17 @@ test('[actions.diff] unexpected createChangeSet error', function(assert) {
 test('[actions.diff] unexpected describeChangeSet error', function(assert) {
   var url = 'https://my-bucket.s3.amazonaws.com/my-template.json';
 
-  AWS.mock('CloudFormation', 'createChangeSet', function(params, callback) {
+  AWS.stub('CloudFormation', 'createChangeSet', function(params, callback) {
     callback(null, { Id: 'changeset:arn' });
   });
 
-  AWS.mock('CloudFormation', 'describeChangeSet', function(params, callback) {
+  AWS.stub('CloudFormation', 'describeChangeSet', function(params, callback) {
     callback(new Error('unexpected'));
   });
 
   actions.diff('my-stack', 'us-east-1', url, {}, function(err) {
     assert.ok(err instanceof actions.CloudFormationError, 'expected error returned');
-    AWS.restore('CloudFormation', 'createChangeSet');
-    AWS.restore('CloudFormation', 'describeChangeSet');
+    AWS.CloudFormation.restore();
     assert.end();
   });
 });
@@ -392,12 +391,12 @@ test('[actions.diff] changeset failed to create', function(assert) {
   var url = 'https://my-bucket.s3.amazonaws.com/my-template.json';
   var changesetId;
 
-  AWS.mock('CloudFormation', 'createChangeSet', function(params, callback) {
+  AWS.stub('CloudFormation', 'createChangeSet', function(params, callback) {
     changesetId = params.ChangeSetName;
     callback(null, { Id: 'changeset:arn' });
   });
 
-  AWS.mock('CloudFormation', 'describeChangeSet', function(params, callback) {
+  AWS.stub('CloudFormation', 'describeChangeSet', function(params, callback) {
     callback(null, {
       ChangeSetName: changesetId,
       ChangeSetId: 'changeset:arn',
@@ -415,8 +414,7 @@ test('[actions.diff] changeset failed to create', function(assert) {
       status: 'FAILED',
       execution: 'UNAVAILABLE'
     }, 'returned changeset details');
-    AWS.restore('CloudFormation', 'createChangeSet');
-    AWS.restore('CloudFormation', 'describeChangeSet');
+    AWS.CloudFormation.restore();
     assert.end();
   });
 });
@@ -426,7 +424,7 @@ test('[actions.diff] success', function(assert) {
   var changesetId;
   var polled = 0;
 
-  AWS.mock('CloudFormation', 'createChangeSet', function(params, callback) {
+  AWS.stub('CloudFormation', 'createChangeSet', function(params, callback) {
     assert.ok(/^[\w\d-]{1,128}$/.test(params.ChangeSetName), 'createChangeSet valid change set name');
     assert.deepEqual(params, {
       ChangeSetName: params.ChangeSetName,
@@ -447,7 +445,7 @@ test('[actions.diff] success', function(assert) {
     callback(null, { Id: 'changeset:arn' });
   });
 
-  AWS.mock('CloudFormation', 'describeChangeSet', function(params, callback) {
+  AWS.stub('CloudFormation', 'describeChangeSet', function(params, callback) {
     polled++;
 
     assert.deepEqual(params, {
@@ -505,26 +503,25 @@ test('[actions.diff] success', function(assert) {
         }
       ]
     }, 'returned changeset details');
-    AWS.restore('CloudFormation', 'createChangeSet');
-    AWS.restore('CloudFormation', 'describeChangeSet');
+    AWS.CloudFormation.restore();
     assert.end();
   });
 });
 
 test('[actions.executeChangeSet] describeChangeSet error', function(assert) {
-  AWS.mock('CloudFormation', 'describeChangeSet', function(params, callback) {
+  AWS.stub('CloudFormation', 'describeChangeSet', function(params, callback) {
     callback(new Error('unexpected'));
   });
 
   actions.executeChangeSet('my-stack', 'us-east-1', 'changeset-id', function(err) {
     assert.ok(err instanceof actions.CloudFormationError, 'expected error');
-    AWS.restore('CloudFormation', 'describeChangeSet');
+    AWS.CloudFormation.restore();
     assert.end();
   });
 });
 
 test('[actions.executeChangeSet] changeset not executable', function(assert) {
-  AWS.mock('CloudFormation', 'describeChangeSet', function(params, callback) {
+  AWS.stub('CloudFormation', 'describeChangeSet', function(params, callback) {
     callback(null, {
       ExecutionStatus: 'UNAVAILABLE',
       Status: 'CREATE_COMPLETE',
@@ -537,33 +534,32 @@ test('[actions.executeChangeSet] changeset not executable', function(assert) {
     assert.equal(err.execution, 'UNAVAILABLE', 'err object exposes execution status');
     assert.equal(err.status, 'CREATE_COMPLETE', 'err object exposes status');
     assert.equal(err.reason, 'because I said so', 'err object exposes status reason');
-    AWS.restore('CloudFormation', 'describeChangeSet');
+    AWS.CloudFormation.restore();
     assert.end();
   });
 });
 
 test('[actions.executeChangeSet] executeChangeSet error', function(assert) {
-  AWS.mock('CloudFormation', 'describeChangeSet', function(params, callback) {
+  AWS.stub('CloudFormation', 'describeChangeSet', function(params, callback) {
     callback(null, {
       ExecutionStatus: 'AVAILABLE',
       Status: 'CREATE_COMPLETE'
     });
   });
 
-  AWS.mock('CloudFormation', 'executeChangeSet', function(params, callback) {
+  AWS.stub('CloudFormation', 'executeChangeSet', function(params, callback) {
     callback(new Error('unexpected'));
   });
 
   actions.executeChangeSet('my-stack', 'us-east-1', 'changeset-id', function(err) {
     assert.ok(err instanceof actions.CloudFormationError, 'expected error');
-    AWS.restore('CloudFormation', 'describeChangeSet');
-    AWS.restore('CloudFormation', 'executeChangeSet');
+    AWS.CloudFormation.restore();
     assert.end();
   });
 });
 
 test('[actions.executeChangeSet] success', function(assert) {
-  AWS.mock('CloudFormation', 'describeChangeSet', function(params, callback) {
+  AWS.stub('CloudFormation', 'describeChangeSet', function(params, callback) {
     assert.deepEqual(params, {
       ChangeSetName: 'changeset-id',
       StackName: 'my-stack'
@@ -575,7 +571,7 @@ test('[actions.executeChangeSet] success', function(assert) {
     });
   });
 
-  AWS.mock('CloudFormation', 'executeChangeSet', function(params, callback) {
+  AWS.stub('CloudFormation', 'executeChangeSet', function(params, callback) {
     assert.deepEqual(params, {
       ChangeSetName: 'changeset-id',
       StackName: 'my-stack'
@@ -586,8 +582,7 @@ test('[actions.executeChangeSet] success', function(assert) {
 
   actions.executeChangeSet('my-stack', 'us-east-1', 'changeset-id', function(err) {
     assert.ifError(err, 'success');
-    AWS.restore('CloudFormation', 'describeChangeSet');
-    AWS.restore('CloudFormation', 'executeChangeSet');
+    AWS.CloudFormation.restore();
     assert.end();
   });
 });
@@ -595,20 +590,20 @@ test('[actions.executeChangeSet] success', function(assert) {
 test('[actions.validate] unexpected validateTemplate error', function(assert) {
   var url = 'https://my-bucket.s3.amazonaws.com/my-template.json';
 
-  AWS.mock('CloudFormation', 'validateTemplate', function(params, callback) {
+  AWS.stub('CloudFormation', 'validateTemplate', function(params, callback) {
     assert.deepEqual(params, { TemplateURL: url }, 'validateTemplate with expected params');
     callback(new Error('unexpected'));
   });
 
   actions.validate('us-east-1', url, function(err) {
     assert.ok(err instanceof actions.CloudFormationError, 'expected error returned');
-    AWS.restore('CloudFormation', 'validateTemplate');
+    AWS.CloudFormation.restore();
     assert.end();
   });
 });
 
 test('[actions.validate] invalid template', function(assert) {
-  AWS.mock('CloudFormation', 'validateTemplate', function(params, callback) {
+  AWS.stub('CloudFormation', 'validateTemplate', function(params, callback) {
     var err = new Error('Unresolved resource dependencies [Name] in the Outputs block of the template');
     err.code = 'ValidationError';
     callback(err);
@@ -616,13 +611,13 @@ test('[actions.validate] invalid template', function(assert) {
 
   actions.validate('us-east-1', 'https://my-bucket.s3.amazonaws.com/my-template.json', function(err) {
     assert.ok(err instanceof actions.CloudFormationError, 'expected error type');
-    AWS.restore('CloudFormation', 'validateTemplate');
+    AWS.CloudFormation.restore();
     assert.end();
   });
 });
 
 test('[actions.validate] valid template', function(assert) {
-  AWS.mock('CloudFormation', 'validateTemplate', function(params, callback) {
+  AWS.stub('CloudFormation', 'validateTemplate', function(params, callback) {
     assert.deepEqual(params, {
       TemplateURL: 'https://my-bucket.s3.amazonaws.com/my-template.json'
     }, 'expected params passed to validateTemplate');
@@ -632,7 +627,7 @@ test('[actions.validate] valid template', function(assert) {
 
   actions.validate('us-east-1', 'https://my-bucket.s3.amazonaws.com/my-template.json', function(err) {
     assert.ifError(err, 'success');
-    AWS.restore('CloudFormation', 'validateTemplate');
+    AWS.CloudFormation.restore();
     assert.end();
   });
 });
@@ -647,11 +642,11 @@ test('[actions.saveConfiguration] bucket does not exist', function(assert) {
     SecretPassword: 'secret'
   };
 
-  AWS.mock('S3', 'getBucketLocation', function(params, callback) {
+  AWS.stub('S3', 'getBucketLocation', function(params, callback) {
     callback(null, 'us-east-1');
   });
 
-  AWS.mock('S3', 'putObject', function(params, callback) {
+  AWS.stub('S3', 'putObject', function(params, callback) {
     var err = new Error('The specified bucket does not exist');
     err.code = 'NoSuchBucket';
     callback(err);
@@ -659,8 +654,7 @@ test('[actions.saveConfiguration] bucket does not exist', function(assert) {
 
   actions.saveConfiguration('my-stack', 'my-bucket', 'my-config', parameters, function(err) {
     assert.ok(err instanceof actions.BucketNotFoundError, 'expected error returned');
-    AWS.restore('S3', 'getBucketLocation');
-    AWS.restore('S3', 'putObject');
+    AWS.S3.restore();
     assert.end();
   });
 });
@@ -675,18 +669,17 @@ test('[actions.saveConfiguration] unexpected putObject error', function(assert) 
     SecretPassword: 'secret'
   };
 
-  AWS.mock('S3', 'getBucketLocation', function(params, callback) {
+  AWS.stub('S3', 'getBucketLocation', function(params, callback) {
     callback(null, 'us-east-1');
   });
 
-  AWS.mock('S3', 'putObject', function(params, callback) {
+  AWS.stub('S3', 'putObject', function(params, callback) {
     callback(new Error('unexpected'));
   });
 
   actions.saveConfiguration('my-stack', 'my-bucket', 'my-config', parameters, function(err) {
     assert.ok(err instanceof actions.S3Error, 'expected error returned');
-    AWS.restore('S3', 'getBucketLocation');
-    AWS.restore('S3', 'putObject');
+    AWS.S3.restore();
     assert.end();
   });
 });
@@ -701,11 +694,11 @@ test('[actions.saveConfiguration] success with encryption', function(assert) {
     SecretPassword: 'secret'
   };
 
-  AWS.mock('S3', 'getBucketLocation', function(params, callback) {
+  AWS.stub('S3', 'getBucketLocation', function(params, callback) {
     callback(null, 'us-east-1');
   });
 
-  AWS.mock('S3', 'putObject', function(params, callback) {
+  AWS.stub('S3', 'putObject', function(params, callback) {
     assert.deepEqual(params, {
       Bucket: 'my-bucket',
       Key: 'my-stack/my-config.cfn.json',
@@ -718,8 +711,7 @@ test('[actions.saveConfiguration] success with encryption', function(assert) {
 
   actions.saveConfiguration('my-stack', 'my-bucket', 'my-config', parameters, 'my-key', function(err) {
     assert.ifError(err, 'success');
-    AWS.restore('S3', 'getBucketLocation');
-    AWS.restore('S3', 'putObject');
+    AWS.S3.restore();
     assert.end();
   });
 });
@@ -734,11 +726,11 @@ test('[actions.saveConfiguration] success without encryption', function(assert) 
     SecretPassword: 'secret'
   };
 
-  AWS.mock('S3', 'getBucketLocation', function(params, callback) {
+  AWS.stub('S3', 'getBucketLocation', function(params, callback) {
     callback(null, 'us-east-1');
   });
 
-  AWS.mock('S3', 'putObject', function(params, callback) {
+  AWS.stub('S3', 'putObject', function(params, callback) {
     assert.deepEqual(params, {
       Bucket: 'my-bucket',
       Key: 'my-stack/my-config.cfn.json',
@@ -749,8 +741,7 @@ test('[actions.saveConfiguration] success without encryption', function(assert) 
 
   actions.saveConfiguration('my-stack', 'my-bucket', 'my-config', parameters, function(err) {
     assert.ifError(err, 'success');
-    AWS.restore('S3', 'putObject');
-    AWS.restore('S3', 'getBucketLocation');
+    AWS.S3.restore();
     assert.end();
   });
 });
@@ -801,13 +792,13 @@ test('[actions.saveTemplate] bucket does not exist', function(assert) {
 test('[actions.saveTemplate] s3 error', function(assert) {
   var url = 'https://s3.amazonaws.com/my-bucket/cirjpj94c0000s5nzc1j452o7-my-stack.template.json';
   var template = fs.readFileSync(path.resolve(__dirname, 'fixtures', 'template.json'));
-  AWS.mock('S3', 'putObject', function(params, callback) {
+  AWS.stub('S3', 'putObject', function(params, callback) {
     callback(new Error('unexpected'));
   });
 
   actions.saveTemplate(url, template, function(err) {
     assert.ok(err instanceof actions.S3Error, 'expected error returned');
-    AWS.restore('S3', 'putObject');
+    AWS.S3.restore();
     assert.end();
   });
 });
@@ -816,9 +807,9 @@ test('[actions.saveTemplate] us-east-1', function(assert) {
   var url = 'https://s3.amazonaws.com/my-bucket/cirjpj94c0000s5nzc1j452o7-my-stack.template.json';
   var template = fs.readFileSync(path.resolve(__dirname, 'fixtures', 'template.json'));
 
-  // really need a way to mock the client constructor
+  // really need a way to stub the client constructor
 
-  AWS.mock('S3', 'putObject', function(params, callback) {
+  AWS.stub('S3', 'putObject', function(params, callback) {
     assert.deepEqual(params, {
       Bucket: 'my-bucket',
       Key: 'cirjpj94c0000s5nzc1j452o7-my-stack.template.json',
@@ -830,7 +821,7 @@ test('[actions.saveTemplate] us-east-1', function(assert) {
 
   actions.saveTemplate(url, template, function(err) {
     assert.ifError(err, 'success');
-    AWS.restore('S3', 'putObject');
+    AWS.S3.restore();
     assert.end();
   });
 });
@@ -886,14 +877,14 @@ test('[actions.saveTemplate] eu-central-1', function(assert) {
 });
 
 test('[actions.monitor] error', function(assert) {
-  AWS.mock('CloudFormation', 'describeStackEvents', function(params, callback) {
+  AWS.stub('CloudFormation', 'describeStackEvents', function(params, callback) {
     callback(new Error('failure'));
     return new events.EventEmitter();
   });
 
   actions.monitor('my-stack', 'us-east-1', function(err) {
     assert.ok(err instanceof actions.CloudFormationError, 'expected error type');
-    AWS.restore('CloudFormation', 'describeStackEvents');
+    AWS.CloudFormation.restore();
     assert.end();
   });
 });
@@ -901,7 +892,7 @@ test('[actions.monitor] error', function(assert) {
 test('[actions.monitor] success', function(assert) {
   var once = true;
 
-  AWS.mock('CloudFormation', 'describeStacks', function(params, callback) {
+  AWS.stub('CloudFormation', 'describeStacks', function(params, callback) {
     setTimeout(callback, 1000, null, {
       Stacks: [
         { StackStatus: 'CREATE_COMPLETE' }
@@ -911,7 +902,7 @@ test('[actions.monitor] success', function(assert) {
     return new events.EventEmitter();
   });
 
-  AWS.mock('CloudFormation', 'describeStackEvents', function(params, callback) {
+  AWS.stub('CloudFormation', 'describeStackEvents', function(params, callback) {
     if (!once) {
       callback(null, { StackEvents: [] });
     } else {
@@ -955,8 +946,7 @@ test('[actions.monitor] success', function(assert) {
 
   actions.monitor('my-stack', 'us-east-1', function(err) {
     assert.ifError(err, 'success');
-    AWS.restore('CloudFormation', 'describeStacks');
-    AWS.restore('CloudFormation', 'describeStackEvents');
+    AWS.CloudFormation.restore();
     assert.end();
   });
 });
@@ -964,7 +954,7 @@ test('[actions.monitor] success', function(assert) {
 test('[actions.monitor] success w/ slow polling', function(assert) {
   var once = true;
 
-  AWS.mock('CloudFormation', 'describeStacks', function(params, callback) {
+  AWS.stub('CloudFormation', 'describeStacks', function(params, callback) {
     setTimeout(callback, 1000, null, {
       Stacks: [
         { StackStatus: 'CREATE_COMPLETE' }
@@ -974,7 +964,7 @@ test('[actions.monitor] success w/ slow polling', function(assert) {
     return new events.EventEmitter();
   });
 
-  AWS.mock('CloudFormation', 'describeStackEvents', function(params, callback) {
+  AWS.stub('CloudFormation', 'describeStackEvents', function(params, callback) {
     if (!once) {
       callback(null, { StackEvents: [] });
     } else {
@@ -1018,8 +1008,7 @@ test('[actions.monitor] success w/ slow polling', function(assert) {
 
   actions.monitor('my-stack', 'us-east-1', 20000, function(err) {
     assert.ifError(err, 'success');
-    AWS.restore('CloudFormation', 'describeStacks');
-    AWS.restore('CloudFormation', 'describeStackEvents');
+    AWS.CloudFormation.restore();
     assert.end();
   });
 });

@@ -1,6 +1,8 @@
 # Change Log
 All notable changes to this project will be documented in this file. For change log formatting, see http://keepachangelog.com/
 
+- Fix fetching more than 100 stack resources in lookup.getResorces by using listStackResources instead of describeStackResources
+
 ## 2.7.2 - 2017-11-17
 
 - Assure stable template diffs
