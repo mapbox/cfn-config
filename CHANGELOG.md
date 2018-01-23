@@ -1,6 +1,10 @@
 # Change Log
 All notable changes to this project will be documented in this file. For change log formatting, see http://keepachangelog.com/
 
+## 2.9.0 - 2018-01-23
+
+- Adds `.preauth()` method, allowing you to provide a set of AWS credentials to be used in subsequent calls to cfn-config functions.
+
 ## 2.8.0 - 2017-11-23
 
 - Fix fetching more than 100 stack resources in lookup.getResorces by using listStackResources instead of describeStackResources
