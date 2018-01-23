@@ -120,7 +120,6 @@ test('[commands.update] with overrides.skipConfirmParameters', function(assert) 
   function whenDone() {}
 
   sinon.stub(commands, 'commandContext', function(config, suffix, operations, callback) {
-    console.log(operations.length);
     assert.deepEqual(config, opts, 'instantiate context with expected config');
     assert.deepEqual(suffix, 'testing', 'instantiate context with expected suffix');
     assert.ok(operations.every(function(op) { return typeof op === 'function'; }), 'instantiate context with array of operations');
