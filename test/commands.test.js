@@ -69,6 +69,7 @@ test('[commands.update] with overrides', function(assert) {
   function whenDone() {}
 
   sinon.stub(commands, 'commandContext', function(config, suffix, operations, callback) {
+    assert.equal(operations.length, 13, '13 operations are run');
     assert.deepEqual(config, opts, 'instantiate context with expected config');
     assert.deepEqual(suffix, 'testing', 'instantiate context with expected suffix');
     assert.ok(operations.every(function(op) { return typeof op === 'function'; }), 'instantiate context with array of operations');
@@ -83,7 +84,6 @@ test('[commands.update] with overrides', function(assert) {
         assert.end();
       }
     });
-
     return context;
   });
 
@@ -101,6 +101,7 @@ test('[commands.update] with multiple overrides', function(assert) {
 
     var context = Object.assign({}, basicContext, {
       next: function() {
+        assert.equal(operations.length, 13, '13 operations are ran');
         assert.pass('called next to begin process');
         assert.equal(context.templatePath, path.resolve('templatePath'), 'set absolute context.templatePath');
         assert.deepEqual(context.overrides, { force: true, masterConfig: 's3://chill' }, 'sets context.overrides');
@@ -115,10 +116,90 @@ test('[commands.update] with multiple overrides', function(assert) {
 
 });
 
+test('[commands.update] with overrides.skipConfirmParameters', function(assert) {
+  function whenDone() {}
+
+  sinon.stub(commands, 'commandContext', function(config, suffix, operations, callback) {
+    console.log(operations.length);
+    assert.deepEqual(config, opts, 'instantiate context with expected config');
+    assert.deepEqual(suffix, 'testing', 'instantiate context with expected suffix');
+    assert.ok(operations.every(function(op) { return typeof op === 'function'; }), 'instantiate context with array of operations');
+    assert.equal(callback, whenDone, 'instantiate context with final callback function');
+
+    var context = Object.assign({}, basicContext, {
+      next: function() {
+        assert.equal(operations.length, 11, '11 operations are ran [skips promptParameters and confirmParameters]');
+        assert.pass('called next to begin process');
+        assert.equal(context.templatePath, path.resolve('templatePath'), 'set absolute context.templatePath');
+        assert.deepEqual(context.overrides, { force: true, masterConfig: 's3://chill', skipConfirmParameters: true }, 'sets context.overrides');
+        commands.commandContext.restore();
+        assert.end();
+      }
+    });
+    return context;
+  });
+
+  commands(opts).update('testing', 'templatePath', { force: true, masterConfig: 's3://chill', skipConfirmParameters: true }, whenDone);
+
+});
+
+test('[commands.update] with overrides.skipConfirmTemplate', function(assert) {
+  function whenDone() {}
+
+  sinon.stub(commands, 'commandContext', function(config, suffix, operations, callback) {
+    assert.deepEqual(config, opts, 'instantiate context with expected config');
+    assert.deepEqual(suffix, 'testing', 'instantiate context with expected suffix');
+    assert.ok(operations.every(function(op) { return typeof op === 'function'; }), 'instantiate context with array of operations');
+    assert.equal(callback, whenDone, 'instantiate context with final callback function');
+
+    var context = Object.assign({}, basicContext, {
+      next: function() {
+        assert.equal(operations.length, 12, '12 operations are ran [skips confirmTemplate]');
+        assert.pass('called next to begin process');
+        assert.equal(context.templatePath, path.resolve('templatePath'), 'set absolute context.templatePath');
+        assert.deepEqual(context.overrides, { force: true, masterConfig: 's3://chill', skipConfirmTemplate: true }, 'sets context.overrides');
+        commands.commandContext.restore();
+        assert.end();
+      }
+    });
+    return context;
+  });
+
+  commands(opts).update('testing', 'templatePath', { force: true, masterConfig: 's3://chill', skipConfirmTemplate: true }, whenDone);
+
+});
+
+test('[commands.update] with overrides.skipConfirmParameters and overrides.skipConfirmTemplate', function(assert) {
+  function whenDone() {}
+
+  sinon.stub(commands, 'commandContext', function(config, suffix, operations, callback) {
+    assert.deepEqual(config, opts, 'instantiate context with expected config');
+    assert.deepEqual(suffix, 'testing', 'instantiate context with expected suffix');
+    assert.ok(operations.every(function(op) { return typeof op === 'function'; }), 'instantiate context with array of operations');
+    assert.equal(callback, whenDone, 'instantiate context with final callback function');
+
+    var context = Object.assign({}, basicContext, {
+      next: function() {
+        assert.equal(operations.length, 10, '10 operations are ran [skips confirmParameters, confirmTemplate, promptParameters]');
+        assert.pass('called next to begin process');
+        assert.equal(context.templatePath, path.resolve('templatePath'), 'set absolute context.templatePath');
+        assert.deepEqual(context.overrides, { force: true, masterConfig: 's3://chill', skipConfirmTemplate: true, skipConfirmParameters: true }, 'sets context.overrides');
+        commands.commandContext.restore();
+        assert.end();
+      }
+    });
+    return context;
+  });
+
+  commands(opts).update('testing', 'templatePath', { force: true, masterConfig: 's3://chill', skipConfirmTemplate: true, skipConfirmParameters: true }, whenDone);
+
+});
+
 test('[commands.update] no overrides', function(assert) {
   function whenDone() {}
 
   sinon.stub(commands, 'commandContext', function(config, suffix, operations, callback) {
+    assert.equal(operations.length, 13, '13 operations are run');
     assert.deepEqual(config, opts, 'instantiate context with expected config');
     assert.deepEqual(suffix, 'testing', 'instantiate context with expected suffix');
     assert.ok(operations.every(function(op) { return typeof op === 'function'; }), 'instantiate context with array of operations');
