@@ -1,6 +1,10 @@
 # Change Log
 All notable changes to this project will be documented in this file. For change log formatting, see http://keepachangelog.com/
 
+## 2.10.0 - 2018-01-29
+
+- Adds `skipPromptParameters`, `skipConfirmParameters` and `skipConfirmTemplate` flags to skip individual prompt operations.
+
 ## 2.9.0 - 2018-01-23
 
 - Adds `.preauth()` method, allowing you to provide a set of AWS credentials to be used in subsequent calls to cfn-config functions.
