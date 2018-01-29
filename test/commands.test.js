@@ -1414,6 +1414,21 @@ test('[commands.operations.confirmChangeset] force-mode', function(assert) {
   commands.operations.confirmChangeset(context);
 });
 
+test('[commands.operations.confirmChangeset] skipConfirmParams && skipConfirmTemplate', function(assert) {
+  var context = Object.assign({}, basicContext, {
+    overrides: { skipConfirmParameters: true, skipConfirmTemplate: true },
+    next: function() {
+      assert.pass('accepted with no prompt');
+      assert.end();
+    },
+    abort: function(err) {
+      assert.ifError(err, 'should not abort');
+    }
+  });
+
+  commands.operations.confirmChangeset(context);
+});
+
 test('[commands.operations.confirmChangeset] rejected', function(assert) {
   sinon.stub(prompt, 'confirm', function(message, callback) {
     callback(null, false);
