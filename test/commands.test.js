@@ -905,6 +905,7 @@ test('[commands.operations.promptParameters] reject overrides that are not in ol
   commands.operations.promptParameters(context);
 });
 
+
 test('[commands.operations.confirmParameters] force-mode', function(assert) {
   var context = Object.assign({}, basicContext, {
     overrides: { force: true },
@@ -919,6 +920,7 @@ test('[commands.operations.confirmParameters] force-mode', function(assert) {
   commands.operations.confirmParameters(context);
 });
 
+
 test('[commands.operations.confirmParameters] no difference', function(assert) {
   var context = Object.assign({}, basicContext, {
     oldParameters: { old: 'parameters' },
@@ -932,7 +934,7 @@ test('[commands.operations.confirmParameters] no difference', function(assert) {
   commands.operations.confirmParameters(context);
 });
 
-test.only('[commands.operations.confirmParameters] rejected', function(assert) {
+test('[commands.operations.confirmParameters] rejected', function(assert) {
   assert.plan(2);
 
   sinon.stub(prompt, 'confirm', function(message, callback) {
@@ -943,6 +945,7 @@ test.only('[commands.operations.confirmParameters] rejected', function(assert) {
   var context = Object.assign({}, basicContext, {
     oldParameters: { old: 'parameters' },
     newParameters: { new: 'parameterz' },
+    overrides: {},
     next: function() {
       assert.fail('should not proceed');
     },
@@ -966,6 +969,7 @@ test('[commands.operations.confirmParameters] accepted', function(assert) {
   var context = Object.assign({}, basicContext, {
     oldParameters: { old: 'parameters' },
     newParameters: { new: 'parameters' },
+    overrides: {},
     next: function(err) {
       assert.ifError(err, 'success');
       prompt.confirm.restore();
@@ -977,6 +981,7 @@ test('[commands.operations.confirmParameters] accepted', function(assert) {
 
   commands.operations.confirmParameters(context);
 });
+
 
 test('[commands.operations.confirmTemplate] no difference', function(assert) {
   var context = Object.assign({}, basicContext, {
