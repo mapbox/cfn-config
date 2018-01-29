@@ -83,7 +83,6 @@ test('[commands.update] with overrides', function(assert) {
         assert.end();
       }
     });
-
     return context;
   });
 
@@ -115,10 +114,86 @@ test('[commands.update] with multiple overrides', function(assert) {
 
 });
 
+test('[commands.update] with overrides.skipConfirmParameters', function(assert) {
+  function whenDone() {}
+
+  sinon.stub(commands, 'commandContext', function(config, suffix, operations, callback) {
+    assert.deepEqual(config, opts, 'instantiate context with expected config');
+    assert.deepEqual(suffix, 'testing', 'instantiate context with expected suffix');
+    assert.ok(operations.every(function(op) { return typeof op === 'function'; }), 'instantiate context with array of operations');
+    assert.equal(callback, whenDone, 'instantiate context with final callback function');
+
+    var context = Object.assign({}, basicContext, {
+      next: function() {
+        assert.pass('called next to begin process');
+        assert.equal(context.templatePath, path.resolve('templatePath'), 'set absolute context.templatePath');
+        assert.deepEqual(context.overrides, { force: true, masterConfig: 's3://chill', skipConfirmParameters: true }, 'sets context.overrides');
+        commands.commandContext.restore();
+        assert.end();
+      }
+    });
+    return context;
+  });
+
+  commands(opts).update('testing', 'templatePath', { force: true, masterConfig: 's3://chill', skipConfirmParameters: true }, whenDone);
+
+});
+
+test('[commands.update] with overrides.skipConfirmTemplate', function(assert) {
+  function whenDone() {}
+
+  sinon.stub(commands, 'commandContext', function(config, suffix, operations, callback) {
+    assert.deepEqual(config, opts, 'instantiate context with expected config');
+    assert.deepEqual(suffix, 'testing', 'instantiate context with expected suffix');
+    assert.ok(operations.every(function(op) { return typeof op === 'function'; }), 'instantiate context with array of operations');
+    assert.equal(callback, whenDone, 'instantiate context with final callback function');
+
+    var context = Object.assign({}, basicContext, {
+      next: function() {
+        assert.pass('called next to begin process');
+        assert.equal(context.templatePath, path.resolve('templatePath'), 'set absolute context.templatePath');
+        assert.deepEqual(context.overrides, { force: true, masterConfig: 's3://chill', skipConfirmTemplate: true }, 'sets context.overrides');
+        commands.commandContext.restore();
+        assert.end();
+      }
+    });
+    return context;
+  });
+
+  commands(opts).update('testing', 'templatePath', { force: true, masterConfig: 's3://chill', skipConfirmTemplate: true }, whenDone);
+
+});
+
+test('[commands.update] with overrides.skipConfirmParameters and overrides.skipConfirmTemplate', function(assert) {
+  function whenDone() {}
+
+  sinon.stub(commands, 'commandContext', function(config, suffix, operations, callback) {
+    assert.deepEqual(config, opts, 'instantiate context with expected config');
+    assert.deepEqual(suffix, 'testing', 'instantiate context with expected suffix');
+    assert.ok(operations.every(function(op) { return typeof op === 'function'; }), 'instantiate context with array of operations');
+    assert.equal(callback, whenDone, 'instantiate context with final callback function');
+
+    var context = Object.assign({}, basicContext, {
+      next: function() {
+        assert.pass('called next to begin process');
+        assert.equal(context.templatePath, path.resolve('templatePath'), 'set absolute context.templatePath');
+        assert.deepEqual(context.overrides, { force: true, masterConfig: 's3://chill', skipConfirmTemplate: true, skipConfirmParameters: true }, 'sets context.overrides');
+        commands.commandContext.restore();
+        assert.end();
+      }
+    });
+    return context;
+  });
+
+  commands(opts).update('testing', 'templatePath', { force: true, masterConfig: 's3://chill', skipConfirmTemplate: true, skipConfirmParameters: true }, whenDone);
+
+});
+
 test('[commands.update] no overrides', function(assert) {
   function whenDone() {}
 
   sinon.stub(commands, 'commandContext', function(config, suffix, operations, callback) {
+    assert.equal(operations.length, 13, '13 operations are run');
     assert.deepEqual(config, opts, 'instantiate context with expected config');
     assert.deepEqual(suffix, 'testing', 'instantiate context with expected suffix');
     assert.ok(operations.every(function(op) { return typeof op === 'function'; }), 'instantiate context with array of operations');
@@ -830,6 +905,7 @@ test('[commands.operations.promptParameters] reject overrides that are not in ol
   commands.operations.promptParameters(context);
 });
 
+
 test('[commands.operations.confirmParameters] force-mode', function(assert) {
   var context = Object.assign({}, basicContext, {
     overrides: { force: true },
@@ -843,6 +919,7 @@ test('[commands.operations.confirmParameters] force-mode', function(assert) {
 
   commands.operations.confirmParameters(context);
 });
+
 
 test('[commands.operations.confirmParameters] no difference', function(assert) {
   var context = Object.assign({}, basicContext, {
@@ -861,13 +938,14 @@ test('[commands.operations.confirmParameters] rejected', function(assert) {
   assert.plan(2);
 
   sinon.stub(prompt, 'confirm', function(message, callback) {
-    assert.equal(message, ' {\n\x1b[31m-  old: "parameters"\x1b[39m\n\x1b[32m+  new: "parameters"\x1b[39m\n }\n\nAccept parameter changes?', 'prompted appropriate message');
+    assert.equal(message, ' {\n\x1b[31m-  old: "parameters"\x1b[39m\n\x1b[32m+  new: "parameterz"\x1b[39m\n }\n\nAccept parameter changes?', 'prompted appropriate message');
     callback(null, false);
   });
 
   var context = Object.assign({}, basicContext, {
     oldParameters: { old: 'parameters' },
-    newParameters: { new: 'parameters' },
+    newParameters: { new: 'parameterz' },
+    overrides: {},
     next: function() {
       assert.fail('should not proceed');
     },
@@ -891,6 +969,7 @@ test('[commands.operations.confirmParameters] accepted', function(assert) {
   var context = Object.assign({}, basicContext, {
     oldParameters: { old: 'parameters' },
     newParameters: { new: 'parameters' },
+    overrides: {},
     next: function(err) {
       assert.ifError(err, 'success');
       prompt.confirm.restore();
@@ -902,6 +981,7 @@ test('[commands.operations.confirmParameters] accepted', function(assert) {
 
   commands.operations.confirmParameters(context);
 });
+
 
 test('[commands.operations.confirmTemplate] no difference', function(assert) {
   var context = Object.assign({}, basicContext, {
@@ -1322,6 +1402,21 @@ test('[commands.operations.getChangeset] success', function(assert) {
 test('[commands.operations.confirmChangeset] force-mode', function(assert) {
   var context = Object.assign({}, basicContext, {
     overrides: { force: true },
+    next: function() {
+      assert.pass('accepted with no prompt');
+      assert.end();
+    },
+    abort: function(err) {
+      assert.ifError(err, 'should not abort');
+    }
+  });
+
+  commands.operations.confirmChangeset(context);
+});
+
+test('[commands.operations.confirmChangeset] skipConfirmParams && skipConfirmTemplate', function(assert) {
+  var context = Object.assign({}, basicContext, {
+    overrides: { skipConfirmParameters: true, skipConfirmTemplate: true },
     next: function() {
       assert.pass('accepted with no prompt');
       assert.end();
