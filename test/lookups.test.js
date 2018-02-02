@@ -462,7 +462,7 @@ test('[lookup.configuration] bucket location error', function(assert) {
     callback(new Error('failure'));
   });
 
-  lookup.configuration('my-stack', 'my-bucket', 'my-config', function(err) {
+  lookup.configuration('my-stack', 'my-bucket', 'my-stack-staging-us-east-1', function(err) {
     assert.ok(err instanceof lookup.S3Error, 'expected error returned');
     AWS.S3.restore();
     assert.end();
@@ -480,7 +480,7 @@ test('[lookup.configuration] bucket does not exist', function(assert) {
     callback(err);
   });
 
-  lookup.configuration('my-stack', 'my-bucket', 'my-config', function(err) {
+  lookup.configuration('my-stack', 'my-bucket', 'my-stack-staging-us-east-1', function(err) {
     assert.ok(err instanceof lookup.BucketNotFoundError, 'expected error returned');
     AWS.S3.restore();
     assert.end();
@@ -493,12 +493,12 @@ test('[lookup.configuration] S3 error', function(assert) {
   });
 
   AWS.stub('S3', 'getObject', function(params, callback) {
-    assert.equal(params.Key, 'my-stack/my-config.cfn.json', 'getObject called with proper key');
+    assert.equal(params.Key, 'my-stack/my-stack-staging-us-east-1.cfn.json', 'getObject called with proper key');
     var err = new Error('something unexpected');
     callback(err);
   });
 
-  lookup.configuration('my-stack', 'my-bucket', 'my-config', function(err) {
+  lookup.configuration('my-stack', 'my-bucket', 'my-stack-staging-us-east-1', function(err) {
     assert.ok(err instanceof lookup.S3Error, 'expected error returned');
     AWS.S3.restore();
     assert.end();
@@ -516,7 +516,7 @@ test('[lookup.configuration] requested configuration does not exist', function(a
     callback(err);
   });
 
-  lookup.configuration('my-stack', 'my-bucket', 'my-config', function(err) {
+  lookup.configuration('my-stack', 'my-bucket', 'my-stack-staging-us-east-1', function(err) {
     assert.ok(err instanceof lookup.ConfigurationNotFoundError, 'expected error returned');
     AWS.S3.restore();
     assert.end();
@@ -532,7 +532,7 @@ test('[lookup.configuration] cannot parse object data', function(assert) {
     callback(null, { Body: new Buffer('invalid') });
   });
 
-  lookup.configuration('my-stack', 'my-bucket', 'my-config', function(err) {
+  lookup.configuration('my-stack', 'my-bucket', 'my-stack-staging-us-east-1', function(err) {
     assert.ok(err instanceof lookup.InvalidConfigurationError, 'expected error returned');
     AWS.S3.restore();
     assert.end();
@@ -556,13 +556,13 @@ test('[lookup.configuration] success', function(assert) {
   AWS.stub('S3', 'getObject', function(params, callback) {
     assert.deepEqual(params, {
       Bucket: 'my-bucket',
-      Key: 'my-stack/my-config.cfn.json'
+      Key: 'my-stack/my-stack-staging-us-east-1.cfn.json'
     }, 'requested expected configuration');
 
     callback(null, { Body: new Buffer(JSON.stringify(info)) });
   });
 
-  lookup.configuration('my-stack', 'my-bucket', 'my-config', function(err, configuration) {
+  lookup.configuration('my-stack', 'my-bucket', 'my-stack-staging-us-east-1', function(err, configuration) {
     assert.ifError(err, 'success');
     assert.deepEqual(configuration, info, 'returned expected stack info');
     AWS.S3.restore();
