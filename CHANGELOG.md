@@ -1,6 +1,10 @@
 # Change Log
 All notable changes to this project will be documented in this file. For change log formatting, see http://keepachangelog.com/
 
+## 2.10.1 - 2018-02-19
+
+- Adds support for `DELETE_SKIPPED` status in CloudFormation events printed after an update or delete.
+
 ## 2.10.0 - 2018-01-29
 
 - Adds `skipPromptParameters`, `skipConfirmParameters` and `skipConfirmTemplate` flags to skip individual prompt operations.
