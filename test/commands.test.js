@@ -435,6 +435,33 @@ test('[commands.commandContext] iterates through operations', function(assert) {
   context.next();
 });
 
+test('[commands.commandContext] callback with diffs', function(assert) {
+  var ops = [
+    commands.operations.confirmParameters,
+    commands.operations.confirmTemplate
+  ];
+
+  sinon.stub(prompt, 'confirm').yields(null, true);
+
+  var context = commands.commandContext(opts, 'testing', ops, function(err, performed, diffs) {
+    assert.ifError(err, 'success');
+    assert.equal(performed, true, 'the requested command was performed');
+    assert.deepEqual(diffs, {
+      parameters: ' {\n\u001b[32m+  newones: "too"\u001b[39m\n }\n',
+      template: '\u001b[90m {\n\u001b[39m\u001b[31m-  "old": "template"\n\u001b[39m\u001b[32m+  "new": "template"\n\u001b[39m\u001b[90m }\u001b[39m'
+    }, 'callback provides diffs as 3rd arg');
+    prompt.confirm.restore();
+    assert.end();
+  });
+
+  context.oldParameters = { old: 'parameters' };
+  context.newParameters = { old: 'parameters', newones: 'too' };
+  context.oldTemplate = { old: 'template' };
+  context.newTemplate = { new: 'template' };
+
+  context.next();
+});
+
 test('[commands.commandContext] aborts', function(assert) {
   var ops = [
     function(context) { context.abort(); }
@@ -905,7 +932,6 @@ test('[commands.operations.promptParameters] reject overrides that are not in ol
   commands.operations.promptParameters(context);
 });
 
-
 test('[commands.operations.confirmParameters] force-mode', function(assert) {
   var context = Object.assign({}, basicContext, {
     overrides: { force: true },
@@ -920,13 +946,29 @@ test('[commands.operations.confirmParameters] force-mode', function(assert) {
   commands.operations.confirmParameters(context);
 });
 
-
 test('[commands.operations.confirmParameters] no difference', function(assert) {
   var context = Object.assign({}, basicContext, {
     oldParameters: { old: 'parameters' },
     newParameters: { old: 'parameters' },
     next: function() {
       assert.pass('skipped prompting');
+      assert.end();
+    }
+  });
+
+  commands.operations.confirmParameters(context);
+});
+
+test('[commands.operations.confirmParameters] preapproved', function(assert) {
+  var context = Object.assign({}, basicContext, {
+    oldParameters: { old: 'parameters' },
+    newParameters: { old: 'parameters', newones: 'too' },
+    overrides: {
+      diffs: { parameters: [' {\n\u001b[32m+  newones: "too"\u001b[39m\n }\n'] }
+    },
+    next: function() {
+      assert.pass('skipped prompting');
+      assert.ok(context.overrides.skipConfirmParameters, 'sets skipConfirmParameters');
       assert.end();
     }
   });
@@ -982,7 +1024,6 @@ test('[commands.operations.confirmParameters] accepted', function(assert) {
   commands.operations.confirmParameters(context);
 });
 
-
 test('[commands.operations.confirmTemplate] no difference', function(assert) {
   var context = Object.assign({}, basicContext, {
     oldTemplate: { old: 'template' },
@@ -1016,6 +1057,28 @@ test('[commands.operations.confirmTemplate] force-mode', function(assert) {
     overrides: { force: true },
     next: function(err) {
       assert.ifError(err, 'should proceed');
+      assert.end();
+    },
+    abort: function(err) {
+      assert.ifError(err, 'should not proceed');
+    }
+  });
+
+  commands.operations.confirmTemplate(context);
+});
+
+test('[commands.operations.confirmTemplate] preapproved', function(assert) {
+  var context = Object.assign({}, basicContext, {
+    oldTemplate: { old: 'template' },
+    newTemplate: { new: 'template' },
+    overrides: {
+      diffs: {
+        template: ['\u001b[90m {\n\u001b[39m\u001b[31m-  "old": "template"\n\u001b[39m\u001b[32m+  "new": "template"\n\u001b[39m\u001b[90m }\u001b[39m']
+      }
+    },
+    next: function(err) {
+      assert.ifError(err, 'should proceed');
+      assert.ok(context.overrides.skipConfirmTemplate, 'sets skipConfirmTemplate');
       assert.end();
     },
     abort: function(err) {
