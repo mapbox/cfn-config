@@ -2220,7 +2220,7 @@ test('[commands.operations.saveConfig] success', function(assert) {
     assert.equal(stackRegion, context.stackRegion, 'save under correct stack region');
     assert.equal(bucket, context.configBucket, 'save in correct bucket');
     assert.deepEqual(parameters, { new: 'parameters' }, 'save correct config');
-    assert.equal(kms, true, 'use appropriate kms setting');
+    assert.equal(kms, 'alias/cloudformation', 'use appropriate kms setting');
     callback();
   });
 
