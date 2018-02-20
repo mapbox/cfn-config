@@ -193,7 +193,7 @@ test('[commands.update] no overrides', function(assert) {
   function whenDone() {}
 
   sinon.stub(commands, 'commandContext', function(config, suffix, operations, callback) {
-    assert.equal(operations.length, 13, '13 operations are run');
+    assert.equal(operations.length, 14, '14 operations are run');
     assert.deepEqual(config, opts, 'instantiate context with expected config');
     assert.deepEqual(suffix, 'testing', 'instantiate context with expected suffix');
     assert.ok(operations.every(function(op) { return typeof op === 'function'; }), 'instantiate context with array of operations');
@@ -2241,7 +2241,7 @@ test('[commands.operations.confirmSaveConfig] accept', function(assert) {
 });
 
 test('[commands.operations.saveConfig] bucket not found', function(assert) {
-  sinon.stub(actions, 'saveConfiguration', function(name, bucket, config, parameters, kms, callback) {
+  sinon.stub(actions, 'saveConfiguration', function(baseName, stackName, stackRegion, bucket, parameters, kms, callback) {
     callback(new actions.BucketNotFoundError('failure'));
   });
 
@@ -2260,7 +2260,7 @@ test('[commands.operations.saveConfig] bucket not found', function(assert) {
 });
 
 test('[commands.operations.saveConfig] failure', function(assert) {
-  sinon.stub(actions, 'saveConfiguration', function(name, bucket, config, parameters, kms, callback) {
+  sinon.stub(actions, 'saveConfiguration', function(baseName, stackName, stackRegion, bucket, parameters, kms, callback) {
     callback(new actions.S3Error('failure'));
   });
 
@@ -2279,18 +2279,18 @@ test('[commands.operations.saveConfig] failure', function(assert) {
 });
 
 test('[commands.operations.saveConfig] success', function(assert) {
-  sinon.stub(actions, 'saveConfiguration', function(name, bucket, config, parameters, kms, callback) {
-    assert.equal(name, context.baseName, 'save under correct stack name');
+  sinon.stub(actions, 'saveConfiguration', function(baseName, stackName, stackRegion, bucket, parameters, kms, callback) {
+    assert.equal(baseName, context.baseName, 'save under correct stack name');
+    assert.equal(stackName, context.stackName, 'save under correct stack name');
+    assert.equal(stackRegion, context.stackRegion, 'save under correct stack region');
     assert.equal(bucket, context.configBucket, 'save in correct bucket');
-    assert.equal(config, context.saveName, 'save correct config name');
-    assert.deepEqual(parameters, { old: 'parameters' }, 'save correct config');
-    assert.equal(kms, true, 'use appropriate kms setting');
+    assert.deepEqual(parameters, { new: 'parameters' }, 'save correct config');
+    assert.equal(kms, 'alias/cloudformation', 'use appropriate kms setting');
     callback();
   });
 
   var context = Object.assign({}, basicContext, {
-    saveName: 'chuck',
-    oldParameters: { old: 'parameters' },
+    newParameters: { new: 'parameters' },
     overrides: { kms: true },
     next: function(err) {
       assert.ifError(err, 'success');

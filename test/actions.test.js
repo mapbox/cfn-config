@@ -652,7 +652,7 @@ test('[actions.saveConfiguration] bucket does not exist', function(assert) {
     callback(err);
   });
 
-  actions.saveConfiguration('my-stack', 'my-bucket', 'my-config', parameters, function(err) {
+  actions.saveConfiguration('my-stack', 'my-stack-staging', 'us-east-1', 'my-bucket', parameters, function(err) {
     assert.ok(err instanceof actions.BucketNotFoundError, 'expected error returned');
     AWS.S3.restore();
     assert.end();
@@ -677,7 +677,7 @@ test('[actions.saveConfiguration] unexpected putObject error', function(assert) 
     callback(new Error('unexpected'));
   });
 
-  actions.saveConfiguration('my-stack', 'my-bucket', 'my-config', parameters, function(err) {
+  actions.saveConfiguration('my-stack', 'my-stack-staging', 'us-east-1', 'my-bucket', parameters, function(err) {
     assert.ok(err instanceof actions.S3Error, 'expected error returned');
     AWS.S3.restore();
     assert.end();
@@ -701,7 +701,7 @@ test('[actions.saveConfiguration] success with encryption', function(assert) {
   AWS.stub('S3', 'putObject', function(params, callback) {
     assert.deepEqual(params, {
       Bucket: 'my-bucket',
-      Key: 'my-stack/my-config.cfn.json',
+      Key: 'my-stack/my-stack-staging-us-east-1.cfn.json',
       Body: JSON.stringify(parameters),
       ServerSideEncryption: 'aws:kms',
       SSEKMSKeyId: 'my-key'
@@ -709,7 +709,7 @@ test('[actions.saveConfiguration] success with encryption', function(assert) {
     callback();
   });
 
-  actions.saveConfiguration('my-stack', 'my-bucket', 'my-config', parameters, 'my-key', function(err) {
+  actions.saveConfiguration('my-stack', 'my-stack-staging', 'us-east-1', 'my-bucket', parameters, 'my-key', function(err) {
     assert.ifError(err, 'success');
     AWS.S3.restore();
     assert.end();
@@ -733,13 +733,13 @@ test('[actions.saveConfiguration] success without encryption', function(assert) 
   AWS.stub('S3', 'putObject', function(params, callback) {
     assert.deepEqual(params, {
       Bucket: 'my-bucket',
-      Key: 'my-stack/my-config.cfn.json',
+      Key: 'my-stack/my-stack-staging-us-east-1.cfn.json',
       Body: JSON.stringify(parameters)
     }, 'expected putObject parameters');
     callback();
   });
 
-  actions.saveConfiguration('my-stack', 'my-bucket', 'my-config', parameters, function(err) {
+  actions.saveConfiguration('my-stack', 'my-stack-staging', 'us-east-1', 'my-bucket', parameters, function(err) {
     assert.ifError(err, 'success');
     AWS.S3.restore();
     assert.end();
