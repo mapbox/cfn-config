@@ -1,6 +1,10 @@
 # Change Log
 All notable changes to this project will be documented in this file. For change log formatting, see http://keepachangelog.com/
 
+## 2.12.0 - 2018-02-20
+
+- Automatically save stack configurations to S3 after create or update.
+
 ## 2.11.0 - 2018-02-20
 
 - Adds support for `overrides.preapproved`. Providing this object allows a higher-level function to prevent cfn-config from prompting the user to confirm changes that have already been confirmed in another region.
