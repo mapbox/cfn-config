@@ -1100,6 +1100,8 @@ test('[commands.operations.confirmTemplate] rejected', function(assert) {
     callback(null, false);
   });
 
+  basicContext.overrides = {}; // some previous test has mutated this
+
   var context = Object.assign({}, basicContext, {
     oldTemplate: { old: 'template' },
     newTemplate: { new: 'template' },
