@@ -964,7 +964,7 @@ test('[commands.operations.confirmParameters] preapproved', function(assert) {
     oldParameters: { old: 'parameters' },
     newParameters: { old: 'parameters', newones: 'too' },
     overrides: {
-      diffs: { parameters: [' {\n\u001b[32m+  newones: "too"\u001b[39m\n }\n'] }
+      preapproved: { parameters: [' {\n\u001b[32m+  newones: "too"\u001b[39m\n }\n'] }
     },
     next: function() {
       assert.pass('skipped prompting');
@@ -1072,7 +1072,7 @@ test('[commands.operations.confirmTemplate] preapproved', function(assert) {
     oldTemplate: { old: 'template' },
     newTemplate: { new: 'template' },
     overrides: {
-      diffs: {
+      preapproved: {
         template: ['\u001b[90m {\n\u001b[39m\u001b[31m-  "old": "template"\n\u001b[39m\u001b[32m+  "new": "template"\n\u001b[39m\u001b[90m }\u001b[39m']
       }
     },
