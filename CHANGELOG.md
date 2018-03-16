@@ -1,7 +1,7 @@
 # Change Log
 All notable changes to this project will be documented in this file. For change log formatting, see http://keepachangelog.com/
 
-## Next version
+## 2.13.0 - 2018-03-16
 
 - specifies region for GetBucketLocation call during `commands.create`
 
