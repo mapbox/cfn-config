@@ -457,6 +457,25 @@ test('[lookup.configurations] found multiple saved configs', function(assert) {
   });
 });
 
+test('[lookup.configurations] region specified', function(assert) {
+  AWS.stub('S3', 'getBucketLocation', function(params, callback) {
+    callback(null, 'us-east-1');
+  });
+
+  AWS.stub('S3', 'listObjects', function(params, callback) {
+    callback(null, { Contents: [] });
+  });
+
+  lookup.configurations('my-stack', 'my-bucket', 'cn-north-1', function() {
+    assert.ok(AWS.S3.calledWith({
+      signatureVersion: 'v4',
+      region: 'cn-north-1'
+    }), 'created S3 client in requested region');
+    AWS.S3.restore();
+    assert.end();
+  });
+});
+
 test('[lookup.configuration] bucket location error', function(assert) {
   AWS.stub('S3', 'getBucketLocation', function(params, callback) {
     callback(new Error('failure'));
@@ -691,6 +710,23 @@ test('[lookup.bucketRegion] no bucket', function(assert) {
   });
 });
 
+test('[lookup.bucketRegion] region specified', function(assert) {
+  AWS.stub('S3', 'getBucketLocation', function(params, callback) {
+    var err = new Error('failure');
+    err.code = 'NoSuchBucket';
+    callback(err);
+  });
+
+  lookup.bucketRegion('my-bucket', 'cn-north-1', function() {
+    assert.ok(AWS.S3.calledWith({
+      signatureVersion: 'v4',
+      region: 'cn-north-1'
+    }), 'used region in S3 client configuration');
+    AWS.S3.restore();
+    assert.end();
+  });
+});
+
 test('[lookup.decryptParameters] failure', function(assert) {
   AWS.stub('KMS', 'decrypt', function(params, callback) {
     var err = new Error('failure');
@@ -731,4 +767,3 @@ test('[lookup.decryptParameters] success', function(assert) {
     assert.end();
   });
 });
-
