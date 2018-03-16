@@ -1626,7 +1626,7 @@ test('[commands.operations.createPreamble] template not found', function(assert)
     callback(new template.NotFoundError('failure'));
   });
 
-  sinon.stub(lookup, 'configurations', function(name, bucket, callback) {
+  sinon.stub(lookup, 'configurations', function(name, bucket, region, callback) {
     callback();
   });
 
@@ -1649,7 +1649,7 @@ test('[commands.operations.createPreamble] template invalid', function(assert) {
     callback(new template.InvalidTemplateError('failure'));
   });
 
-  sinon.stub(lookup, 'configurations', function(name, bucket, callback) {
+  sinon.stub(lookup, 'configurations', function(name, bucket, region, callback) {
     callback();
   });
 
@@ -1672,7 +1672,7 @@ test('[commands.operations.createPreamble] config bucket not found', function(as
     callback();
   });
 
-  sinon.stub(lookup, 'configurations', function(name, bucket, callback) {
+  sinon.stub(lookup, 'configurations', function(name, bucket, region, callback) {
     callback(new lookup.BucketNotFoundError('failure'));
   });
 
@@ -1695,7 +1695,7 @@ test('[commands.operations.createPreamble] failed to read configurations', funct
     callback();
   });
 
-  sinon.stub(lookup, 'configurations', function(name, bucket, callback) {
+  sinon.stub(lookup, 'configurations', function(name, bucket, region, callback) {
     callback(new lookup.S3Error('failure'));
   });
 
@@ -1720,7 +1720,7 @@ test('[commands.operations.createPreamble] success', function(assert) {
     callback(null, { new: 'template' });
   });
 
-  sinon.stub(lookup, 'configurations', function(name, bucket, callback) {
+  sinon.stub(lookup, 'configurations', function(name, bucket, region, callback) {
     assert.equal(name, context.baseName, 'lookup correct stack configurations');
     assert.equal(bucket, context.configBucket, 'lookup in correct bucket');
     callback(null, ['config']);
