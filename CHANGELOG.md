@@ -1,6 +1,10 @@
 # Change Log
 All notable changes to this project will be documented in this file. For change log formatting, see http://keepachangelog.com/
 
+## Next version
+
+- specifies region for GetBucketLocation call during `commands.create`
+
 ## 2.12.0 - 2018-02-20
 
 - Automatically save stack configurations to S3 after create or update.
