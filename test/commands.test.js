@@ -2045,7 +2045,7 @@ test('[commands.operations.confirmDelete] reject', function(assert) {
 
 test('[commands.operations.confirmDelete] accept', function(assert) {
   sinon.stub(prompt, 'confirm', function(message, callback) {
-    assert.equal(message, 'Are you sure you want to delete ' + context.stackName + '?', 'expected message');
+    assert.equal(message, 'Are you sure you want to delete my-stack-testing in region us-east-1?', 'expected message');
     callback(null, true);
   });
 
