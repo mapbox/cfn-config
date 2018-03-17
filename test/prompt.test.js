@@ -7,6 +7,7 @@ var prompt = require('../lib/prompt');
 test('[prompt.confirm] single-line, confirm', function(assert) {
   sinon.stub(inquirer, 'prompt', function(questions) {
     assert.deepEqual(questions, {
+      default: true,
       type: 'confirm',
       name: 'confirmation',
       message: 'confirm?'
@@ -23,9 +24,30 @@ test('[prompt.confirm] single-line, confirm', function(assert) {
   });
 });
 
+test('[prompt.confirm] single-line, false default', function(assert) {
+  sinon.stub(inquirer, 'prompt', function(questions) {
+    assert.deepEqual(questions, {
+      type: 'confirm',
+      name: 'confirmation',
+      message: 'confirm?',
+      default: false
+    }, 'inquirer called with correct question');
+
+    return Promise.resolve({ confirmation: true });
+  });
+
+  prompt.confirm('confirm?', function(err, ready) {
+    assert.ifError(err, 'success');
+    assert.ok(ready, 'received user confirmation');
+    inquirer.prompt.restore();
+    assert.end();
+  }, false);
+});
+
 test('[prompt.confirm] multi-line, reject', function(assert) {
   sinon.stub(inquirer, 'prompt', function(questions) {
     assert.deepEqual(questions, {
+      default: true,
       type: 'confirm',
       name: 'confirmation',
       message: 'confirm?'
