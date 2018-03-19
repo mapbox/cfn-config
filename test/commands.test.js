@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 var path = require('path');
 var test = require('tape');
 var sinon = require('sinon');
@@ -960,6 +961,8 @@ test('[commands.operations.confirmParameters] no difference', function(assert) {
 });
 
 test('[commands.operations.confirmParameters] preapproved', function(assert) {
+  sinon.stub(console, 'log');
+
   var context = Object.assign({}, basicContext, {
     oldParameters: { old: 'parameters' },
     newParameters: { old: 'parameters', newones: 'too' },
@@ -967,8 +970,10 @@ test('[commands.operations.confirmParameters] preapproved', function(assert) {
       preapproved: { parameters: [' {\n\u001b[32m+  newones: "too"\u001b[39m\n }\n'] }
     },
     next: function() {
+      assert.ok(console.log.calledWith('Skipped confirming parameters: diff preapproved.'), 'Skip notice printed');
       assert.pass('skipped prompting');
       assert.ok(context.overrides.skipConfirmParameters, 'sets skipConfirmParameters');
+      console.log.restore();
       assert.end();
     }
   });
@@ -1068,6 +1073,7 @@ test('[commands.operations.confirmTemplate] force-mode', function(assert) {
 });
 
 test('[commands.operations.confirmTemplate] preapproved', function(assert) {
+  sinon.stub(console, 'log');
   var context = Object.assign({}, basicContext, {
     oldTemplate: { old: 'template' },
     newTemplate: { new: 'template' },
@@ -1077,9 +1083,11 @@ test('[commands.operations.confirmTemplate] preapproved', function(assert) {
       }
     },
     next: function(err) {
+      assert.ok(console.log.calledWith('Skipped confirming template: diff preapproved.'), 'Skip notice printed');
       assert.ifError(err, 'should proceed');
       assert.ok(context.overrides.skipConfirmTemplate, 'sets skipConfirmTemplate');
       assert.end();
+      console.log.restore();
     },
     abort: function(err) {
       assert.ifError(err, 'should not proceed');
