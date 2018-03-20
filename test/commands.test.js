@@ -970,7 +970,7 @@ test('[commands.operations.confirmParameters] preapproved', function(assert) {
       preapproved: { parameters: [' {\n\u001b[32m+  newones: "too"\u001b[39m\n }\n'] }
     },
     next: function() {
-      assert.ok(console.log.calledWith('Skipped confirming parameters: diff preapproved.'), 'Skip notice printed');
+      assert.ok(console.log.calledWith('Auto-confirming parameter changes... Changes were pre-approved in another region.'), 'Skip notice printed');
       assert.pass('skipped prompting');
       assert.ok(context.overrides.skipConfirmParameters, 'sets skipConfirmParameters');
       console.log.restore();
@@ -1083,7 +1083,7 @@ test('[commands.operations.confirmTemplate] preapproved', function(assert) {
       }
     },
     next: function(err) {
-      assert.ok(console.log.calledWith('Skipped confirming template: diff preapproved.'), 'Skip notice printed');
+      assert.ok(console.log.calledWith('Auto-confirming template changes... Changes were pre-approved in another region.'), 'Skip notice printed');
       assert.ifError(err, 'should proceed');
       assert.ok(context.overrides.skipConfirmTemplate, 'sets skipConfirmTemplate');
       assert.end();
