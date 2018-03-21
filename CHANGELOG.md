@@ -1,6 +1,10 @@
 # Change Log
 All notable changes to this project will be documented in this file. For change log formatting, see http://keepachangelog.com/
 
+## 2.13.1 - 2018-03-20
+
+- Print notice when parameter changes are auto-confirmed
+
 ## 2.13.0 - 2018-03-16
 
 - specifies region for GetBucketLocation call during `commands.create`
