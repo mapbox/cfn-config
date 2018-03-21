@@ -2036,7 +2036,9 @@ test('[commands.operations.confirmDelete] force-mode', function(assert) {
 });
 
 test('[commands.operations.confirmDelete] reject', function(assert) {
-  sinon.stub(prompt, 'confirm', function(message, callback) {
+  sinon.stub(prompt, 'confirm', function(message, defaultValue, callback) {
+    assert.equal(message, 'Are you sure you want to delete my-stack-testing in region us-east-1?');
+    assert.equal(defaultValue, false);
     callback(null, false);
   });
 
@@ -2052,8 +2054,9 @@ test('[commands.operations.confirmDelete] reject', function(assert) {
 });
 
 test('[commands.operations.confirmDelete] accept', function(assert) {
-  sinon.stub(prompt, 'confirm', function(message, callback) {
+  sinon.stub(prompt, 'confirm', function(message, defaultValue, callback) {
     assert.equal(message, 'Are you sure you want to delete my-stack-testing in region us-east-1?', 'expected message');
+    assert.equal(defaultValue, false);
     callback(null, true);
   });
 
