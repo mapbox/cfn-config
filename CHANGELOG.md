@@ -1,6 +1,11 @@
 # Change Log
 All notable changes to this project will be documented in this file. For change log formatting, see http://keepachangelog.com/
 
+## 2.14.0 - 2018-03-21
+
+- Update prompt.confirm function to allow y/n option to default to No
+- Default stack update & delete confirmation to No
+
 ## 2.13.1 - 2018-03-20
 
 - Print notice when parameter changes are auto-confirmed
