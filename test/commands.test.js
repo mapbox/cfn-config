@@ -1503,7 +1503,8 @@ test('[commands.operations.confirmChangeset] skipConfirmParams && skipConfirmTem
 });
 
 test('[commands.operations.confirmChangeset] rejected', function(assert) {
-  sinon.stub(prompt, 'confirm', function(message, callback) {
+  sinon.stub(prompt, 'confirm', function(message, defaultValue, callback) {
+    assert.equal(defaultValue, false);
     callback(null, false);
   });
 
@@ -1520,10 +1521,11 @@ test('[commands.operations.confirmChangeset] rejected', function(assert) {
 });
 
 test('[commands.operations.confirmChangeset] acccepted', function(assert) {
-  assert.plan(2);
+  assert.plan(3);
 
-  sinon.stub(prompt, 'confirm', function(message, callback) {
+  sinon.stub(prompt, 'confirm', function(message, defaultValue, callback) {
     assert.equal(message, '\n\n\nAccept changes and update the stack?', 'expected message');
+    assert.equal(defaultValue, false);
     callback(null, true);
   });
 
@@ -1542,8 +1544,9 @@ test('[commands.operations.confirmChangeset] acccepted', function(assert) {
 });
 
 test('[commands.operations.confirmChangeset] changeset formatting', function(assert) {
-  sinon.stub(prompt, 'confirm', function(message, callback) {
+  sinon.stub(prompt, 'confirm', function(message, defaultValue, callback) {
     assert.equal(message, 'Action  Name  Type  Replace\n------  ----  ----  -------\n\x1b[33mModify\x1b[39m  name  type  \x1b[31mtrue\x1b[39m   \n\x1b[32mAdd\x1b[39m     name  type  \x1b[32mfalse\x1b[39m  \n\x1b[31mRemove\x1b[39m  name  type  \x1b[32mfalse\x1b[39m  \n\nAccept changes and update the stack?', 'expected message (with colors)');
+    assert.equal(defaultValue, false);
     callback(null, true);
   });
 
