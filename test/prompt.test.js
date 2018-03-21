@@ -36,12 +36,12 @@ test('[prompt.confirm] single-line, false default', function(assert) {
     return Promise.resolve({ confirmation: true });
   });
 
-  prompt.confirm('confirm?', function(err, ready) {
+  prompt.confirm('confirm?', false, function(err, ready) {
     assert.ifError(err, 'success');
     assert.ok(ready, 'received user confirmation');
     inquirer.prompt.restore();
     assert.end();
-  }, false);
+  });
 });
 
 test('[prompt.confirm] multi-line, reject', function(assert) {
