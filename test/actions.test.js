@@ -448,7 +448,7 @@ test('[actions.diff] success', function(assert) {
     callback(null, { Id: 'changeset:arn' });
   });
 
-  const describeChangeSet = AWS.stub('CloudFormation', 'describeChangeSet').returns({
+  var describeChangeSet = AWS.stub('CloudFormation', 'describeChangeSet').returns({
     eachPage: function(callback) {
 
       callback(null, { ChangeSetName: changesetId,
@@ -572,7 +572,7 @@ test('[actions.executeChangeSet] executeChangeSet error', function(assert) {
 });
 
 test('[actions.executeChangeSet] success', function(assert) {
-  const describeChangeset = AWS.stub('CloudFormation', 'describeChangeSet').returns({
+  var describeChangeset = AWS.stub('CloudFormation', 'describeChangeSet').returns({
     eachPage: function(callback) {
       callback(null, {
         ExecutionStatus: 'AVAILABLE',
