@@ -378,7 +378,7 @@ test('[actions.diff] unexpected describeChangeSet error', function(assert) {
 
   AWS.stub('CloudFormation', 'describeChangeSet').returns({
     eachPage: function(callback) {
-      callback(new Error('unexpected'), null,  () => {});
+      callback(new Error('unexpected'), null,  () => callback(null, null, () => {}));
     }
   });
 
@@ -407,7 +407,7 @@ test('[actions.diff] changeset failed to create', function(assert) {
         StackName: 'my-stack',
         ExecutionStatus: 'UNAVAILABLE',
         Status: 'FAILED'
-      }, () => {});
+      }, () => callback(null, null, () => {}));
     }
   });
 
@@ -487,9 +487,7 @@ test('[actions.diff] success', function(assert) {
               }
             }
           ]
-        }, () => {
-          callback();
-        });
+        }, () => callback(null, null, () => {}));
       });
     }
   });
@@ -518,7 +516,7 @@ test('[actions.diff] success', function(assert) {
 test('[actions.executeChangeSet] describeChangeSet error', function(assert) {
   AWS.stub('CloudFormation', 'describeChangeSet').returns({
     eachPage: function(callback) {
-      callback(new Error('unexpected'), null, () => {});
+      callback(new Error('unexpected'), null, () => callback(null, null, () => {}));
     }
   });
 
@@ -536,7 +534,7 @@ test('[actions.executeChangeSet] changeset not executable', function(assert) {
         ExecutionStatus: 'UNAVAILABLE',
         Status: 'CREATE_COMPLETE',
         StatusReason: 'because I said so'
-      }, () => {});
+      }, () => callback(null, null, () => {}));
     }
   });
 
@@ -556,7 +554,7 @@ test('[actions.executeChangeSet] executeChangeSet error', function(assert) {
       callback(null, {
         ExecutionStatus: 'AVAILABLE',
         Status: 'CREATE_COMPLETE'
-      }, () => {});
+      }, () => callback(null, null, () => {}));
     }
   });
 
@@ -577,7 +575,7 @@ test('[actions.executeChangeSet] success', function(assert) {
       callback(null, {
         ExecutionStatus: 'AVAILABLE',
         Status: 'CREATE_COMPLETE'
-      }, () => {});
+      }, () => callback(null, null, () => {}));
     }
   });
 
