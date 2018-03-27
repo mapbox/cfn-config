@@ -1,6 +1,10 @@
 # Change Log
 All notable changes to this project will be documented in this file. For change log formatting, see http://keepachangelog.com/
 
+## 2.15.0 - 2018-03-27
+
+- Implement pagination in describeChangeset
+
 ## 2.14.0 - 2018-03-21
 
 - Update prompt.confirm function to allow y/n option to default to No
