@@ -376,7 +376,9 @@ test('[actions.diff] unexpected describeChangeSet error', function(assert) {
     callback(null, { Id: 'changeset:arn' });
   });
 
-  AWS.stub('CloudFormation', 'describeChangeSet').yields(new Error('unexpected'));
+  AWS.stub('CloudFormation', 'describeChangeSet', function(params, callback) {
+    callback(new Error('unexpected'));
+  });
 
   actions.diff('my-stack', 'us-east-1', url, {}, function(err) {
     assert.ok(err instanceof actions.CloudFormationError, 'expected error returned');
@@ -395,27 +397,14 @@ test('[actions.diff] changeset failed to create', function(assert) {
   });
 
   AWS.stub('CloudFormation', 'describeChangeSet', function(params, callback) {
-    if (callback) {
-      return callback(null, {
-        ChangeSetName: changesetId,
-        ChangeSetId: 'changeset:arn',
-        StackId: 'arn:aws:cloudformation:us-east-1:123456789012:stack/my-stack/be3aa370-5b64-11e6-a232-500c217dbe62',
-        StackName: 'my-stack',
-        ExecutionStatus: 'UNAVAILABLE',
-        Status: 'FAILED'
-      });
-    } else {
-      this.request.eachPage = function(cb) {
-        cb(null, {
-          ChangeSetName: changesetId,
-          ChangeSetId: 'changeset:arn',
-          StackId: 'arn:aws:cloudformation:us-east-1:123456789012:stack/my-stack/be3aa370-5b64-11e6-a232-500c217dbe62',
-          StackName: 'my-stack',
-          ExecutionStatus: 'UNAVAILABLE',
-          Status: 'FAILED'
-        }, function() { cb(); });
-      };
-    }
+    callback(null, {
+      ChangeSetName: changesetId,
+      ChangeSetId: 'changeset:arn',
+      StackId: 'arn:aws:cloudformation:us-east-1:123456789012:stack/my-stack/be3aa370-5b64-11e6-a232-500c217dbe62',
+      StackName: 'my-stack',
+      ExecutionStatus: 'UNAVAILABLE',
+      Status: 'FAILED'
+    });
   });
 
   actions.diff('my-stack', 'us-east-1', url, {}, function(err, data) {
@@ -433,6 +422,7 @@ test('[actions.diff] changeset failed to create', function(assert) {
 test('[actions.diff] success', function(assert) {
   var url = 'https://my-bucket.s3.amazonaws.com/my-template.json';
   var changesetId;
+  var polled = 0;
 
   AWS.stub('CloudFormation', 'createChangeSet', function(params, callback) {
     assert.ok(/^[\w\d-]{1,128}$/.test(params.ChangeSetName), 'createChangeSet valid change set name');
@@ -455,81 +445,53 @@ test('[actions.diff] success', function(assert) {
     callback(null, { Id: 'changeset:arn' });
   });
 
-  var calls = 0;
-  var describeChangeSet = AWS.stub('CloudFormation', 'describeChangeSet', function(params, callback) {
-    calls++;
-    if (calls === 1) {
-      callback(null, { ChangeSetName: changesetId,
-        ChangeSetId: 'changeset:arn1',
-        StackId: 'arn:aws:cloudformation:us-east-1:123456789012:stack/my-stack/be3aa370-5b64-11e6-a232-500c217dbe62',
-        StackName: 'my-stack',
-        ExecutionStatus: 'AVAILABLE',
-        Status: 'CREATE_IN_PROGRESS'
-      });
-    } else if (calls === 2) {
-      callback(null, {
-        ChangeSetName: 'aa507e2bdfc55947035a07271e75384efe',
-        ChangeSetId: 'changeset:arn',
-        StackId: 'arn:aws:cloudformation:us-east-1:123456789012:stack/my-stack/be3aa370-5b64-11e6-a232-500c217dbe62',
-        StackName: 'my-stack',
-        ExecutionStatus: 'AVAILABLE',
-        Status: 'CREATE_COMPLETE',
-        Changes: [
-          {
-            Type: 'Resource',
-            ResourceChange: {
-              Action: 'Modify',
-              LogicalResourceId: 'Topic',
-              PhysicalResourceId: 'arn:aws:sns:us-east-1:123456789012:my-stack-Topic-DQ8MBRPFONMK',
-              ResourceType: 'AWS::SNS::Topic',
-              Replacement: 'False'
-            }
+  AWS.stub('CloudFormation', 'describeChangeSet', function(params, callback) {
+    polled++;
+    assert.deepEqual(params, {
+      ChangeSetName: changesetId,
+      StackName: 'my-stack',
+      NextToken: undefined
+    }, 'describeChangeSet expected parameters');
+
+    if (polled === 1) return callback(null, { ChangeSetName: changesetId,
+      ChangeSetId: 'changeset:arn1',
+      StackId: 'arn:aws:cloudformation:us-east-1:123456789012:stack/my-stack/be3aa370-5b64-11e6-a232-500c217dbe62',
+      StackName: 'my-stack',
+      ExecutionStatus: 'AVAILABLE',
+      Status: 'CREATE_IN_PROGRESS',
+      Changes: [{
+        Type: 'Resource',
+        ResourceChange: {
+          Action: 'Modify',
+          LogicalResourceId: 'Topic',
+          PhysicalResourceId: 'arn:aws:sns:us-east-1:123456789012:another-stack-Topic-ABCDEFGHIJKL',
+          ResourceType: 'AWS::SNS::Topic',
+          Replacement: 'False'
+        }
+      }]
+    });
+
+    // This is a partial response object
+    callback(null, {
+      ChangeSetName: 'aa507e2bdfc55947035a07271e75384efe',
+      ChangeSetId: 'changeset:arn',
+      StackId: 'arn:aws:cloudformation:us-east-1:123456789012:stack/my-stack/be3aa370-5b64-11e6-a232-500c217dbe62',
+      StackName: 'my-stack',
+      ExecutionStatus: 'AVAILABLE',
+      Status: 'CREATE_COMPLETE',
+      Changes: [
+        {
+          Type: 'Resource',
+          ResourceChange: {
+            Action: 'Modify',
+            LogicalResourceId: 'Topic',
+            PhysicalResourceId: 'arn:aws:sns:us-east-1:123456789012:my-stack-Topic-DQ8MBRPFONMK',
+            ResourceType: 'AWS::SNS::Topic',
+            Replacement: 'False'
           }
-        ]
-      });
-    } else if (calls === 3) {
-      this.request.eachPage = function(cb) {
-        cb(null, {
-          ChangeSetName: 'aa507e2bdfc55947035a07271e75384efe',
-          ChangeSetId: 'changeset:arn',
-          StackId: 'arn:aws:cloudformation:us-east-1:123456789012:stack/my-stack/be3aa370-5b64-11e6-a232-500c217dbe62',
-          StackName: 'my-stack',
-          ExecutionStatus: 'AVAILABLE',
-          Status: 'CREATE_COMPLETE',
-          Changes: [
-            {
-              Type: 'Resource',
-              ResourceChange: {
-                Action: 'Modify',
-                LogicalResourceId: 'Topic',
-                PhysicalResourceId: 'arn:aws:sns:us-east-1:123456789012:my-stack-Topic-DQ8MBRPFONMK',
-                ResourceType: 'AWS::SNS::Topic',
-                Replacement: 'False'
-              }
-            }
-          ]
-        }, () => cb(null, {
-          ChangeSetName: 'aa507e2bdfc55947035a07271e75384efe',
-          ChangeSetId: 'changeset:arn',
-          StackId: 'arn:aws:cloudformation:us-east-1:123456789012:stack/my-stack/be3aa370-5b64-11e6-a232-500c217dbe62',
-          StackName: 'my-stack',
-          ExecutionStatus: 'AVAILABLE',
-          Status: 'CREATE_COMPLETE',
-          Changes: [
-            {
-              Type: 'Resource',
-              ResourceChange: {
-                Action: 'Modify',
-                LogicalResourceId: 'Topic',
-                PhysicalResourceId: 'arn:aws:sns:us-east-1:123456789012:another-stack-Topic-ABCDEFGHIJKL',
-                ResourceType: 'AWS::SNS::Topic',
-                Replacement: 'False'
-              }
-            }
-          ]
-        }, function() { cb(); }));
-      };
-    }
+        }
+      ]
+    });
   });
 
   var parameters = {
@@ -542,39 +504,17 @@ test('[actions.diff] success', function(assert) {
   };
 
   actions.diff('my-stack', 'us-east-1', url, parameters, function(err, data) {
-    describeChangeSet.calledWith({
-      ChangeSetName: changesetId,
-      StackName: 'my-stack'
-    });
     assert.ifError(err, 'success');
-    assert.deepEqual(data, {
-      id: 'aa507e2bdfc55947035a07271e75384efe',
-      status: 'CREATE_COMPLETE',
-      execution: 'AVAILABLE',
-      changes: [
-        {
-          id: 'arn:aws:sns:us-east-1:123456789012:my-stack-Topic-DQ8MBRPFONMK',
-          name: 'Topic',
-          type: 'AWS::SNS::Topic',
-          action: 'Modify',
-          replacement: false
-        }, {
-          id: 'arn:aws:sns:us-east-1:123456789012:another-stack-Topic-ABCDEFGHIJKL',
-          name: 'Topic',
-          type: 'AWS::SNS::Topic',
-          action: 'Modify',
-          replacement: false
-        }
-      ]
-
-    }, 'returned changeset details');
+    assert.deepEqual(data, { id: 'aa507e2bdfc55947035a07271e75384efe', status: 'CREATE_COMPLETE', execution: 'AVAILABLE', changes: [{ id: 'arn:aws:sns:us-east-1:123456789012:another-stack-Topic-ABCDEFGHIJKL', name: 'Topic', type: 'AWS::SNS::Topic', action: 'Modify', replacement: false }, { id: 'arn:aws:sns:us-east-1:123456789012:my-stack-Topic-DQ8MBRPFONMK', name: 'Topic', type: 'AWS::SNS::Topic', action: 'Modify', replacement: false }] }, 'returned changeset details');
     AWS.CloudFormation.restore();
     assert.end();
   });
 });
 
 test('[actions.executeChangeSet] describeChangeSet error', function(assert) {
-  AWS.stub('CloudFormation', 'describeChangeSet').yields(new Error('unexpected'));
+  AWS.stub('CloudFormation', 'describeChangeSet', function(params, callback) {
+    callback(new Error('unexpected'));
+  });
 
   actions.executeChangeSet('my-stack', 'us-east-1', 'changeset-id', function(err) {
     assert.ok(err instanceof actions.CloudFormationError, 'expected error');
@@ -585,21 +525,11 @@ test('[actions.executeChangeSet] describeChangeSet error', function(assert) {
 
 test('[actions.executeChangeSet] changeset not executable', function(assert) {
   AWS.stub('CloudFormation', 'describeChangeSet', function(params, callback) {
-    if (callback) {
-      callback(null, {
-        ExecutionStatus: 'UNAVAILABLE',
-        Status: 'CREATE_COMPLETE',
-        StatusReason: 'because I said so'
-      });
-    } else {
-      this.request.eachPage = function(cb) {
-        cb(null, {
-          ExecutionStatus: 'UNAVAILABLE',
-          Status: 'CREATE_COMPLETE',
-          StatusReason: 'because I said so'
-        }, function() { cb(); });
-      };
-    }
+    callback(null, {
+      ExecutionStatus: 'UNAVAILABLE',
+      Status: 'CREATE_COMPLETE',
+      StatusReason: 'because I said so'
+    });
   });
 
   actions.executeChangeSet('my-stack', 'us-east-1', 'changeset-id', function(err) {
@@ -614,19 +544,10 @@ test('[actions.executeChangeSet] changeset not executable', function(assert) {
 
 test('[actions.executeChangeSet] executeChangeSet error', function(assert) {
   AWS.stub('CloudFormation', 'describeChangeSet', function(params, callback) {
-    if (callback) {
-      return callback(null, {
-        ExecutionStatus: 'AVAILABLE',
-        Status: 'CREATE_COMPLETE'
-      });
-    } else {
-      this.request.eachPage = function(cb) {
-        cb(null, {
-          ExecutionStatus: 'AVAILABLE',
-          Status: 'CREATE_COMPLETE'
-        }, function() { cb(); });
-      };
-    }
+    callback(null, {
+      ExecutionStatus: 'AVAILABLE',
+      Status: 'CREATE_COMPLETE'
+    });
   });
 
   AWS.stub('CloudFormation', 'executeChangeSet', function(params, callback) {
@@ -641,20 +562,17 @@ test('[actions.executeChangeSet] executeChangeSet error', function(assert) {
 });
 
 test('[actions.executeChangeSet] success', function(assert) {
-  var describeChangeset = AWS.stub('CloudFormation', 'describeChangeSet', function(params, callback) {
-    if (callback) {
-      return callback(null, {
-        ExecutionStatus: 'AVAILABLE',
-        Status: 'CREATE_COMPLETE'
-      });
-    } else {
-      this.request.eachPage = function(cb) {
-        cb(null, {
-          ExecutionStatus: 'AVAILABLE',
-          Status: 'CREATE_COMPLETE'
-        }, function() { cb(); });
-      };
-    }
+  AWS.stub('CloudFormation', 'describeChangeSet', function(params, callback) {
+    assert.deepEqual(params, {
+      ChangeSetName: 'changeset-id',
+      StackName: 'my-stack',
+      NextToken: undefined
+    }, 'expected params provided to describeChangeSet');
+
+    callback(null, {
+      ExecutionStatus: 'AVAILABLE',
+      Status: 'CREATE_COMPLETE'
+    });
   });
 
   AWS.stub('CloudFormation', 'executeChangeSet', function(params, callback) {
@@ -667,13 +585,8 @@ test('[actions.executeChangeSet] success', function(assert) {
   });
 
   actions.executeChangeSet('my-stack', 'us-east-1', 'changeset-id', function(err) {
-    describeChangeset.calledWith({
-      ChangeSetName: 'changeset-id',
-      StackName: 'my-stack'
-    });
-    describeChangeset.restore();
     assert.ifError(err, 'success');
-
+    AWS.CloudFormation.restore();
     assert.end();
   });
 });
