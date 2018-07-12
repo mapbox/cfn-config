@@ -776,7 +776,8 @@ test('[actions.saveConfiguration] config bucket in a different region', function
   actions.saveConfiguration('my-stack', 'my-stack-staging', 'eu-west-1', 'my-bucket', parameters, function(err) {
     assert.ifError(err, 'success');
     assert.true(AWS.S3.calledTwice, 's3 client setup called twice');
-    assert.ok(AWS.S3.secondCall.calledWithExactly({ region: 'us-east-2', signatureVersion: 'v4' }), 's3 client created correctly');
+    assert.ok(AWS.S3.firstCall.calledWithExactly({ signatureVersion: 'v4', region: 'eu-west-1' }), 'first s3 client created correctly');
+    assert.ok(AWS.S3.secondCall.calledWithExactly({ region: 'us-east-2', signatureVersion: 'v4' }), 'second s3 client created correctly');
     AWS.S3.restore();
     assert.end();
   });
