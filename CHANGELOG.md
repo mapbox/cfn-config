@@ -1,6 +1,10 @@
 # Change Log
 All notable changes to this project will be documented in this file. For change log formatting, see http://keepachangelog.com/
 
+## 2.16.0 - 2018-07-12
+
+- Implement the possibility of external parameter validation: https://github.com/mapbox/cfn-config/pull/157
+
 ## 2.15.0 - 2018-03-27
 
 - Implement pagination in describeChangeset
