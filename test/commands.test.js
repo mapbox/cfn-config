@@ -21,6 +21,7 @@ test('[commands.create] no overrides', function(assert) {
   function whenDone() {}
 
   sinon.stub(commands, 'commandContext', function(config, suffix, operations, callback) {
+    assert.equal(operations.length, 12, '12 operations are run');
     assert.deepEqual(config, opts, 'instantiate context with expected config');
     assert.deepEqual(suffix, 'testing', 'instantiate context with expected suffix');
     assert.ok(operations.every(function(op) { return typeof op === 'function'; }), 'instantiate context with array of operations');
@@ -45,6 +46,7 @@ test('[commands.create] with overrides', function(assert) {
   function whenDone() {}
 
   sinon.stub(commands, 'commandContext', function(config, suffix, operations, callback) {
+    assert.equal(operations.length, 12, '12 operations are run');
     assert.deepEqual(config, opts, 'instantiate context with expected config');
     assert.deepEqual(suffix, 'testing', 'instantiate context with expected suffix');
     assert.ok(operations.every(function(op) { return typeof op === 'function'; }), 'instantiate context with array of operations');
@@ -194,7 +196,7 @@ test('[commands.update] no overrides', function(assert) {
   function whenDone() {}
 
   sinon.stub(commands, 'commandContext', function(config, suffix, operations, callback) {
-    assert.equal(operations.length, 14, '14 operations are run');
+    assert.equal(operations.length, 15, '15 operations are run');
     assert.deepEqual(config, opts, 'instantiate context with expected config');
     assert.deepEqual(suffix, 'testing', 'instantiate context with expected suffix');
     assert.ok(operations.every(function(op) { return typeof op === 'function'; }), 'instantiate context with array of operations');
@@ -1378,6 +1380,59 @@ test('[commands.operations.beforeUpdateHook] no hook', function(assert) {
   });
 
   commands.operations.beforeUpdateHook(context);
+});
+
+test('[commands.operations.validateParametersHook] no hook', function(assert) {
+  var context = Object.assign({}, basicContext, {
+    abort: function() {
+      assert.fail('failed');
+    },
+    next: function(err) {
+      assert.ifError(err, 'success');
+      assert.end();
+    }
+  });
+
+  commands.operations.validateParametersHook(context);
+});
+
+test('[commands.operations.validateParametersHook] hook error', function(assert) {
+  var context = Object.assign({}, basicContext, {
+    overrides: {
+      validateParameters: function(context, callback) {
+        callback(new Error('failure'));
+      }
+    },
+    abort: function(err) {
+      assert.equal(err.message, 'failure', 'passed through error on abort');
+      assert.end();
+    },
+    next: function() {
+      assert.fail('should not proceed');
+    }
+  });
+
+  commands.operations.validateParametersHook(context);
+});
+
+test('[commands.operations.validateParametersHook] hook success', function(assert) {
+  assert.plan(2);
+  var context = Object.assign({}, basicContext, {
+    overrides: {
+      validateParameters: function(arg, callback) {
+        assert.deepEqual(arg, context, 'provided hook with runtime context');
+        callback();
+      }
+    },
+    abort: function(err) {
+      assert.ifError(err, 'failed');
+    },
+    next: function() {
+      assert.pass('should proceed');
+    }
+  });
+
+  commands.operations.validateParametersHook(context);
 });
 
 test('[commands.operations.beforeUpdateHook] hook error', function(assert) {
