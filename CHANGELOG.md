@@ -1,6 +1,10 @@
 # Change Log
 All notable changes to this project will be documented in this file. For change log formatting, see http://keepachangelog.com/
 
+## 2.17.0 - 2018-07-13
+
+- Use stack's AWS region when looking up config bucket location
+
 ## 2.16.0 - 2018-07-12
 
 - Implement the possibility of external parameter validation: https://github.com/mapbox/cfn-config/pull/157
