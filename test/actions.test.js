@@ -750,6 +750,39 @@ test('[actions.saveConfiguration] success without encryption', function(assert) 
   });
 });
 
+test('[actions.saveConfiguration] config bucket in a different region', function(assert) {
+  var parameters = {
+    Name: 'Chuck',
+    Age: 18,
+    Handedness: 'left',
+    Pets: 'Duck,Wombat',
+    LuckyNumbers: '3,7,42',
+    SecretPassword: 'secret'
+  };
+
+  AWS.stub('S3', 'getBucketLocation', function(params, callback) {
+    callback(null, { LocationConstraint: 'us-east-2' });
+  });
+
+  AWS.stub('S3', 'putObject', function(params, callback) {
+    assert.deepEqual(params, {
+      Bucket: 'my-bucket',
+      Key: 'my-stack/my-stack-staging-eu-west-1.cfn.json',
+      Body: JSON.stringify(parameters)
+    }, 'expected putObject parameters');
+    callback();
+  });
+
+  actions.saveConfiguration('my-stack', 'my-stack-staging', 'eu-west-1', 'my-bucket', parameters, function(err) {
+    assert.ifError(err, 'success');
+    assert.true(AWS.S3.calledTwice, 's3 client setup called twice');
+    assert.ok(AWS.S3.firstCall.calledWithExactly({ signatureVersion: 'v4', region: 'eu-west-1' }), 'first s3 client created correctly');
+    assert.ok(AWS.S3.secondCall.calledWithExactly({ region: 'us-east-2', signatureVersion: 'v4' }), 'second s3 client created correctly');
+    AWS.S3.restore();
+    assert.end();
+  });
+});
+
 test('[actions.templateUrl] us-east-1', function(assert) {
   var url = actions.templateUrl('my-bucket', 'us-east-1', 'my-stack');
   var re = /https:\/\/s3.amazonaws.com\/my-bucket\/.*-my-stack.template.json/;
