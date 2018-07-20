@@ -447,11 +447,9 @@ test('[actions.diff] success', function(assert) {
 
   AWS.stub('CloudFormation', 'describeChangeSet', function(params, callback) {
     polled++;
-    assert.deepEqual(params, {
-      ChangeSetName: changesetId,
-      StackName: 'my-stack',
-      NextToken: undefined
-    }, 'describeChangeSet expected parameters');
+    assert.equal(params.ChangeSetName, changesetId, 'describe correct changeset');
+    assert.equal(params.StackName, 'my-stack', 'describe correct stackname');
+    if (params.NextToken) assert.equal(params.NextToken, 'xxx', 'used next token to paginate');
 
     if (polled === 1) return callback(null, { ChangeSetName: changesetId,
       ChangeSetId: 'changeset:arn1',
@@ -459,6 +457,16 @@ test('[actions.diff] success', function(assert) {
       StackName: 'my-stack',
       ExecutionStatus: 'AVAILABLE',
       Status: 'CREATE_IN_PROGRESS',
+      Changes: []
+    });
+
+    if (polled === 2) return callback(null, {
+      ChangeSetName: changesetId,
+      ChangeSetId: 'changeset:arn1',
+      StackId: 'arn:aws:cloudformation:us-east-1:123456789012:stack/my-stack/be3aa370-5b64-11e6-a232-500c217dbe62',
+      StackName: 'my-stack',
+      ExecutionStatus: 'AVAILABLE',
+      Status: 'CREATE_COMPLETE',
       Changes: [{
         Type: 'Resource',
         ResourceChange: {
@@ -468,7 +476,8 @@ test('[actions.diff] success', function(assert) {
           ResourceType: 'AWS::SNS::Topic',
           Replacement: 'False'
         }
-      }]
+      }],
+      NextToken: 'xxx'
     });
 
     // This is a partial response object
@@ -505,7 +514,27 @@ test('[actions.diff] success', function(assert) {
 
   actions.diff('my-stack', 'us-east-1', url, parameters, function(err, data) {
     assert.ifError(err, 'success');
-    assert.deepEqual(data, { id: 'aa507e2bdfc55947035a07271e75384efe', status: 'CREATE_COMPLETE', execution: 'AVAILABLE', changes: [{ id: 'arn:aws:sns:us-east-1:123456789012:another-stack-Topic-ABCDEFGHIJKL', name: 'Topic', type: 'AWS::SNS::Topic', action: 'Modify', replacement: false }, { id: 'arn:aws:sns:us-east-1:123456789012:my-stack-Topic-DQ8MBRPFONMK', name: 'Topic', type: 'AWS::SNS::Topic', action: 'Modify', replacement: false }] }, 'returned changeset details');
+    assert.deepEqual(data, {
+      id: 'aa507e2bdfc55947035a07271e75384efe',
+      status: 'CREATE_COMPLETE',
+      execution: 'AVAILABLE',
+      changes: [
+        {
+          id: 'arn:aws:sns:us-east-1:123456789012:another-stack-Topic-ABCDEFGHIJKL',
+          name: 'Topic',
+          type: 'AWS::SNS::Topic',
+          action: 'Modify',
+          replacement: false
+        },
+        {
+          id: 'arn:aws:sns:us-east-1:123456789012:my-stack-Topic-DQ8MBRPFONMK',
+          name: 'Topic',
+          type: 'AWS::SNS::Topic',
+          action: 'Modify',
+          replacement: false
+        }
+      ]
+    }, 'returned changeset details');
     AWS.CloudFormation.restore();
     assert.end();
   });
