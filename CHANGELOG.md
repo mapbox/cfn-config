@@ -1,6 +1,10 @@
 # Change Log
 All notable changes to this project will be documented in this file. For change log formatting, see http://keepachangelog.com/
 
+## 2.17.1 - 2018-07-27
+
+- Add support for `UPDATE_ROLLBACK_COMPLETE` status in Cloudformation events
+
 ## 2.17.0 - 2018-07-13
 
 - Use stack's AWS region when looking up config bucket location
