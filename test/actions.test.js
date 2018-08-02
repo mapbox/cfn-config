@@ -419,7 +419,7 @@ test('[actions.diff] changeset failed to create', function(assert) {
   });
 });
 
-test.only('[actions.diff] success', function(assert) {
+test('[actions.diff] success', function(assert) {
   var url = 'https://my-bucket.s3.amazonaws.com/my-template.json';
   var changesetId;
   var polled = 0;
