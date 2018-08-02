@@ -1,6 +1,10 @@
 # Change Log
 All notable changes to this project will be documented in this file. For change log formatting, see http://keepachangelog.com/
 
+## 2.17.2 - 2018-08-02
+
+- Fixes a bug in changeset polling / pagination that could result in duplicate console output
+
 ## 2.17.1 - 2018-07-27
 
 - Add support for `UPDATE_ROLLBACK_COMPLETE` status in Cloudformation events
