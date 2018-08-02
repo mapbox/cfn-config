@@ -419,7 +419,7 @@ test('[actions.diff] changeset failed to create', function(assert) {
   });
 });
 
-test('[actions.diff] success', function(assert) {
+test.only('[actions.diff] success', function(assert) {
   var url = 'https://my-bucket.s3.amazonaws.com/my-template.json';
   var changesetId;
   var polled = 0;
@@ -461,6 +461,25 @@ test('[actions.diff] success', function(assert) {
     });
 
     if (polled === 2) return callback(null, {
+      ChangeSetName: changesetId,
+      ChangeSetId: 'changeset:arn1',
+      StackId: 'arn:aws:cloudformation:us-east-1:123456789012:stack/my-stack/be3aa370-5b64-11e6-a232-500c217dbe62',
+      StackName: 'my-stack',
+      ExecutionStatus: 'AVAILABLE',
+      Status: 'CREATE_IN_PROGRESS',
+      Changes: [{
+        Type: 'Resource',
+        ResourceChange: {
+          Action: 'Modify',
+          LogicalResourceId: 'Topic',
+          PhysicalResourceId: 'arn:aws:sns:us-east-1:123456789012:another-stack-Topic-ABCDEFGHIJKL',
+          ResourceType: 'AWS::SNS::Topic',
+          Replacement: 'False'
+        }
+      }]
+    });
+
+    if (polled === 3) return callback(null, {
       ChangeSetName: changesetId,
       ChangeSetId: 'changeset:arn1',
       StackId: 'arn:aws:cloudformation:us-east-1:123456789012:stack/my-stack/be3aa370-5b64-11e6-a232-500c217dbe62',
