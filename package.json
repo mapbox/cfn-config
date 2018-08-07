@@ -19,7 +19,7 @@
     "diff": "^3.2.0",
     "easy-table": "^1.0.0",
     "fasterror": "^1.0.0",
-    "inquirer": "^2.0.0",
+    "inquirer": "^6.1.0",
     "json-diff": "^0.3.1",
     "json-stable-stringify": "1.0.1",
     "meow": "^3.7.0",
