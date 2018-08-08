@@ -20,7 +20,7 @@ var basicContext = commands.commandContext(opts, 'testing', [], function() {});
 test('[commands.create] no overrides', function(assert) {
   function whenDone() {}
 
-  sinon.stub(commands, 'commandContext', function(config, suffix, operations, callback) {
+  sinon.stub(commands, 'commandContext').callsFake(function(config, suffix, operations, callback) {
     assert.equal(operations.length, 12, '12 operations are run');
     assert.deepEqual(config, opts, 'instantiate context with expected config');
     assert.deepEqual(suffix, 'testing', 'instantiate context with expected suffix');
@@ -45,7 +45,7 @@ test('[commands.create] no overrides', function(assert) {
 test('[commands.create] with overrides', function(assert) {
   function whenDone() {}
 
-  sinon.stub(commands, 'commandContext', function(config, suffix, operations, callback) {
+  sinon.stub(commands, 'commandContext').callsFake(function(config, suffix, operations, callback) {
     assert.equal(operations.length, 12, '12 operations are run');
     assert.deepEqual(config, opts, 'instantiate context with expected config');
     assert.deepEqual(suffix, 'testing', 'instantiate context with expected suffix');
@@ -71,7 +71,7 @@ test('[commands.create] with overrides', function(assert) {
 test('[commands.update] with overrides', function(assert) {
   function whenDone() {}
 
-  sinon.stub(commands, 'commandContext', function(config, suffix, operations, callback) {
+  sinon.stub(commands, 'commandContext').callsFake(function(config, suffix, operations, callback) {
     assert.deepEqual(config, opts, 'instantiate context with expected config');
     assert.deepEqual(suffix, 'testing', 'instantiate context with expected suffix');
     assert.ok(operations.every(function(op) { return typeof op === 'function'; }), 'instantiate context with array of operations');
@@ -95,7 +95,7 @@ test('[commands.update] with overrides', function(assert) {
 test('[commands.update] with multiple overrides', function(assert) {
   function whenDone() {}
 
-  sinon.stub(commands, 'commandContext', function(config, suffix, operations, callback) {
+  sinon.stub(commands, 'commandContext').callsFake(function(config, suffix, operations, callback) {
     assert.deepEqual(config, opts, 'instantiate context with expected config');
     assert.deepEqual(suffix, 'testing', 'instantiate context with expected suffix');
     assert.ok(operations.every(function(op) { return typeof op === 'function'; }), 'instantiate context with array of operations');
@@ -120,7 +120,7 @@ test('[commands.update] with multiple overrides', function(assert) {
 test('[commands.update] with overrides.skipConfirmParameters', function(assert) {
   function whenDone() {}
 
-  sinon.stub(commands, 'commandContext', function(config, suffix, operations, callback) {
+  sinon.stub(commands, 'commandContext').callsFake(function(config, suffix, operations, callback) {
     assert.deepEqual(config, opts, 'instantiate context with expected config');
     assert.deepEqual(suffix, 'testing', 'instantiate context with expected suffix');
     assert.ok(operations.every(function(op) { return typeof op === 'function'; }), 'instantiate context with array of operations');
@@ -145,7 +145,7 @@ test('[commands.update] with overrides.skipConfirmParameters', function(assert) 
 test('[commands.update] with overrides.skipConfirmTemplate', function(assert) {
   function whenDone() {}
 
-  sinon.stub(commands, 'commandContext', function(config, suffix, operations, callback) {
+  sinon.stub(commands, 'commandContext').callsFake(function(config, suffix, operations, callback) {
     assert.deepEqual(config, opts, 'instantiate context with expected config');
     assert.deepEqual(suffix, 'testing', 'instantiate context with expected suffix');
     assert.ok(operations.every(function(op) { return typeof op === 'function'; }), 'instantiate context with array of operations');
@@ -170,7 +170,7 @@ test('[commands.update] with overrides.skipConfirmTemplate', function(assert) {
 test('[commands.update] with overrides.skipConfirmParameters and overrides.skipConfirmTemplate', function(assert) {
   function whenDone() {}
 
-  sinon.stub(commands, 'commandContext', function(config, suffix, operations, callback) {
+  sinon.stub(commands, 'commandContext').callsFake(function(config, suffix, operations, callback) {
     assert.deepEqual(config, opts, 'instantiate context with expected config');
     assert.deepEqual(suffix, 'testing', 'instantiate context with expected suffix');
     assert.ok(operations.every(function(op) { return typeof op === 'function'; }), 'instantiate context with array of operations');
@@ -195,7 +195,7 @@ test('[commands.update] with overrides.skipConfirmParameters and overrides.skipC
 test('[commands.update] no overrides', function(assert) {
   function whenDone() {}
 
-  sinon.stub(commands, 'commandContext', function(config, suffix, operations, callback) {
+  sinon.stub(commands, 'commandContext').callsFake(function(config, suffix, operations, callback) {
     assert.equal(operations.length, 15, '15 operations are run');
     assert.deepEqual(config, opts, 'instantiate context with expected config');
     assert.deepEqual(suffix, 'testing', 'instantiate context with expected suffix');
@@ -221,7 +221,7 @@ test('[commands.update] no overrides', function(assert) {
 test('[commands.delete] no overrides', function(assert) {
   function whenDone() {}
 
-  sinon.stub(commands, 'commandContext', function(config, suffix, operations, callback) {
+  sinon.stub(commands, 'commandContext').callsFake(function(config, suffix, operations, callback) {
     assert.deepEqual(config, opts, 'instantiate context with expected config');
     assert.deepEqual(suffix, 'testing', 'instantiate context with expected suffix');
     assert.ok(operations.every(function(op) { return typeof op === 'function'; }), 'instantiate context with array of operations');
@@ -246,7 +246,7 @@ test('[commands.delete] no overrides', function(assert) {
 test('[commands.delete] with overrides', function(assert) {
   function whenDone() {}
 
-  sinon.stub(commands, 'commandContext', function(config, suffix, operations, callback) {
+  sinon.stub(commands, 'commandContext').callsFake(function(config, suffix, operations, callback) {
     assert.deepEqual(config, opts, 'instantiate context with expected config');
     assert.deepEqual(suffix, 'testing', 'instantiate context with expected suffix');
     assert.ok(operations.every(function(op) { return typeof op === 'function'; }), 'instantiate context with array of operations');
@@ -269,7 +269,7 @@ test('[commands.delete] with overrides', function(assert) {
 });
 
 test('[commands.info] success w/o resources', function(assert) {
-  sinon.stub(lookup, 'info', function(name, region, resources, decrypt, callback) {
+  sinon.stub(lookup, 'info').callsFake(function(name, region, resources, decrypt, callback) {
     assert.equal(name, 'my-stack-testing', 'lookup.info expected stack name');
     assert.equal(region, 'us-east-1', 'lookup.info expected region');
     assert.notOk(resources, 'lookup.info no resources');
@@ -285,7 +285,7 @@ test('[commands.info] success w/o resources', function(assert) {
 });
 
 test('[commands.info] success w/ resources', function(assert) {
-  sinon.stub(lookup, 'info', function(name, region, resources, decrypt, callback) {
+  sinon.stub(lookup, 'info').callsFake(function(name, region, resources, decrypt, callback) {
     assert.equal(name, 'my-stack-testing', 'lookup.info expected stack name');
     assert.equal(region, 'us-east-1', 'lookup.info expected region');
     assert.ok(resources, 'lookup.info no resources');
@@ -301,7 +301,7 @@ test('[commands.info] success w/ resources', function(assert) {
 });
 
 test('[commands.info] success w/o decrypt', function(assert) {
-  sinon.stub(lookup, 'info', function(name, region, resources, decrypt, callback) {
+  sinon.stub(lookup, 'info').callsFake(function(name, region, resources, decrypt, callback) {
     assert.equal(name, 'my-stack-testing', 'lookup.info expected stack name');
     assert.equal(region, 'us-east-1', 'lookup.info expected region');
     assert.ok(resources, 'lookup.info resources');
@@ -317,7 +317,7 @@ test('[commands.info] success w/o decrypt', function(assert) {
 });
 
 test('[commands.info] success w/ decrypt', function(assert) {
-  sinon.stub(lookup, 'info', function(name, region, resources, decrypt, callback) {
+  sinon.stub(lookup, 'info').callsFake(function(name, region, resources, decrypt, callback) {
     assert.equal(name, 'my-stack-testing', 'lookup.info expected stack name');
     assert.equal(region, 'us-east-1', 'lookup.info expected region');
     assert.ok(resources, 'lookup.info resources');
@@ -333,7 +333,7 @@ test('[commands.info] success w/ decrypt', function(assert) {
 });
 
 test('[commands.info] null provided as suffix', function(assert) {
-  sinon.stub(lookup, 'info', function(name, region, resources, decrypt, callback) {
+  sinon.stub(lookup, 'info').callsFake(function(name, region, resources, decrypt, callback) {
     assert.equal(name, 'my-stack', 'no trailing - on stack name');
     callback();
   });
@@ -348,7 +348,7 @@ test('[commands.info] null provided as suffix', function(assert) {
 test('[commands.save] kms-mode', function(assert) {
   function whenDone() {}
 
-  sinon.stub(commands, 'commandContext', function(config, suffix, operations, callback) {
+  sinon.stub(commands, 'commandContext').callsFake(function(config, suffix, operations, callback) {
     assert.deepEqual(config, opts, 'instantiate context with expected config');
     assert.deepEqual(suffix, 'testing', 'instantiate context with expected suffix');
     assert.ok(operations.every(function(op) { return typeof op === 'function'; }), 'instantiate context with array of operations');
@@ -372,7 +372,7 @@ test('[commands.save] kms-mode', function(assert) {
 test('[commands.save] not kms-mode', function(assert) {
   function whenDone() {}
 
-  sinon.stub(commands, 'commandContext', function(config, suffix, operations, callback) {
+  sinon.stub(commands, 'commandContext').callsFake(function(config, suffix, operations, callback) {
     assert.deepEqual(config, opts, 'instantiate context with expected config');
     assert.deepEqual(suffix, 'testing', 'instantiate context with expected suffix');
     assert.ok(operations.every(function(op) { return typeof op === 'function'; }), 'instantiate context with array of operations');
@@ -494,15 +494,15 @@ test('[commands.commandContext] aborts with error', function(assert) {
 });
 
 test('[commands.operations.updatePreamble] template not found', function(assert) {
-  sinon.stub(template, 'read', function(templatePath, options, callback) {
+  sinon.stub(template, 'read').callsFake(function(templatePath, options, callback) {
     callback(new template.NotFoundError('failure'));
   });
 
-  sinon.stub(lookup, 'parameters', function(name, region, callback) {
+  sinon.stub(lookup, 'parameters').callsFake(function(name, region, callback) {
     callback();
   });
 
-  sinon.stub(lookup, 'template', function(name, region, callback) {
+  sinon.stub(lookup, 'template').callsFake(function(name, region, callback) {
     callback();
   });
 
@@ -524,15 +524,15 @@ test('[commands.operations.updatePreamble] template not found', function(assert)
 });
 
 test('[commands.operations.updatePreamble] template invalid', function(assert) {
-  sinon.stub(template, 'read', function(templatePath, options, callback) {
+  sinon.stub(template, 'read').callsFake(function(templatePath, options, callback) {
     callback(new template.InvalidTemplateError('failure'));
   });
 
-  sinon.stub(lookup, 'parameters', function(name, region, callback) {
+  sinon.stub(lookup, 'parameters').callsFake(function(name, region, callback) {
     callback();
   });
 
-  sinon.stub(lookup, 'template', function(name, region, callback) {
+  sinon.stub(lookup, 'template').callsFake(function(name, region, callback) {
     callback();
   });
 
@@ -554,15 +554,15 @@ test('[commands.operations.updatePreamble] template invalid', function(assert) {
 });
 
 test('[commands.operations.updatePreamble] stack not found for parameters', function(assert) {
-  sinon.stub(template, 'read', function(templatePath, options, callback) {
+  sinon.stub(template, 'read').callsFake(function(templatePath, options, callback) {
     callback();
   });
 
-  sinon.stub(lookup, 'parameters', function(name, region, callback) {
+  sinon.stub(lookup, 'parameters').callsFake(function(name, region, callback) {
     callback(new lookup.StackNotFoundError('failure'));
   });
 
-  sinon.stub(lookup, 'template', function(name, region, callback) {
+  sinon.stub(lookup, 'template').callsFake(function(name, region, callback) {
     callback();
   });
 
@@ -584,15 +584,15 @@ test('[commands.operations.updatePreamble] stack not found for parameters', func
 });
 
 test('[commands.operations.updatePreamble] failure getting stack parameters', function(assert) {
-  sinon.stub(template, 'read', function(templatePath, options, callback) {
+  sinon.stub(template, 'read').callsFake(function(templatePath, options, callback) {
     callback();
   });
 
-  sinon.stub(lookup, 'parameters', function(name, region, callback) {
+  sinon.stub(lookup, 'parameters').callsFake(function(name, region, callback) {
     callback(new lookup.CloudFormationError('failure'));
   });
 
-  sinon.stub(lookup, 'template', function(name, region, callback) {
+  sinon.stub(lookup, 'template').callsFake(function(name, region, callback) {
     callback();
   });
 
@@ -614,15 +614,15 @@ test('[commands.operations.updatePreamble] failure getting stack parameters', fu
 });
 
 test('[commands.operations.updatePreamble] stack not found for template', function(assert) {
-  sinon.stub(template, 'read', function(templatePath, options, callback) {
+  sinon.stub(template, 'read').callsFake(function(templatePath, options, callback) {
     callback();
   });
 
-  sinon.stub(lookup, 'parameters', function(name, region, callback) {
+  sinon.stub(lookup, 'parameters').callsFake(function(name, region, callback) {
     callback();
   });
 
-  sinon.stub(lookup, 'template', function(name, region, callback) {
+  sinon.stub(lookup, 'template').callsFake(function(name, region, callback) {
     callback(new lookup.StackNotFoundError('failure'));
   });
 
@@ -644,15 +644,15 @@ test('[commands.operations.updatePreamble] stack not found for template', functi
 });
 
 test('[commands.operations.updatePreamble] failure getting stack template', function(assert) {
-  sinon.stub(template, 'read', function(templatePath, options, callback) {
+  sinon.stub(template, 'read').callsFake(function(templatePath, options, callback) {
     callback();
   });
 
-  sinon.stub(lookup, 'parameters', function(name, region, callback) {
+  sinon.stub(lookup, 'parameters').callsFake(function(name, region, callback) {
     callback();
   });
 
-  sinon.stub(lookup, 'template', function(name, region, callback) {
+  sinon.stub(lookup, 'template').callsFake(function(name, region, callback) {
     callback(new lookup.CloudFormationError('failure'));
   });
 
@@ -674,16 +674,16 @@ test('[commands.operations.updatePreamble] failure getting stack template', func
 });
 
 test('[commands.operations.updatePreamble] success', function(assert) {
-  sinon.stub(template, 'read', function(templatePath, options, callback) {
+  sinon.stub(template, 'read').callsFake(function(templatePath, options, callback) {
     assert.deepEqual(options, { template: 'options' }, 'passed overrides.templateOptions');
     callback(null, { new: 'template' });
   });
 
-  sinon.stub(lookup, 'parameters', function(name, region, callback) {
+  sinon.stub(lookup, 'parameters').callsFake(function(name, region, callback) {
     callback(null, { old: 'parameters' });
   });
 
-  sinon.stub(lookup, 'template', function(name, region, callback) {
+  sinon.stub(lookup, 'template').callsFake(function(name, region, callback) {
     callback(null, { old: 'template' });
   });
 
@@ -709,7 +709,7 @@ test('[commands.operations.updatePreamble] success', function(assert) {
 
 test('[commands.operations.getMasterConfig] success', function(assert) {
 
-  sinon.stub(lookup, 'defaultConfiguration', function(s3Url, callback) {
+  sinon.stub(lookup, 'defaultConfiguration').callsFake(function(s3Url, callback) {
     callback(null, { old: 'fresh' });
   });
 
@@ -733,7 +733,7 @@ test('[commands.operations.getMasterConfig] success', function(assert) {
 
 test('[commands.operations.getMasterConfig] no-op', function(assert) {
 
-  sinon.stub(lookup, 'defaultConfiguration', function(s3Url, callback) {
+  sinon.stub(lookup, 'defaultConfiguration').callsFake(function(s3Url, callback) {
     callback(null, { old: 'fresh' });
   });
 
@@ -756,7 +756,7 @@ test('[commands.operations.getMasterConfig] no-op', function(assert) {
 
 test('[commands.operations.getMasterConfig] failed', function(assert) {
 
-  sinon.stub(lookup, 'defaultConfiguration', function(s3Url, callback) {
+  sinon.stub(lookup, 'defaultConfiguration').callsFake(function(s3Url, callback) {
     callback(new Error(), {});
   });
 
@@ -777,7 +777,7 @@ test('[commands.operations.getMasterConfig] failed', function(assert) {
 
 test('[commands.operations.getMasterConfig] no matching oldParameters does not put masterConfig keys into oldParameters for better looking diff at the end', function(assert) {
 
-  sinon.stub(lookup, 'defaultConfiguration', function(s3Url, callback) {
+  sinon.stub(lookup, 'defaultConfiguration').callsFake(function(s3Url, callback) {
     callback(null, { bingo: 'fresh' });
   });
 
@@ -800,7 +800,7 @@ test('[commands.operations.getMasterConfig] no matching oldParameters does not p
 
 test('[commands.operations.getMasterConfig] adding a newParameter that matches masterConfig parameter does not get overwritten, so that user is intentional in adding newParameters', function(assert) {
 
-  sinon.stub(lookup, 'defaultConfiguration', function(s3Url, callback) {
+  sinon.stub(lookup, 'defaultConfiguration').callsFake(function(s3Url, callback) {
     callback(null, { old: 'fresh' });
   });
 
@@ -825,7 +825,7 @@ test('[commands.operations.getMasterConfig] adding a newParameter that matches m
 });
 
 test('[commands.operations.promptParameters] force-mode', function(assert) {
-  sinon.stub(template, 'questions', function() {
+  sinon.stub(template, 'questions').callsFake(function() {
     assert.fail('should not build questions');
   });
 
@@ -849,13 +849,13 @@ test('[commands.operations.promptParameters] not force-mode', function(assert) {
   var questions = { parameter: 'questions' };
   var answers = { parameter: 'answers' };
 
-  sinon.stub(template, 'questions', function(template, overrides) {
+  sinon.stub(template, 'questions').callsFake(function(template, overrides) {
     assert.deepEqual(template, { new: 'template' }, 'builds questions for new template');
     assert.deepEqual(overrides, { defaults: { old: 'parameters' }, kmsKeyId: undefined, region: 'us-east-1' }, 'uses old parameters as default values');
     return questions;
   });
 
-  sinon.stub(prompt, 'parameters', function(question, callback) {
+  sinon.stub(prompt, 'parameters').callsFake(function(question, callback) {
     assert.deepEqual(question, questions, 'prompts for derived questions');
     callback(null, answers);
   });
@@ -876,12 +876,12 @@ test('[commands.operations.promptParameters] not force-mode', function(assert) {
 });
 
 test('[commands.operations.promptParameters] with parameter and kms overrides', function(assert) {
-  sinon.stub(template, 'questions', function(template, overrides) {
+  sinon.stub(template, 'questions').callsFake(function(template, overrides) {
     assert.deepEqual(overrides, { defaults: { old: 'overriden' }, kmsKeyId: 'this is a bomb key', region: 'us-west-2' }, 'uses override parameters');
     return { parameter: 'questions' };
   });
 
-  sinon.stub(prompt, 'parameters', function(questions, callback) {
+  sinon.stub(prompt, 'parameters').callsFake(function(questions, callback) {
     callback({ the: 'answers' });
   });
 
@@ -916,7 +916,7 @@ test('[commands.operations.promptParameters] force-mode with no parameters in ne
 });
 
 test('[commands.operations.promptParameters] reject overrides that are not in old or new template', function(assert) {
-  sinon.stub(prompt, 'parameters', function(questions, callback) {
+  sinon.stub(prompt, 'parameters').callsFake(function(questions, callback) {
     callback(null, { some: 'answers' });
   });
 
@@ -986,7 +986,7 @@ test('[commands.operations.confirmParameters] preapproved', function(assert) {
 test('[commands.operations.confirmParameters] rejected', function(assert) {
   assert.plan(2);
 
-  sinon.stub(prompt, 'confirm', function(message, callback) {
+  sinon.stub(prompt, 'confirm').callsFake(function(message, callback) {
     assert.equal(message, ' {\n\x1b[31m-  old: "parameters"\x1b[39m\n\x1b[32m+  new: "parameterz"\x1b[39m\n }\n\nAccept parameter changes?', 'prompted appropriate message');
     callback(null, false);
   });
@@ -1010,7 +1010,7 @@ test('[commands.operations.confirmParameters] rejected', function(assert) {
 test('[commands.operations.confirmParameters] accepted', function(assert) {
   assert.plan(2);
 
-  sinon.stub(prompt, 'confirm', function(message, callback) {
+  sinon.stub(prompt, 'confirm').callsFake(function(message, callback) {
     assert.equal(message, ' {\n\x1b[31m-  old: "parameters"\x1b[39m\n\x1b[32m+  new: "parameters"\x1b[39m\n }\n\nAccept parameter changes?', 'prompted appropriate message');
     callback(null, true);
   });
@@ -1102,7 +1102,7 @@ test('[commands.operations.confirmTemplate] preapproved', function(assert) {
 test('[commands.operations.confirmTemplate] rejected', function(assert) {
   assert.plan(2);
 
-  sinon.stub(prompt, 'confirm', function(message, callback) {
+  sinon.stub(prompt, 'confirm').callsFake(function(message, callback) {
     assert.equal(
       message,
       '\x1b[90m {\n\x1b[39m\x1b[31m-  "old": "template"\n\x1b[39m\x1b[32m+  "new": "template"\n\x1b[39m\x1b[90m }\x1b[39m\nAccept template changes?',
@@ -1130,7 +1130,7 @@ test('[commands.operations.confirmTemplate] rejected', function(assert) {
 test('[commands.operations.confirmTemplate] accepted', function(assert) {
   assert.plan(2);
 
-  sinon.stub(prompt, 'confirm', function(message, callback) {
+  sinon.stub(prompt, 'confirm').callsFake(function(message, callback) {
     assert.equal(message, '\x1b[90m {\n\x1b[39m\x1b[31m-  "old": "template"\n\x1b[39m\x1b[32m+  "new": "template"\n\x1b[39m\x1b[90m }\x1b[39m\nAccept template changes?', 'prompted appropriate message');
     callback(null, true);
   });
@@ -1154,7 +1154,7 @@ test('[commands.operations.confirmTemplate] accepted', function(assert) {
 test('[commands.operations.confirmTemplate] lengthy diff, first unchanged section ignored', function(assert) {
   assert.plan(2);
 
-  sinon.stub(prompt, 'confirm', function(message, callback) {
+  sinon.stub(prompt, 'confirm').callsFake(function(message, callback) {
     assert.equal(message, '\x1b[90m {\n   "a": "lines",\n   "aa": "lines",\n\x1b[39m\x1b[31m-  "and": "will change too",\n\x1b[39m\x1b[32m+  "and": "has changed",\n\x1b[39m\x1b[90m   "b": "lines",\n   "ba": "lines",\n   "c": "lines",\n\x1b[39m\x1b[90m\n---------------------------------------------\n\n\x1b[39m\x1b[90m   "r": "lines",\n   "s": "lines",\n   "t": "lines",\n\x1b[39m\x1b[31m-  "this": "will change",\n\x1b[39m\x1b[32m+  "this": "has changed",\n\x1b[39m\x1b[90m   "u": "lines",\n   "v": "lines"\n }\x1b[39m\nAccept template changes?', 'prompted appropriate message');
     callback(null, true);
   });
@@ -1252,11 +1252,11 @@ test('[commands.operations.confirmTemplate] lengthy diff, first unchanged sectio
 test('[commands.operations.saveTemplate] bucket not found', function(assert) {
   var url = 'https://s3.amazonaws.com/my-template-bucket/my-stack-testing.template.json';
 
-  sinon.stub(actions, 'templateUrl', function() {
+  sinon.stub(actions, 'templateUrl').callsFake(function() {
     return url;
   });
 
-  sinon.stub(actions, 'saveTemplate', function(url, template, callback) {
+  sinon.stub(actions, 'saveTemplate').callsFake(function(url, template, callback) {
     callback(new actions.BucketNotFoundError('failure'));
   });
 
@@ -1276,11 +1276,11 @@ test('[commands.operations.saveTemplate] bucket not found', function(assert) {
 test('[commands.operations.saveTemplate] failed to save template', function(assert) {
   var url = 'https://s3.amazonaws.com/my-template-bucket/my-stack-testing.template.json';
 
-  sinon.stub(actions, 'templateUrl', function() {
+  sinon.stub(actions, 'templateUrl').callsFake(function() {
     return url;
   });
 
-  sinon.stub(actions, 'saveTemplate', function(url, template, callback) {
+  sinon.stub(actions, 'saveTemplate').callsFake(function(url, template, callback) {
     callback(new actions.S3Error('failure'));
   });
 
@@ -1300,14 +1300,14 @@ test('[commands.operations.saveTemplate] failed to save template', function(asse
 test('[commands.operations.saveTemplate] success', function(assert) {
   var templateUrl = 'https://s3.amazonaws.com/my-template-bucket/my-stack-testing.template.json';
 
-  sinon.stub(actions, 'templateUrl', function(bucket, region, suffix) {
+  sinon.stub(actions, 'templateUrl').callsFake(function(bucket, region, suffix) {
     assert.equal(bucket, context.templateBucket, 'template url in proper bucket');
     assert.equal(region, context.stackRegion, 'template url in proper region');
     assert.equal(suffix, context.suffix, 'template url for correct suffix');
     return templateUrl;
   });
 
-  sinon.stub(actions, 'saveTemplate', function(url, template, callback) {
+  sinon.stub(actions, 'saveTemplate').callsFake(function(url, template, callback) {
     assert.equal(url, templateUrl, 'saved to correct url');
     assert.equal(template, '{\n  "new": "template"\n}', 'saved correct template');
     callback();
@@ -1328,7 +1328,7 @@ test('[commands.operations.saveTemplate] success', function(assert) {
 });
 
 test('[commands.operations.validateTemplate] invalid', function(assert) {
-  sinon.stub(actions, 'validate', function(region, url, callback) {
+  sinon.stub(actions, 'validate').callsFake(function(region, url, callback) {
     callback(new actions.CloudFormationError('failure'));
   });
 
@@ -1348,7 +1348,7 @@ test('[commands.operations.validateTemplate] invalid', function(assert) {
 test('[commands.operations.validateTemplate] valid', function(assert) {
   assert.plan(3);
 
-  sinon.stub(actions, 'validate', function(region, url, callback) {
+  sinon.stub(actions, 'validate').callsFake(function(region, url, callback) {
     assert.equal(region, context.stackRegion, 'validate in proper region');
     assert.equal(url, context.templateUrl, 'validate proper template');
     callback();
@@ -1476,7 +1476,7 @@ test('[commands.operations.beforeUpdateHook] hook success', function(assert) {
 });
 
 test('[commands.operations.getChangeset] failure', function(assert) {
-  sinon.stub(actions, 'diff', function(name, region, url, params, callback) {
+  sinon.stub(actions, 'diff').callsFake(function(name, region, url, params, callback) {
     callback(new actions.CloudFormationError('failure'));
   });
 
@@ -1500,7 +1500,7 @@ test('[commands.operations.getChangeset] success', function(assert) {
 
   var details = { changeset: 'details' };
 
-  sinon.stub(actions, 'diff', function(name, region, url, params, callback) {
+  sinon.stub(actions, 'diff').callsFake(function(name, region, url, params, callback) {
     assert.equal(name, context.stackName, 'changeset for correct stack');
     assert.equal(region, context.stackRegion, 'changeset in the correct region');
     assert.equal(url, context.templateUrl, 'changeset for the correct template');
@@ -1558,7 +1558,7 @@ test('[commands.operations.confirmChangeset] skipConfirmParams && skipConfirmTem
 });
 
 test('[commands.operations.confirmChangeset] rejected', function(assert) {
-  sinon.stub(prompt, 'confirm', function(message, defaultValue, callback) {
+  sinon.stub(prompt, 'confirm').callsFake(function(message, defaultValue, callback) {
     assert.equal(defaultValue, false);
     callback(null, false);
   });
@@ -1578,7 +1578,7 @@ test('[commands.operations.confirmChangeset] rejected', function(assert) {
 test('[commands.operations.confirmChangeset] acccepted', function(assert) {
   assert.plan(3);
 
-  sinon.stub(prompt, 'confirm', function(message, defaultValue, callback) {
+  sinon.stub(prompt, 'confirm').callsFake(function(message, defaultValue, callback) {
     assert.equal(message, '\n\n\nAccept changes and update the stack?', 'expected message');
     assert.equal(defaultValue, false);
     callback(null, true);
@@ -1599,7 +1599,7 @@ test('[commands.operations.confirmChangeset] acccepted', function(assert) {
 });
 
 test('[commands.operations.confirmChangeset] changeset formatting', function(assert) {
-  sinon.stub(prompt, 'confirm', function(message, defaultValue, callback) {
+  sinon.stub(prompt, 'confirm').callsFake(function(message, defaultValue, callback) {
     assert.equal(message, 'Action  Name  Type  Replace\n------  ----  ----  -------\n\x1b[33mModify\x1b[39m  name  type  \x1b[31mtrue\x1b[39m   \n\x1b[32mAdd\x1b[39m     name  type  \x1b[32mfalse\x1b[39m  \n\x1b[31mRemove\x1b[39m  name  type  \x1b[32mfalse\x1b[39m  \n\nAccept changes and update the stack?', 'expected message (with colors)');
     assert.equal(defaultValue, false);
     callback(null, true);
@@ -1627,7 +1627,7 @@ test('[commands.operations.confirmChangeset] changeset formatting', function(ass
 });
 
 test('[commands.operations.executeChangeSet] failure', function(assert) {
-  sinon.stub(actions, 'executeChangeSet', function(name, region, id, callback) {
+  sinon.stub(actions, 'executeChangeSet').callsFake(function(name, region, id, callback) {
     callback(new actions.CloudFormationError('failure'));
   });
 
@@ -1645,7 +1645,7 @@ test('[commands.operations.executeChangeSet] failure', function(assert) {
 });
 
 test('[commands.operations.executeChangeSet] not executable', function(assert) {
-  sinon.stub(actions, 'executeChangeSet', function(name, region, id, callback) {
+  sinon.stub(actions, 'executeChangeSet').callsFake(function(name, region, id, callback) {
     var err = new actions.ChangeSetNotExecutableError('failure');
     err.execution = 'OBSOLETE';
     err.reason = 'outdated';
@@ -1668,7 +1668,7 @@ test('[commands.operations.executeChangeSet] not executable', function(assert) {
 test('[commands.operations.executeChangeSet] success', function(assert) {
   assert.plan(4);
 
-  sinon.stub(actions, 'executeChangeSet', function(name, region, id, callback) {
+  sinon.stub(actions, 'executeChangeSet').callsFake(function(name, region, id, callback) {
     assert.equal(name, context.stackName, 'execute on proper stack');
     assert.equal(region, context.stackRegion, 'execute in proper region');
     assert.equal(id, context.changeset.id, 'execute proper changeset');
@@ -1688,11 +1688,11 @@ test('[commands.operations.executeChangeSet] success', function(assert) {
 });
 
 test('[commands.operations.createPreamble] template not found', function(assert) {
-  sinon.stub(template, 'read', function(templatePath, options, callback) {
+  sinon.stub(template, 'read').callsFake(function(templatePath, options, callback) {
     callback(new template.NotFoundError('failure'));
   });
 
-  sinon.stub(lookup, 'configurations', function(name, bucket, region, callback) {
+  sinon.stub(lookup, 'configurations').callsFake(function(name, bucket, region, callback) {
     callback();
   });
 
@@ -1711,11 +1711,11 @@ test('[commands.operations.createPreamble] template not found', function(assert)
 });
 
 test('[commands.operations.createPreamble] template invalid', function(assert) {
-  sinon.stub(template, 'read', function(templatePath, options, callback) {
+  sinon.stub(template, 'read').callsFake(function(templatePath, options, callback) {
     callback(new template.InvalidTemplateError('failure'));
   });
 
-  sinon.stub(lookup, 'configurations', function(name, bucket, region, callback) {
+  sinon.stub(lookup, 'configurations').callsFake(function(name, bucket, region, callback) {
     callback();
   });
 
@@ -1734,11 +1734,11 @@ test('[commands.operations.createPreamble] template invalid', function(assert) {
 });
 
 test('[commands.operations.createPreamble] config bucket not found', function(assert) {
-  sinon.stub(template, 'read', function(templatePath, options, callback) {
+  sinon.stub(template, 'read').callsFake(function(templatePath, options, callback) {
     callback();
   });
 
-  sinon.stub(lookup, 'configurations', function(name, bucket, region, callback) {
+  sinon.stub(lookup, 'configurations').callsFake(function(name, bucket, region, callback) {
     callback(new lookup.BucketNotFoundError('failure'));
   });
 
@@ -1757,11 +1757,11 @@ test('[commands.operations.createPreamble] config bucket not found', function(as
 });
 
 test('[commands.operations.createPreamble] failed to read configurations', function(assert) {
-  sinon.stub(template, 'read', function(templatePath, options, callback) {
+  sinon.stub(template, 'read').callsFake(function(templatePath, options, callback) {
     callback();
   });
 
-  sinon.stub(lookup, 'configurations', function(name, bucket, region, callback) {
+  sinon.stub(lookup, 'configurations').callsFake(function(name, bucket, region, callback) {
     callback(new lookup.S3Error('failure'));
   });
 
@@ -1780,13 +1780,13 @@ test('[commands.operations.createPreamble] failed to read configurations', funct
 });
 
 test('[commands.operations.createPreamble] success', function(assert) {
-  sinon.stub(template, 'read', function(templatePath, options, callback) {
+  sinon.stub(template, 'read').callsFake(function(templatePath, options, callback) {
     assert.equal(templatePath, context.templatePath, 'read correct template');
     assert.deepEqual(options, { template: 'options' }, 'passed overrides.templateOptions');
     callback(null, { new: 'template' });
   });
 
-  sinon.stub(lookup, 'configurations', function(name, bucket, region, callback) {
+  sinon.stub(lookup, 'configurations').callsFake(function(name, bucket, region, callback) {
     assert.equal(name, context.baseName, 'lookup correct stack configurations');
     assert.equal(bucket, context.configBucket, 'lookup in correct bucket');
     callback(null, ['config']);
@@ -1809,7 +1809,7 @@ test('[commands.operations.createPreamble] success', function(assert) {
 });
 
 test('[commands.operations.selectConfig] force-mode', function(assert) {
-  sinon.stub(prompt, 'configuration', function(configs, callback) {
+  sinon.stub(prompt, 'configuration').callsFake(function(configs, callback) {
     assert.fail('should not prompt');
     callback(new Error('failure'));
   });
@@ -1828,7 +1828,7 @@ test('[commands.operations.selectConfig] force-mode', function(assert) {
 });
 
 test('[commands.operations.selectConfig] new config', function(assert) {
-  sinon.stub(prompt, 'configuration', function(configs, callback) {
+  sinon.stub(prompt, 'configuration').callsFake(function(configs, callback) {
     assert.deepEqual(configs, context.configNames, 'prompted with correct config names');
     callback(null, 'New configuration');
   });
@@ -1847,7 +1847,7 @@ test('[commands.operations.selectConfig] new config', function(assert) {
 });
 
 test('[commands.operations.selectConfig] saved config', function(assert) {
-  sinon.stub(prompt, 'configuration', function(configs, callback) {
+  sinon.stub(prompt, 'configuration').callsFake(function(configs, callback) {
     assert.deepEqual(configs, context.configNames, 'prompted with correct config names');
     callback(null, 'config');
   });
@@ -1878,7 +1878,7 @@ test('[commands.operations.loadConfig] no saved config, no default', function(as
 });
 
 test('[commands.operations.loadConfig] no saved config, has default', function(assert) {
-  sinon.stub(lookup, 'defaultConfiguration', function(s3url, callback) {
+  sinon.stub(lookup, 'defaultConfiguration').callsFake(function(s3url, callback) {
     assert.equal(s3url, 's3://my-bucket/my-default.cfn.json', 'requested correct configuration');
     callback(null, { default: 'configuration' });
   });
@@ -1897,7 +1897,7 @@ test('[commands.operations.loadConfig] no saved config, has default', function(a
 });
 
 test('[commands.operations.loadConfig] bucket not found', function(assert) {
-  sinon.stub(lookup, 'configuration', function(name, bucket, config, callback) {
+  sinon.stub(lookup, 'configuration').callsFake(function(name, bucket, config, callback) {
     callback(new lookup.BucketNotFoundError('failure'));
   });
 
@@ -1915,7 +1915,7 @@ test('[commands.operations.loadConfig] bucket not found', function(assert) {
 });
 
 test('[commands.operations.loadConfig] config not found', function(assert) {
-  sinon.stub(lookup, 'configuration', function(name, bucket, config, callback) {
+  sinon.stub(lookup, 'configuration').callsFake(function(name, bucket, config, callback) {
     callback(new lookup.ConfigurationNotFoundError('failure'));
   });
 
@@ -1933,7 +1933,7 @@ test('[commands.operations.loadConfig] config not found', function(assert) {
 });
 
 test('[commands.operations.loadConfig] invalid config', function(assert) {
-  sinon.stub(lookup, 'configuration', function(name, bucket, config, callback) {
+  sinon.stub(lookup, 'configuration').callsFake(function(name, bucket, config, callback) {
     callback(new lookup.InvalidConfigurationError('failure'));
   });
 
@@ -1951,7 +1951,7 @@ test('[commands.operations.loadConfig] invalid config', function(assert) {
 });
 
 test('[commands.operations.loadConfig] failed to load config', function(assert) {
-  sinon.stub(lookup, 'configuration', function(name, bucket, config, callback) {
+  sinon.stub(lookup, 'configuration').callsFake(function(name, bucket, config, callback) {
     callback(new lookup.S3Error('failure'));
   });
 
@@ -1969,7 +1969,7 @@ test('[commands.operations.loadConfig] failed to load config', function(assert) 
 });
 
 test('[commands.operations.loadConfig] success', function(assert) {
-  sinon.stub(lookup, 'configuration', function(name, bucket, config, callback) {
+  sinon.stub(lookup, 'configuration').callsFake(function(name, bucket, config, callback) {
     assert.equal(name, context.baseName, 'expected stack name');
     assert.equal(bucket, context.configBucket, 'expected config bucket');
     assert.equal(config, context.configName, 'expected config name');
@@ -1990,7 +1990,7 @@ test('[commands.operations.loadConfig] success', function(assert) {
 });
 
 test('[commands.operations.confirmCreate] force-mode', function(assert) {
-  sinon.stub(prompt, 'confirm', function(message, callback) {
+  sinon.stub(prompt, 'confirm').callsFake(function(message, callback) {
     assert.fail('should not prompt');
     callback(new Error('failure'));
   });
@@ -2008,7 +2008,7 @@ test('[commands.operations.confirmCreate] force-mode', function(assert) {
 });
 
 test('[commands.operations.confirmCreate] reject', function(assert) {
-  sinon.stub(prompt, 'confirm', function(message, callback) {
+  sinon.stub(prompt, 'confirm').callsFake(function(message, callback) {
     callback(null, false);
   });
 
@@ -2025,7 +2025,7 @@ test('[commands.operations.confirmCreate] reject', function(assert) {
 });
 
 test('[commands.operations.confirmCreate] accept', function(assert) {
-  sinon.stub(prompt, 'confirm', function(message, callback) {
+  sinon.stub(prompt, 'confirm').callsFake(function(message, callback) {
     assert.equal(message, 'Ready to create the stack?', 'expected message');
     callback(null, true);
   });
@@ -2043,7 +2043,7 @@ test('[commands.operations.confirmCreate] accept', function(assert) {
 });
 
 test('[commands.operations.createStack] failure', function(assert) {
-  sinon.stub(actions, 'create', function(name, region, url, parameters, callback) {
+  sinon.stub(actions, 'create').callsFake(function(name, region, url, parameters, callback) {
     callback(new actions.CloudFormationError('failure'));
   });
 
@@ -2060,7 +2060,7 @@ test('[commands.operations.createStack] failure', function(assert) {
 });
 
 test('[commands.operations.createStack] success', function(assert) {
-  sinon.stub(actions, 'create', function(name, region, url, parameters, callback) {
+  sinon.stub(actions, 'create').callsFake(function(name, region, url, parameters, callback) {
     assert.equal(name, context.stackName, 'expected stack name');
     assert.equal(region, context.stackRegion, 'expected stack region');
     assert.equal(url, context.templateUrl, 'expected template url');
@@ -2094,7 +2094,7 @@ test('[commands.operations.confirmDelete] force-mode', function(assert) {
 });
 
 test('[commands.operations.confirmDelete] reject', function(assert) {
-  sinon.stub(prompt, 'confirm', function(message, defaultValue, callback) {
+  sinon.stub(prompt, 'confirm').callsFake(function(message, defaultValue, callback) {
     assert.equal(message, 'Are you sure you want to delete my-stack-testing in region us-east-1?');
     assert.equal(defaultValue, false);
     callback(null, false);
@@ -2112,7 +2112,7 @@ test('[commands.operations.confirmDelete] reject', function(assert) {
 });
 
 test('[commands.operations.confirmDelete] accept', function(assert) {
-  sinon.stub(prompt, 'confirm', function(message, defaultValue, callback) {
+  sinon.stub(prompt, 'confirm').callsFake(function(message, defaultValue, callback) {
     assert.equal(message, 'Are you sure you want to delete my-stack-testing in region us-east-1?', 'expected message');
     assert.equal(defaultValue, false);
     callback(null, true);
@@ -2130,7 +2130,7 @@ test('[commands.operations.confirmDelete] accept', function(assert) {
 });
 
 test('[commands.operations.deleteStack] failure', function(assert) {
-  sinon.stub(actions, 'delete', function(name, region, callback) {
+  sinon.stub(actions, 'delete').callsFake(function(name, region, callback) {
     callback(new actions.CloudFormationError('failure'));
   });
 
@@ -2147,7 +2147,7 @@ test('[commands.operations.deleteStack] failure', function(assert) {
 });
 
 test('[commands.operations.deleteStack] success', function(assert) {
-  sinon.stub(actions, 'delete', function(name, region, callback) {
+  sinon.stub(actions, 'delete').callsFake(function(name, region, callback) {
     assert.equal(name, context.stackName, 'deleted expected stack');
     assert.equal(region, context.stackRegion, 'deleted in expected region');
     callback();
@@ -2165,7 +2165,7 @@ test('[commands.operations.deleteStack] success', function(assert) {
 });
 
 test('[commands.operations.monitorStack] failure', function(assert) {
-  sinon.stub(actions, 'monitor', function(name, region, pollInterval, callback) {
+  sinon.stub(actions, 'monitor').callsFake(function(name, region, pollInterval, callback) {
     callback(new actions.CloudFormationError('failure'));
   });
 
@@ -2181,7 +2181,7 @@ test('[commands.operations.monitorStack] failure', function(assert) {
 });
 
 test('[commands.operations.monitorStack] success', function(assert) {
-  sinon.stub(actions, 'monitor', function(name, region, pollInterval, callback) {
+  sinon.stub(actions, 'monitor').callsFake(function(name, region, pollInterval, callback) {
     assert.equal(name, context.stackName, 'monitor expected stack');
     assert.equal(region, context.stackRegion, 'monitor in expected region');
     assert.equal(pollInterval, 5000, 'monitor with overriden pollInterval');
@@ -2201,7 +2201,7 @@ test('[commands.operations.monitorStack] success', function(assert) {
 });
 
 test('[commands.operations.getOldParameters] missing stack', function(assert) {
-  sinon.stub(lookup, 'parameters', function(name, region, callback) {
+  sinon.stub(lookup, 'parameters').callsFake(function(name, region, callback) {
     callback(new lookup.StackNotFoundError('failure'));
   });
 
@@ -2218,7 +2218,7 @@ test('[commands.operations.getOldParameters] missing stack', function(assert) {
 });
 
 test('[commands.operations.getOldParameters] failed to lookup stack', function(assert) {
-  sinon.stub(lookup, 'parameters', function(name, region, callback) {
+  sinon.stub(lookup, 'parameters').callsFake(function(name, region, callback) {
     callback(new lookup.CloudFormationError('failure'));
   });
 
@@ -2235,7 +2235,7 @@ test('[commands.operations.getOldParameters] failed to lookup stack', function(a
 });
 
 test('[commands.operations.getOldParameters] success', function(assert) {
-  sinon.stub(lookup, 'parameters', function(name, region, callback) {
+  sinon.stub(lookup, 'parameters').callsFake(function(name, region, callback) {
     assert.equal(name, context.stackName, 'lookup expected stack');
     assert.equal(region, context.stackRegion, 'lookup in expected region');
     callback(null, { old: 'parameters' });
@@ -2254,7 +2254,7 @@ test('[commands.operations.getOldParameters] success', function(assert) {
 });
 
 test('[commands.operations.promptSaveConfig]', function(assert) {
-  sinon.stub(prompt, 'input', function(message, def, callback) {
+  sinon.stub(prompt, 'input').callsFake(function(message, def, callback) {
     assert.equal(message, 'Name for saved configuration:', 'expected prompt');
     assert.equal(def, context.suffix, 'expected default value');
     callback(null, 'chuck');
@@ -2274,7 +2274,7 @@ test('[commands.operations.promptSaveConfig]', function(assert) {
 });
 
 test('[commands.operations.confirmSaveConfig] reject', function(assert) {
-  sinon.stub(prompt, 'confirm', function(message, callback) {
+  sinon.stub(prompt, 'confirm').callsFake(function(message, callback) {
     callback(null, false);
   });
 
@@ -2291,7 +2291,7 @@ test('[commands.operations.confirmSaveConfig] reject', function(assert) {
 });
 
 test('[commands.operations.confirmSaveConfig] accept', function(assert) {
-  sinon.stub(prompt, 'confirm', function(message, callback) {
+  sinon.stub(prompt, 'confirm').callsFake(function(message, callback) {
     assert.equal(message, 'Ready to save this configuration as "hello"?', 'expected message');
     callback(null, true);
   });
@@ -2310,7 +2310,7 @@ test('[commands.operations.confirmSaveConfig] accept', function(assert) {
 });
 
 test('[commands.operations.saveConfig] bucket not found', function(assert) {
-  sinon.stub(actions, 'saveConfiguration', function(baseName, stackName, stackRegion, bucket, parameters, kms, callback) {
+  sinon.stub(actions, 'saveConfiguration').callsFake(function(baseName, stackName, stackRegion, bucket, parameters, kms, callback) {
     callback(new actions.BucketNotFoundError('failure'));
   });
 
@@ -2329,7 +2329,7 @@ test('[commands.operations.saveConfig] bucket not found', function(assert) {
 });
 
 test('[commands.operations.saveConfig] failure', function(assert) {
-  sinon.stub(actions, 'saveConfiguration', function(baseName, stackName, stackRegion, bucket, parameters, kms, callback) {
+  sinon.stub(actions, 'saveConfiguration').callsFake(function(baseName, stackName, stackRegion, bucket, parameters, kms, callback) {
     callback(new actions.S3Error('failure'));
   });
 
@@ -2348,7 +2348,7 @@ test('[commands.operations.saveConfig] failure', function(assert) {
 });
 
 test('[commands.operations.saveConfig] success', function(assert) {
-  sinon.stub(actions, 'saveConfiguration', function(baseName, stackName, stackRegion, bucket, parameters, kms, callback) {
+  sinon.stub(actions, 'saveConfiguration').callsFake(function(baseName, stackName, stackRegion, bucket, parameters, kms, callback) {
     assert.equal(baseName, context.baseName, 'save under correct stack name');
     assert.equal(stackName, context.stackName, 'save under correct stack name');
     assert.equal(stackRegion, context.stackRegion, 'save under correct stack region');

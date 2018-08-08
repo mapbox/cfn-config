@@ -154,7 +154,7 @@ test('[cli.main] no template path (create)', function(assert) {
 });
 
 test('[cli.main] no template path (info)', function(assert) {
-  sinon.stub(cfnConfig, 'commands', function() {
+  sinon.stub(cfnConfig, 'commands').callsFake(function() {
     return { info: function() { Array.from(arguments).pop()(); } };
   });
 
@@ -168,7 +168,7 @@ test('[cli.main] no template path (info)', function(assert) {
 });
 
 test('[cli.main] create', function(assert) {
-  sinon.stub(cfnConfig, 'commands', function(options) {
+  sinon.stub(cfnConfig, 'commands').callsFake(function(options) {
     assert.deepEqual(options, base.options, 'provided commands constructor with correct options');
     return {
       create: function(suffix, templatePath, overrides, callback) {
@@ -188,7 +188,7 @@ test('[cli.main] create', function(assert) {
 });
 
 test('[cli.main] update', function(assert) {
-  sinon.stub(cfnConfig, 'commands', function(options) {
+  sinon.stub(cfnConfig, 'commands').callsFake(function(options) {
     assert.deepEqual(options, base.options, 'provided commands constructor with correct options');
     return {
       update: function(suffix, templatePath, overrides, callback) {
@@ -210,7 +210,7 @@ test('[cli.main] update', function(assert) {
 });
 
 test('[cli.main] delete', function(assert) {
-  sinon.stub(cfnConfig, 'commands', function(options) {
+  sinon.stub(cfnConfig, 'commands').callsFake(function(options) {
     assert.deepEqual(options, base.options, 'provided commands constructor with correct options');
     return {
       delete: function(suffix, overrides, callback) {
@@ -231,7 +231,7 @@ test('[cli.main] delete', function(assert) {
 });
 
 test('[cli.main] info', function(assert) {
-  sinon.stub(cfnConfig, 'commands', function(options) {
+  sinon.stub(cfnConfig, 'commands').callsFake(function(options) {
     assert.deepEqual(options, base.options, 'provided commands constructor with correct options');
     return {
       info: function(suffix, resources, decrypt, callback) {
@@ -253,7 +253,7 @@ test('[cli.main] info', function(assert) {
 });
 
 test('[cli.main] save (with kms)', function(assert) {
-  sinon.stub(cfnConfig, 'commands', function(options) {
+  sinon.stub(cfnConfig, 'commands').callsFake(function(options) {
     assert.deepEqual(options, base.options, 'provided commands constructor with correct options');
     return {
       save: function(suffix, kms, callback) {
@@ -275,7 +275,7 @@ test('[cli.main] save (with kms)', function(assert) {
 });
 
 test('[cli.main] save (without kms)', function(assert) {
-  sinon.stub(cfnConfig, 'commands', function(options) {
+  sinon.stub(cfnConfig, 'commands').callsFake(function(options) {
     assert.deepEqual(options, base.options, 'provided commands constructor with correct options');
     return {
       save: function(suffix, kms, callback) {
