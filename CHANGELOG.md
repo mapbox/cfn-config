@@ -1,6 +1,10 @@
 # Change Log
 All notable changes to this project will be documented in this file. For change log formatting, see http://keepachangelog.com/
 
+## 2.18.0 - 2018-08-09
+
+- Upgrades all depencies to latest versions. Ensures compatibility with Node 6 and Node 8.
+
 ## 2.17.2 - 2018-08-02
 
 - Fixes a bug in changeset polling / pagination that could result in duplicate console output
