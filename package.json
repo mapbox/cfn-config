@@ -9,7 +9,7 @@
     "type": "git"
   },
   "author": "Mapbox",
-  "version": "2.17.2",
+  "version": "2.18.0",
   "dependencies": {
     "aws-sdk": "^2.288.0",
     "cfn-stack-event-stream": "0.0.7",
