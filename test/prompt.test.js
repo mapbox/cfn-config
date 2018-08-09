@@ -5,7 +5,7 @@ var Promise = require('pinkie-promise');
 var prompt = require('../lib/prompt');
 
 test('[prompt.confirm] single-line, confirm', function(assert) {
-  sinon.stub(inquirer, 'prompt', function(questions) {
+  sinon.stub(inquirer, 'prompt').callsFake(function(questions) {
     assert.deepEqual(questions, {
       default: true,
       type: 'confirm',
@@ -25,7 +25,7 @@ test('[prompt.confirm] single-line, confirm', function(assert) {
 });
 
 test('[prompt.confirm] single-line, false default', function(assert) {
-  sinon.stub(inquirer, 'prompt', function(questions) {
+  sinon.stub(inquirer, 'prompt').callsFake(function(questions) {
     assert.deepEqual(questions, {
       type: 'confirm',
       name: 'confirmation',
@@ -45,7 +45,7 @@ test('[prompt.confirm] single-line, false default', function(assert) {
 });
 
 test('[prompt.confirm] multi-line, reject', function(assert) {
-  sinon.stub(inquirer, 'prompt', function(questions) {
+  sinon.stub(inquirer, 'prompt').callsFake(function(questions) {
     assert.deepEqual(questions, {
       default: true,
       type: 'confirm',
@@ -65,7 +65,7 @@ test('[prompt.confirm] multi-line, reject', function(assert) {
 });
 
 test('[prompt.configuration] success', function(assert) {
-  sinon.stub(inquirer, 'prompt', function(questions) {
+  sinon.stub(inquirer, 'prompt').callsFake(function(questions) {
     assert.deepEqual(questions, {
       type: 'list',
       name: 'config',
@@ -85,7 +85,7 @@ test('[prompt.configuration] success', function(assert) {
 });
 
 test('[prompt.parameters] success', function(assert) {
-  sinon.stub(inquirer, 'prompt', function(questions) {
+  sinon.stub(inquirer, 'prompt').callsFake(function(questions) {
     assert.deepEqual(questions, {
       questions: 'passed through'
     }, 'passes through provided questions');
@@ -102,7 +102,7 @@ test('[prompt.parameters] success', function(assert) {
 });
 
 test('[prompt.input] no default value', function(assert) {
-  sinon.stub(inquirer, 'prompt', function(questions) {
+  sinon.stub(inquirer, 'prompt').callsFake(function(questions) {
     assert.deepEqual(questions, {
       type: 'input',
       name: 'data',
@@ -122,7 +122,7 @@ test('[prompt.input] no default value', function(assert) {
 });
 
 test('[prompt.input] with default value', function(assert) {
-  sinon.stub(inquirer, 'prompt', function(questions) {
+  sinon.stub(inquirer, 'prompt').callsFake(function(questions) {
     assert.deepEqual(questions, {
       type: 'input',
       name: 'data',
