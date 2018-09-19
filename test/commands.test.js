@@ -30,7 +30,7 @@ test('[commands.create] no overrides', function(assert) {
     var context = Object.assign({}, basicContext, {
       next: function() {
         assert.pass('called next to begin process');
-        assert.equal(context.templatePath, path.resolve('templatePath'), 'set absolute context.templatePath');
+        assert.equal(context.template, 'templatePath', 'set context.template');
         commands.commandContext.restore();
         assert.end();
       }
@@ -55,7 +55,7 @@ test('[commands.create] with overrides', function(assert) {
     var context = Object.assign({}, basicContext, {
       next: function() {
         assert.pass('called next to begin process');
-        assert.equal(context.templatePath, path.resolve('templatePath'), 'set absolute context.templatePath');
+        assert.equal(context.template, 'templatePath', 'set context.template');
         assert.deepEqual(context.overrides, { some: 'overrides' }, 'sets context.overrides');
         commands.commandContext.restore();
         assert.end();
@@ -66,6 +66,57 @@ test('[commands.create] with overrides', function(assert) {
   });
 
   commands(opts).create('testing', 'templatePath', { some: 'overrides' }, whenDone);
+});
+
+test('[commands.create] with template object', function(assert) {
+  function whenDone() {}
+
+  sinon.stub(commands, 'commandContext').callsFake(function(config, suffix, operations, callback) {
+    assert.equal(operations.length, 12, '12 operations are run');
+    assert.deepEqual(config, opts, 'instantiate context with expected config');
+    assert.deepEqual(suffix, 'testing', 'instantiate context with expected suffix');
+    assert.ok(operations.every(function(op) { return typeof op === 'function'; }), 'instantiate context with array of operations');
+    assert.equal(callback, whenDone, 'instantiate context with final callback function');
+
+    var context = Object.assign({}, basicContext, {
+      next: function() {
+        assert.pass('called next to begin process');
+        assert.deepEqual(context.template, { arbitrary: 'template' }, 'set context.template');
+        commands.commandContext.restore();
+        assert.end();
+      }
+    });
+
+    return context;
+  });
+
+  commands(opts).create('testing', { arbitrary: 'template' }, whenDone);
+});
+
+test('[commands.update] no overrides', function(assert) {
+  function whenDone() {}
+
+  sinon.stub(commands, 'commandContext').callsFake(function(config, suffix, operations, callback) {
+    assert.equal(operations.length, 15, '15 operations are run');
+    assert.deepEqual(config, opts, 'instantiate context with expected config');
+    assert.deepEqual(suffix, 'testing', 'instantiate context with expected suffix');
+    assert.ok(operations.every(function(op) { return typeof op === 'function'; }), 'instantiate context with array of operations');
+    assert.equal(callback, whenDone, 'instantiate context with final callback function');
+
+    var context = Object.assign({}, basicContext, {
+      next: function() {
+        assert.pass('called next to begin process');
+        assert.equal(context.template, 'templatePath', 'set context.template');
+        assert.deepEqual(context.overrides, {}, 'sets empty context.overrides');
+        commands.commandContext.restore();
+        assert.end();
+      }
+    });
+
+    return context;
+  });
+
+  commands(opts).update('testing', 'templatePath', whenDone);
 });
 
 test('[commands.update] with overrides', function(assert) {
@@ -80,7 +131,7 @@ test('[commands.update] with overrides', function(assert) {
     var context = Object.assign({}, basicContext, {
       next: function() {
         assert.pass('called next to begin process');
-        assert.equal(context.templatePath, path.resolve('templatePath'), 'set absolute context.templatePath');
+        assert.equal(context.template, 'templatePath', 'set context.template');
         assert.deepEqual(context.overrides, { force: true }, 'sets context.overrides');
         commands.commandContext.restore();
         assert.end();
@@ -104,7 +155,7 @@ test('[commands.update] with multiple overrides', function(assert) {
     var context = Object.assign({}, basicContext, {
       next: function() {
         assert.pass('called next to begin process');
-        assert.equal(context.templatePath, path.resolve('templatePath'), 'set absolute context.templatePath');
+        assert.equal(context.template, 'templatePath', 'set context.template');
         assert.deepEqual(context.overrides, { force: true, masterConfig: 's3://chill' }, 'sets context.overrides');
         commands.commandContext.restore();
         assert.end();
@@ -129,7 +180,7 @@ test('[commands.update] with overrides.skipConfirmParameters', function(assert) 
     var context = Object.assign({}, basicContext, {
       next: function() {
         assert.pass('called next to begin process');
-        assert.equal(context.templatePath, path.resolve('templatePath'), 'set absolute context.templatePath');
+        assert.equal(context.template, 'templatePath', 'set context.template');
         assert.deepEqual(context.overrides, { force: true, masterConfig: 's3://chill', skipConfirmParameters: true }, 'sets context.overrides');
         commands.commandContext.restore();
         assert.end();
@@ -154,7 +205,7 @@ test('[commands.update] with overrides.skipConfirmTemplate', function(assert) {
     var context = Object.assign({}, basicContext, {
       next: function() {
         assert.pass('called next to begin process');
-        assert.equal(context.templatePath, path.resolve('templatePath'), 'set absolute context.templatePath');
+        assert.equal(context.template, 'templatePath', 'set context.template');
         assert.deepEqual(context.overrides, { force: true, masterConfig: 's3://chill', skipConfirmTemplate: true }, 'sets context.overrides');
         commands.commandContext.restore();
         assert.end();
@@ -179,7 +230,7 @@ test('[commands.update] with overrides.skipConfirmParameters and overrides.skipC
     var context = Object.assign({}, basicContext, {
       next: function() {
         assert.pass('called next to begin process');
-        assert.equal(context.templatePath, path.resolve('templatePath'), 'set absolute context.templatePath');
+        assert.equal(context.template, 'templatePath', 'set context.template');
         assert.deepEqual(context.overrides, { force: true, masterConfig: 's3://chill', skipConfirmTemplate: true, skipConfirmParameters: true }, 'sets context.overrides');
         commands.commandContext.restore();
         assert.end();
@@ -192,7 +243,7 @@ test('[commands.update] with overrides.skipConfirmParameters and overrides.skipC
 
 });
 
-test('[commands.update] no overrides', function(assert) {
+test('[commands.update] with template object', function(assert) {
   function whenDone() {}
 
   sinon.stub(commands, 'commandContext').callsFake(function(config, suffix, operations, callback) {
@@ -205,7 +256,7 @@ test('[commands.update] no overrides', function(assert) {
     var context = Object.assign({}, basicContext, {
       next: function() {
         assert.pass('called next to begin process');
-        assert.equal(context.templatePath, path.resolve('templatePath'), 'set absolute context.templatePath');
+        assert.deepEqual(context.template, { arbitrary: 'template' }, 'set context.template');
         assert.deepEqual(context.overrides, {}, 'sets empty context.overrides');
         commands.commandContext.restore();
         assert.end();
@@ -215,7 +266,7 @@ test('[commands.update] no overrides', function(assert) {
     return context;
   });
 
-  commands(opts).update('testing', 'templatePath', whenDone);
+  commands(opts).update('testing', { arbitrary: 'template' }, whenDone);
 });
 
 test('[commands.delete] no overrides', function(assert) {
@@ -493,11 +544,7 @@ test('[commands.commandContext] aborts with error', function(assert) {
   context.next();
 });
 
-test('[commands.operations.updatePreamble] template not found', function(assert) {
-  sinon.stub(template, 'read').callsFake(function(templatePath, options, callback) {
-    callback(new template.NotFoundError('failure'));
-  });
-
+test('[commands.operations.updatePreamble] no template', function(assert) {
   sinon.stub(lookup, 'parameters').callsFake(function(name, region, callback) {
     callback();
   });
@@ -512,8 +559,33 @@ test('[commands.operations.updatePreamble] template not found', function(assert)
     },
     abort: function(err) {
       assert.ok(err instanceof template.NotFoundError, 'expected error type');
-      assert.equal(err.message, 'Could not load template: failure', 'expected error message');
-      template.read.restore();
+      assert.equal(err.message, 'Could not load template: No template passed', 'expected error message');
+      lookup.parameters.restore();
+      lookup.template.restore();
+      assert.end();
+    }
+  });
+
+  commands.operations.updatePreamble(context);
+});
+
+test('[commands.operations.updatePreamble] templatePath not found', function(assert) {
+  sinon.stub(lookup, 'parameters').callsFake(function(name, region, callback) {
+    callback();
+  });
+
+  sinon.stub(lookup, 'template').callsFake(function(name, region, callback) {
+    callback();
+  });
+
+  var context = Object.assign({}, basicContext, {
+    template: '/tmp/invalid/path/nonono.template.json',
+    next: function() {
+      assert.fail('should not call next');
+    },
+    abort: function(err) {
+      assert.ok(err instanceof template.NotFoundError, 'expected error type');
+      assert.equal(err.message, 'Could not load template: /tmp/invalid/path/nonono.template.json does not exist', 'expected error message');
       lookup.parameters.restore();
       lookup.template.restore();
       assert.end();
@@ -537,6 +609,7 @@ test('[commands.operations.updatePreamble] template invalid', function(assert) {
   });
 
   var context = Object.assign({}, basicContext, {
+    template: 'example.template.json',
     next: function() {
       assert.fail('should not call next');
     },
@@ -567,6 +640,7 @@ test('[commands.operations.updatePreamble] stack not found for parameters', func
   });
 
   var context = Object.assign({}, basicContext, {
+    template: 'example.template.json',
     next: function() {
       assert.fail('should not call next');
     },
@@ -597,6 +671,7 @@ test('[commands.operations.updatePreamble] failure getting stack parameters', fu
   });
 
   var context = Object.assign({}, basicContext, {
+    template: 'example.template.json',
     next: function() {
       assert.fail('should not call next');
     },
@@ -627,6 +702,7 @@ test('[commands.operations.updatePreamble] stack not found for template', functi
   });
 
   var context = Object.assign({}, basicContext, {
+    template: 'example.template.json',
     next: function() {
       assert.fail('should not call next');
     },
@@ -657,6 +733,7 @@ test('[commands.operations.updatePreamble] failure getting stack template', func
   });
 
   var context = Object.assign({}, basicContext, {
+    template: 'example.template.json',
     next: function() {
       assert.fail('should not call next');
     },
@@ -674,7 +751,8 @@ test('[commands.operations.updatePreamble] failure getting stack template', func
 });
 
 test('[commands.operations.updatePreamble] success', function(assert) {
-  sinon.stub(template, 'read').callsFake(function(templatePath, options, callback) {
+  sinon.stub(template, 'read').callsFake(function(template, options, callback) {
+    assert.equal(template, path.resolve('example.template.json'), 'read correct template path');
     assert.deepEqual(options, { template: 'options' }, 'passed overrides.templateOptions');
     callback(null, { new: 'template' });
   });
@@ -688,6 +766,7 @@ test('[commands.operations.updatePreamble] success', function(assert) {
   });
 
   var context = Object.assign({}, basicContext, {
+    template: 'example.template.json',
     overrides: { templateOptions: { template: 'options' } },
     next: function() {
       assert.pass('calls next()');
@@ -695,6 +774,34 @@ test('[commands.operations.updatePreamble] success', function(assert) {
       assert.deepEqual(context.oldTemplate, { old: 'template' }, 'sets context.oldTemplate');
       assert.deepEqual(context.oldParameters, { old: 'parameters' }, 'sets context.oldParameters');
       template.read.restore();
+      lookup.parameters.restore();
+      lookup.template.restore();
+      assert.end();
+    },
+    abort: function(err) {
+      assert.ifError(err, 'failed');
+    }
+  });
+
+  commands.operations.updatePreamble(context);
+});
+
+test('[commands.operations.updatePreamble] success with template object', function(assert) {
+  sinon.stub(lookup, 'parameters').callsFake(function(name, region, callback) {
+    callback(null, { old: 'parameters' });
+  });
+
+  sinon.stub(lookup, 'template').callsFake(function(name, region, callback) {
+    callback(null, { old: 'template' });
+  });
+
+  var context = Object.assign({}, basicContext, {
+    template: { arbitrary: 'template' },
+    next: function() {
+      assert.pass('calls next()');
+      assert.deepEqual(context.newTemplate, { arbitrary: 'template' }, 'sets context.newTemplate');
+      assert.deepEqual(context.oldTemplate, { old: 'template' }, 'sets context.oldTemplate');
+      assert.deepEqual(context.oldParameters, { old: 'parameters' }, 'sets context.oldParameters');
       lookup.parameters.restore();
       lookup.template.restore();
       assert.end();
@@ -1687,21 +1794,33 @@ test('[commands.operations.executeChangeSet] success', function(assert) {
   commands.operations.executeChangeSet(context);
 });
 
-test('[commands.operations.createPreamble] template not found', function(assert) {
-  sinon.stub(template, 'read').callsFake(function(templatePath, options, callback) {
-    callback(new template.NotFoundError('failure'));
-  });
-
+test('[commands.operations.createPreamble] no template', function(assert) {
   sinon.stub(lookup, 'configurations').callsFake(function(name, bucket, region, callback) {
     callback();
   });
 
   var context = Object.assign({}, basicContext, {
-    templatePath: '/absolute/template/path',
     abort: function(err) {
       assert.ok(err instanceof template.NotFoundError, 'expected error type');
-      assert.equal(err.message, 'Could not load template: failure');
-      template.read.restore();
+      assert.equal(err.message, 'Could not load template: No template passed');
+      lookup.configurations.restore();
+      assert.end();
+    }
+  });
+
+  commands.operations.createPreamble(context);
+});
+
+test('[commands.operations.createPreamble] template not found', function(assert) {
+  sinon.stub(lookup, 'configurations').callsFake(function(name, bucket, region, callback) {
+    callback();
+  });
+
+  var context = Object.assign({}, basicContext, {
+    template: '/tmp/invalid/path/nonono.template.json',
+    abort: function(err) {
+      assert.ok(err instanceof template.NotFoundError, 'expected error type');
+      assert.equal(err.message, 'Could not load template: /tmp/invalid/path/nonono.template.json does not exist', 'expected error message');
       lookup.configurations.restore();
       assert.end();
     }
@@ -1720,7 +1839,7 @@ test('[commands.operations.createPreamble] template invalid', function(assert) {
   });
 
   var context = Object.assign({}, basicContext, {
-    templatePath: '/absolute/template/path',
+    template: 'example.template.json',
     abort: function(err) {
       assert.ok(err instanceof template.InvalidTemplateError, 'expected error type');
       assert.equal(err.message, 'Could not parse template: failure');
@@ -1743,7 +1862,7 @@ test('[commands.operations.createPreamble] config bucket not found', function(as
   });
 
   var context = Object.assign({}, basicContext, {
-    templatePath: '/absolute/template/path',
+    template: 'example.template.json',
     abort: function(err) {
       assert.ok(err instanceof lookup.BucketNotFoundError, 'expected error type');
       assert.equal(err.message, 'Could not find config bucket: failure');
@@ -1766,7 +1885,7 @@ test('[commands.operations.createPreamble] failed to read configurations', funct
   });
 
   var context = Object.assign({}, basicContext, {
-    templatePath: '/absolute/template/path',
+    template: 'example.template.json',
     abort: function(err) {
       assert.ok(err instanceof lookup.S3Error, 'expected error type');
       assert.equal(err.message, 'Could not load saved configurations: failure');
@@ -1780,8 +1899,8 @@ test('[commands.operations.createPreamble] failed to read configurations', funct
 });
 
 test('[commands.operations.createPreamble] success', function(assert) {
-  sinon.stub(template, 'read').callsFake(function(templatePath, options, callback) {
-    assert.equal(templatePath, context.templatePath, 'read correct template');
+  sinon.stub(template, 'read').callsFake(function(template, options, callback) {
+    assert.equal(template, path.resolve('example.template.json'), 'read correct template path');
     assert.deepEqual(options, { template: 'options' }, 'passed overrides.templateOptions');
     callback(null, { new: 'template' });
   });
@@ -1793,11 +1912,40 @@ test('[commands.operations.createPreamble] success', function(assert) {
   });
 
   var context = Object.assign({}, basicContext, {
-    templatePath: '/absolute/template/path',
+    template: 'example.template.json',
     overrides: { templateOptions: { template: 'options' } },
     next: function(err) {
       assert.ifError(err, 'success');
       assert.deepEqual(context.newTemplate, { new: 'template' }, 'set context.newTemplate');
+      assert.deepEqual(context.configNames, ['config'], 'set context.configNames');
+      template.read.restore();
+      lookup.configurations.restore();
+      assert.end();
+    }
+  });
+
+  commands.operations.createPreamble(context);
+});
+
+test('[commands.operations.createPreamble] success with template object', function(assert) {
+  sinon.stub(template, 'read').callsFake(function(template, options, callback) {
+    assert.equal(template, path.resolve(context.template), 'read correct template path');
+    assert.deepEqual(options, { template: 'options' }, 'passed overrides.templateOptions');
+    callback(null, context.template);
+  });
+
+  sinon.stub(lookup, 'configurations').callsFake(function(name, bucket, region, callback) {
+    assert.equal(name, context.baseName, 'lookup correct stack configurations');
+    assert.equal(bucket, context.configBucket, 'lookup in correct bucket');
+    callback(null, ['config']);
+  });
+
+  var context = Object.assign({}, basicContext, {
+    template: { arbitrary: 'template' },
+    overrides: { templateOptions: { template: 'options' } },
+    next: function(err) {
+      assert.ifError(err, 'success');
+      assert.deepEqual(context.newTemplate, context.template, 'set context.newTemplate');
       assert.deepEqual(context.configNames, ['config'], 'set context.configNames');
       template.read.restore();
       lookup.configurations.restore();

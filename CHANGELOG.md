@@ -1,6 +1,10 @@
 # Change Log
 All notable changes to this project will be documented in this file. For change log formatting, see http://keepachangelog.com/
 
+## 2.19.0 - 2018-09-19
+
+- Allow template body as parameter to create/update
+
 ## 2.18.0 - 2018-08-09
 
 - Upgrades all depencies to latest versions. Ensures compatibility with Node 6 and Node 8.
