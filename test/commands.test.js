@@ -21,7 +21,7 @@ test('[commands.create] no overrides', function(assert) {
   function whenDone() {}
 
   sinon.stub(commands, 'commandContext').callsFake(function(config, suffix, operations, callback) {
-    assert.equal(operations.length, 12, '12 operations are run');
+    assert.equal(operations.length, 13, '13 operations are run');
     assert.deepEqual(config, opts, 'instantiate context with expected config');
     assert.deepEqual(suffix, 'testing', 'instantiate context with expected suffix');
     assert.ok(operations.every(function(op) { return typeof op === 'function'; }), 'instantiate context with array of operations');
@@ -46,7 +46,7 @@ test('[commands.create] with overrides', function(assert) {
   function whenDone() {}
 
   sinon.stub(commands, 'commandContext').callsFake(function(config, suffix, operations, callback) {
-    assert.equal(operations.length, 12, '12 operations are run');
+    assert.equal(operations.length, 13, '13 operations are run');
     assert.deepEqual(config, opts, 'instantiate context with expected config');
     assert.deepEqual(suffix, 'testing', 'instantiate context with expected suffix');
     assert.ok(operations.every(function(op) { return typeof op === 'function'; }), 'instantiate context with array of operations');
@@ -72,7 +72,7 @@ test('[commands.create] with template object', function(assert) {
   function whenDone() {}
 
   sinon.stub(commands, 'commandContext').callsFake(function(config, suffix, operations, callback) {
-    assert.equal(operations.length, 12, '12 operations are run');
+    assert.equal(operations.length, 13, '13 operations are run');
     assert.deepEqual(config, opts, 'instantiate context with expected config');
     assert.deepEqual(suffix, 'testing', 'instantiate context with expected suffix');
     assert.ok(operations.every(function(op) { return typeof op === 'function'; }), 'instantiate context with array of operations');
@@ -1583,7 +1583,7 @@ test('[commands.operations.beforeUpdateHook] hook success', function(assert) {
 });
 
 test('[commands.operations.getChangeset] failure', function(assert) {
-  sinon.stub(actions, 'diff').callsFake(function(name, region, url, params, callback) {
+  sinon.stub(actions, 'diff').callsFake(function(name, region, changeSetType, url, params, callback) {
     callback(new actions.CloudFormationError('failure'));
   });
 
@@ -1603,13 +1603,14 @@ test('[commands.operations.getChangeset] failure', function(assert) {
 });
 
 test('[commands.operations.getChangeset] success', function(assert) {
-  assert.plan(6);
+  assert.plan(7);
 
   var details = { changeset: 'details' };
 
-  sinon.stub(actions, 'diff').callsFake(function(name, region, url, params, callback) {
+  sinon.stub(actions, 'diff').callsFake(function(name, region, changeSetType, url, params, callback) {
     assert.equal(name, context.stackName, 'changeset for correct stack');
     assert.equal(region, context.stackRegion, 'changeset in the correct region');
+    assert.equal(changeSetType, 'UPDATE', 'changeSetType set correctly');
     assert.equal(url, context.templateUrl, 'changeset for the correct template');
     assert.deepEqual(params, context.newParameters, 'changeset using new parameters');
     callback(null, details);
@@ -1631,7 +1632,43 @@ test('[commands.operations.getChangeset] success', function(assert) {
     }
   });
 
-  commands.operations.getChangeset(context);
+  commands.operations.getChangeset(context, 'UPDATE');
+});
+
+test('[commands.operations.getChangesetCreate] success', function(assert) {
+  assert.plan(1);
+
+  sinon.stub(commands.operations, 'getChangeset').callsFake(function(context, changeSetType) {
+    assert.equals(changeSetType, 'CREATE', 'has changeSetType');
+    context.next();
+  });
+
+  const context = {
+    next: function() {
+      commands.operations.getChangeset.restore();
+      assert.end();
+    }
+  };
+
+  commands.operations.getChangesetCreate(context);
+});
+
+test('[commands.operations.getChangesetUpdate] success', function(assert) {
+  assert.plan(1);
+
+  sinon.stub(commands.operations, 'getChangeset').callsFake(function(context, changeSetType) {
+    assert.equals(changeSetType, 'UPDATE', 'has changeSetType');
+    context.next();
+  });
+
+  const context = {
+    next: function() {
+      commands.operations.getChangeset.restore();
+      assert.end();
+    }
+  };
+
+  commands.operations.getChangesetUpdate(context);
 });
 
 test('[commands.operations.confirmChangeset] force-mode', function(assert) {
@@ -2188,45 +2225,6 @@ test('[commands.operations.confirmCreate] accept', function(assert) {
   });
 
   commands.operations.confirmCreate(context);
-});
-
-test('[commands.operations.createStack] failure', function(assert) {
-  sinon.stub(actions, 'create').callsFake(function(name, region, url, parameters, callback) {
-    callback(new actions.CloudFormationError('failure'));
-  });
-
-  var context = Object.assign({}, basicContext, {
-    abort: function(err) {
-      assert.ok(err instanceof actions.CloudFormationError, 'expected error type');
-      assert.equal(err.message, 'Failed to create stack: failure');
-      actions.create.restore();
-      assert.end();
-    }
-  });
-
-  commands.operations.createStack(context);
-});
-
-test('[commands.operations.createStack] success', function(assert) {
-  sinon.stub(actions, 'create').callsFake(function(name, region, url, parameters, callback) {
-    assert.equal(name, context.stackName, 'expected stack name');
-    assert.equal(region, context.stackRegion, 'expected stack region');
-    assert.equal(url, context.templateUrl, 'expected template url');
-    assert.deepEqual(parameters, context.newParameters, 'expected parameters');
-    callback();
-  });
-
-  var context = Object.assign({}, basicContext, {
-    templateUrl: 'https://s3.amazonaws.com/my-template-bucket/my-stack/testing.template.json',
-    newParameters: { new: 'parameters' },
-    next: function(err) {
-      assert.ifError(err, 'success');
-      actions.create.restore();
-      assert.end();
-    }
-  });
-
-  commands.operations.createStack(context);
 });
 
 test('[commands.operations.confirmDelete] force-mode', function(assert) {

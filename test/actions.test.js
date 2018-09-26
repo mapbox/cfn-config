@@ -5,286 +5,6 @@ var test = require('tape');
 var AWS = require('@mapbox/mock-aws-sdk-js');
 var actions = require('../lib/actions');
 
-test('[actions.create] invalid parameters', function(assert) {
-  AWS.stub('CloudFormation', 'createStack', function(params, callback) {
-    var err = new Error('Parameters: [Pets, Age, Name, LuckyNumbers, SecretPassword] must have values');
-    err.code = 'ValidationError';
-    callback(err);
-  });
-
-  actions.create('my-stack', 'us-east-1', 'https://s3.amazonaws.com/bucket/key', {}, function(err) {
-    assert.ok(err instanceof actions.CloudFormationError, 'returned expected error type');
-    AWS.CloudFormation.restore();
-    assert.end();
-  });
-});
-
-test('[actions.create] stack name in use', function(assert) {
-  AWS.stub('CloudFormation', 'createStack', function(params, callback) {
-    var err = new Error('Stack [my-stack] already exists');
-    err.code = 'AlreadyExistsException';
-    callback(err);
-  });
-
-  actions.create('my-stack', 'us-east-1', 'https://s3.amazonaws.com/bucket/key', {}, function(err) {
-    assert.ok(err instanceof actions.CloudFormationError, 'returned expected error type');
-    AWS.CloudFormation.restore();
-    assert.end();
-  });
-});
-
-test('[actions.create] template url does not exist', function(assert) {
-  AWS.stub('CloudFormation', 'createStack', function(params, callback) {
-    var err = new Error('Template file referenced by https://s3.amazonaws.com/bucket/key does not exist.');
-    err.code = 'ValidationError';
-    callback(err);
-  });
-
-  actions.create('my-stack', 'us-east-1', 'https://s3.amazonaws.com/bucket/key', {}, function(err) {
-    assert.ok(err instanceof actions.CloudFormationError, 'returned expected error type');
-    AWS.CloudFormation.restore();
-    assert.end();
-  });
-});
-
-test('[actions.create] template url is invalid', function(assert) {
-  AWS.stub('CloudFormation', 'createStack', function(params, callback) {
-    var err = new Error('The specified url must be an Amazon S3 URL.');
-    err.code = 'ValidationError';
-    callback(err);
-  });
-
-  actions.create('my-stack', 'us-east-1', 's3://bucket/key', {}, function(err) {
-    assert.ok(err instanceof actions.CloudFormationError, 'returned expected error type');
-    AWS.CloudFormation.restore();
-    assert.end();
-  });
-});
-
-test('[actions.create] template is invalid', function(assert) {
-  AWS.stub('CloudFormation', 'createStack', function(params, callback) {
-    var err = new Error('Template format error: At least one Resources member must be defined.');
-    err.code = 'ValidationError';
-    callback(err);
-  });
-
-  actions.create('my-stack', 'us-east-1', 'https://s3.amazonaws.com/bucket/key', {}, function(err) {
-    assert.ok(err instanceof actions.CloudFormationError, 'returned expected error type');
-    AWS.CloudFormation.restore();
-    assert.end();
-  });
-});
-
-test('[actions.create] unexpected cloudformation error', function(assert) {
-  var url = 'https://my-bucket.s3.amazonaws.com/my-template.json';
-
-  AWS.stub('CloudFormation', 'createStack', function(params, callback) {
-    callback(new Error('unexpected'));
-  });
-
-  actions.create('my-stack', 'us-east-1', url, {}, function(err) {
-    assert.ok(err instanceof actions.CloudFormationError, 'expected error returned');
-    AWS.CloudFormation.restore();
-    assert.end();
-  });
-});
-
-test('[actions.create] success', function(assert) {
-  var url = 'https://my-bucket.s3.amazonaws.com/my-template.json';
-
-  AWS.stub('CloudFormation', 'createStack', function(params, callback) {
-    assert.deepEqual(params, {
-      StackName: 'my-stack',
-      Capabilities: ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
-      TemplateURL: url,
-      Parameters: [
-        { ParameterKey: 'Name', ParameterValue: 'Chuck' },
-        { ParameterKey: 'Age', ParameterValue: 18 },
-        { ParameterKey: 'Handedness', ParameterValue: 'left' },
-        { ParameterKey: 'Pets', ParameterValue: 'Duck,Wombat' },
-        { ParameterKey: 'LuckyNumbers', ParameterValue: '3,7,42' },
-        { ParameterKey: 'SecretPassword', ParameterValue: 'secret' }
-      ]
-    }, 'createStack with expected params');
-    callback();
-  });
-
-  var parameters = {
-    Name: 'Chuck',
-    Age: 18,
-    Handedness: 'left',
-    Pets: 'Duck,Wombat',
-    LuckyNumbers: '3,7,42',
-    SecretPassword: 'secret'
-  };
-
-  actions.create('my-stack', 'us-east-1', url, parameters, function(err) {
-    assert.ifError(err, 'success');
-    AWS.CloudFormation.restore();
-    assert.end();
-  });
-});
-
-test('[actions.update] invalid parameters', function(assert) {
-  AWS.stub('CloudFormation', 'updateStack', function(params, callback) {
-    var err = new Error('Parameters: [Pets, Age, Name, LuckyNumbers, SecretPassword] must have values');
-    err.code = 'ValidationError';
-    callback(err);
-  });
-
-  actions.update('my-stack', 'us-east-1', 'https://s3.amazonaws.com/bucket/key', {}, function(err) {
-    assert.ok(err instanceof actions.CloudFormationError, 'returned expected error type');
-    AWS.CloudFormation.restore();
-    assert.end();
-  });
-});
-
-test('[actions.update] stack does not exist', function(assert) {
-  AWS.stub('CloudFormation', 'updateStack', function(params, callback) {
-    var err = new Error('Stack [my-stack] does not exist');
-    err.code = 'ValidationError';
-    callback(err);
-  });
-
-  actions.update('my-stack', 'us-east-1', 'https://my-bucket.s3.amazonaws.com/my-template.json', {}, function(err) {
-    assert.ok(err instanceof actions.CloudFormationError, 'expected error returned');
-    AWS.CloudFormation.restore();
-    assert.end();
-  });
-});
-
-test('[actions.update] template url does not exist', function(assert) {
-  AWS.stub('CloudFormation', 'updateStack', function(params, callback) {
-    var err = new Error('Template file referenced by https://s3.amazonaws.com/bucket/key does not exist.');
-    err.code = 'ValidationError';
-    callback(err);
-  });
-
-  actions.update('my-stack', 'us-east-1', 'https://s3.amazonaws.com/bucket/key', {}, function(err) {
-    assert.ok(err instanceof actions.CloudFormationError, 'returned expected error type');
-    AWS.CloudFormation.restore();
-    assert.end();
-  });
-});
-
-test('[actions.update] template url is invalid', function(assert) {
-  AWS.stub('CloudFormation', 'updateStack', function(params, callback) {
-    var err = new Error('The specified url must be an Amazon S3 URL.');
-    err.code = 'ValidationError';
-    callback(err);
-  });
-
-  actions.update('my-stack', 'us-east-1', 's3://bucket/key', {}, function(err) {
-    assert.ok(err instanceof actions.CloudFormationError, 'returned expected error type');
-    AWS.CloudFormation.restore();
-    assert.end();
-  });
-});
-
-test('[actions.update] template is invalid', function(assert) {
-  AWS.stub('CloudFormation', 'updateStack', function(params, callback) {
-    var err = new Error('Template format error: At least one Resources member must be defined.');
-    err.code = 'ValidationError';
-    callback(err);
-  });
-
-  actions.update('my-stack', 'us-east-1', 'https://s3.amazonaws.com/bucket/key', {}, function(err) {
-    assert.ok(err instanceof actions.CloudFormationError, 'returned expected error type');
-    AWS.CloudFormation.restore();
-    assert.end();
-  });
-});
-
-test('[actions.update] unexpected cloudformation error', function(assert) {
-  var url = 'https://my-bucket.s3.amazonaws.com/my-template.json';
-
-  AWS.stub('CloudFormation', 'updateStack', function(params, callback) {
-    callback(new Error('unexpected'));
-  });
-
-  actions.update('my-stack', 'us-east-1', url, {}, function(err) {
-    assert.ok(err instanceof actions.CloudFormationError, 'expected error returned');
-    AWS.CloudFormation.restore();
-    assert.end();
-  });
-});
-
-test('[actions.update] success', function(assert) {
-  var url = 'https://my-bucket.s3.amazonaws.com/my-template.json';
-
-  AWS.stub('CloudFormation', 'updateStack', function(params, callback) {
-    assert.deepEqual(params, {
-      StackName: 'my-stack',
-      Capabilities: ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
-      TemplateURL: url,
-      Parameters: [
-        { ParameterKey: 'Name', ParameterValue: 'Chuck' },
-        { ParameterKey: 'Age', ParameterValue: 18 },
-        { ParameterKey: 'Handedness', ParameterValue: 'left' },
-        { ParameterKey: 'Pets', ParameterValue: 'Duck,Wombat' },
-        { ParameterKey: 'LuckyNumbers', ParameterValue: '3,7,42' },
-        { ParameterKey: 'SecretPassword', ParameterValue: 'secret' }
-      ]
-    }, 'updateStack with expected params');
-
-    callback();
-  });
-
-  var parameters = {
-    Name: 'Chuck',
-    Age: 18,
-    Handedness: 'left',
-    Pets: 'Duck,Wombat',
-    LuckyNumbers: '3,7,42',
-    SecretPassword: 'secret'
-  };
-
-  actions.update('my-stack', 'us-east-1', url, parameters, function(err) {
-    assert.ifError(err, 'success');
-    AWS.CloudFormation.restore();
-    assert.end();
-  });
-});
-
-test('[actions.delete] stack does not exist', function(assert) {
-  AWS.stub('CloudFormation', 'deleteStack', function(params, callback) {
-    var err = new Error('Stack [my-stack] does not exist');
-    err.code = 'ValidationError';
-    callback(err);
-  });
-
-  actions.delete('my-stack', 'us-east-1', function(err) {
-    assert.ok(err instanceof actions.CloudFormationError, 'expected error returned');
-    AWS.CloudFormation.restore();
-    assert.end();
-  });
-});
-
-test('[actions.delete] unexpected cloudformation error', function(assert) {
-  AWS.stub('CloudFormation', 'deleteStack', function(params, callback) {
-    callback(new Error('unexpected'));
-  });
-
-  actions.delete('my-stack', 'us-east-1', function(err) {
-    assert.ok(err instanceof actions.CloudFormationError, 'expected error returned');
-    AWS.CloudFormation.restore();
-    assert.end();
-  });
-});
-
-test('[actions.delete] success', function(assert) {
-  AWS.stub('CloudFormation', 'deleteStack', function(params, callback) {
-    assert.deepEqual(params, { StackName: 'my-stack' }, 'deleteStack with expected params');
-    callback();
-  });
-
-  actions.delete('my-stack', 'us-east-1', function(err) {
-    assert.ifError(err, 'success');
-    AWS.CloudFormation.restore();
-    assert.end();
-  });
-});
-
 test('[actions.diff] stack does not exist', function(assert) {
   AWS.stub('CloudFormation', 'createChangeSet', function(params, callback) {
     var err = new Error('Stack [my-stack] does not exist');
@@ -292,7 +12,7 @@ test('[actions.diff] stack does not exist', function(assert) {
     callback(err);
   });
 
-  actions.diff('my-stack', 'us-east-1', 'https://my-bucket.s3.amazonaws.com/my-template.json', {}, function(err) {
+  actions.diff('my-stack', 'us-east-1', 'UPDATE', 'https://my-bucket.s3.amazonaws.com/my-template.json', {}, function(err) {
     assert.ok(err instanceof actions.CloudFormationError, 'expected error returned');
     AWS.CloudFormation.restore();
     assert.end();
@@ -306,7 +26,7 @@ test('[actions.diff] invalid parameters', function(assert) {
     callback(err);
   });
 
-  actions.diff('my-stack', 'us-east-1', 'https://my-bucket.s3.amazonaws.com/my-template.json', {}, function(err) {
+  actions.diff('my-stack', 'us-east-1', 'UPDATE', 'https://my-bucket.s3.amazonaws.com/my-template.json', {}, function(err) {
     assert.ok(err instanceof actions.CloudFormationError, 'expected error returned');
     AWS.CloudFormation.restore();
     assert.end();
@@ -320,7 +40,7 @@ test('[actions.diff] template url does not exist', function(assert) {
     callback(err);
   });
 
-  actions.diff('my-stack', 'us-east-1', 'https://my-bucket.s3.amazonaws.com/my-template.json', {}, function(err) {
+  actions.diff('my-stack', 'us-east-1', 'UPDATE', 'https://my-bucket.s3.amazonaws.com/my-template.json', {}, function(err) {
     assert.ok(err instanceof actions.CloudFormationError, 'expected error returned');
     AWS.CloudFormation.restore();
     assert.end();
@@ -334,7 +54,7 @@ test('[actions.diff] template url is invalid', function(assert) {
     callback(err);
   });
 
-  actions.diff('my-stack', 'us-east-1', 'https://my-bucket.s3.amazonaws.com/my-template.json', {}, function(err) {
+  actions.diff('my-stack', 'us-east-1', 'UPDATE', 'https://my-bucket.s3.amazonaws.com/my-template.json', {}, function(err) {
     assert.ok(err instanceof actions.CloudFormationError, 'expected error returned');
     AWS.CloudFormation.restore();
     assert.end();
@@ -348,7 +68,23 @@ test('[actions.diff] template is invalid', function(assert) {
     callback(err);
   });
 
-  actions.diff('my-stack', 'us-east-1', 'https://my-bucket.s3.amazonaws.com/my-template.json', {}, function(err) {
+  actions.diff('my-stack', 'us-east-1', 'UPDATE', 'https://my-bucket.s3.amazonaws.com/my-template.json', {}, function(err) {
+    assert.ok(err instanceof actions.CloudFormationError, 'expected error returned');
+    AWS.CloudFormation.restore();
+    assert.end();
+  });
+});
+
+test('[actions.diff] createChangeSet error on wrong changeSetType', function(assert) {
+  var url = 'https://my-bucket.s3.amazonaws.com/my-template.json';
+
+  AWS.stub('CloudFormation', 'createChangeSet', function(params, callback) {
+    var err = new Error('\'INVALID\' at \'changeSetType\' failed to satisfy constraint: Member must satisfy enum value set: [UPDATE, CREATE]');
+    err.code = 'ValidationError';
+    callback(err);
+  });
+
+  actions.diff('my-stack', 'us-east-1', 'INVALID', url, {}, function(err) {
     assert.ok(err instanceof actions.CloudFormationError, 'expected error returned');
     AWS.CloudFormation.restore();
     assert.end();
@@ -362,7 +98,7 @@ test('[actions.diff] unexpected createChangeSet error', function(assert) {
     callback(new Error('unexpected'));
   });
 
-  actions.diff('my-stack', 'us-east-1', url, {}, function(err) {
+  actions.diff('my-stack', 'us-east-1', 'UPDATE', url, {}, function(err) {
     assert.ok(err instanceof actions.CloudFormationError, 'expected error returned');
     AWS.CloudFormation.restore();
     assert.end();
@@ -380,7 +116,7 @@ test('[actions.diff] unexpected describeChangeSet error', function(assert) {
     callback(new Error('unexpected'));
   });
 
-  actions.diff('my-stack', 'us-east-1', url, {}, function(err) {
+  actions.diff('my-stack', 'us-east-1', 'UPDATE', url, {}, function(err) {
     assert.ok(err instanceof actions.CloudFormationError, 'expected error returned');
     AWS.CloudFormation.restore();
     assert.end();
@@ -407,7 +143,7 @@ test('[actions.diff] changeset failed to create', function(assert) {
     });
   });
 
-  actions.diff('my-stack', 'us-east-1', url, {}, function(err, data) {
+  actions.diff('my-stack', 'us-east-1', 'UPDATE', url, {}, function(err, data) {
     assert.ifError(err, 'success');
     assert.deepEqual(data, {
       id: changesetId,
@@ -428,6 +164,7 @@ test('[actions.diff] success', function(assert) {
     assert.ok(/^[\w\d-]{1,128}$/.test(params.ChangeSetName), 'createChangeSet valid change set name');
     assert.deepEqual(params, {
       ChangeSetName: params.ChangeSetName,
+      ChangeSetType: 'UPDATE',
       StackName: 'my-stack',
       Capabilities: ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
       Parameters: [
@@ -531,7 +268,7 @@ test('[actions.diff] success', function(assert) {
     SecretPassword: 'secret'
   };
 
-  actions.diff('my-stack', 'us-east-1', url, parameters, function(err, data) {
+  actions.diff('my-stack', 'us-east-1', 'UPDATE', url, parameters, function(err, data) {
     assert.ifError(err, 'success');
     assert.deepEqual(data, {
       id: 'aa507e2bdfc55947035a07271e75384efe',
@@ -633,6 +370,45 @@ test('[actions.executeChangeSet] success', function(assert) {
   });
 
   actions.executeChangeSet('my-stack', 'us-east-1', 'changeset-id', function(err) {
+    assert.ifError(err, 'success');
+    AWS.CloudFormation.restore();
+    assert.end();
+  });
+});
+
+test('[actions.delete] stack does not exist', function(assert) {
+  AWS.stub('CloudFormation', 'deleteStack', function(params, callback) {
+    var err = new Error('Stack [my-stack] does not exist');
+    err.code = 'ValidationError';
+    callback(err);
+  });
+
+  actions.delete('my-stack', 'us-east-1', function(err) {
+    assert.ok(err instanceof actions.CloudFormationError, 'expected error returned');
+    AWS.CloudFormation.restore();
+    assert.end();
+  });
+});
+
+test('[actions.delete] unexpected cloudformation error', function(assert) {
+  AWS.stub('CloudFormation', 'deleteStack', function(params, callback) {
+    callback(new Error('unexpected'));
+  });
+
+  actions.delete('my-stack', 'us-east-1', function(err) {
+    assert.ok(err instanceof actions.CloudFormationError, 'expected error returned');
+    AWS.CloudFormation.restore();
+    assert.end();
+  });
+});
+
+test('[actions.delete] success', function(assert) {
+  AWS.stub('CloudFormation', 'deleteStack', function(params, callback) {
+    assert.deepEqual(params, { StackName: 'my-stack' }, 'deleteStack with expected params');
+    callback();
+  });
+
+  actions.delete('my-stack', 'us-east-1', function(err) {
     assert.ifError(err, 'success');
     AWS.CloudFormation.restore();
     assert.end();
