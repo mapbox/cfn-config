@@ -1,6 +1,10 @@
 # Change Log
 All notable changes to this project will be documented in this file. For change log formatting, see http://keepachangelog.com/
 
+## 2.20.1 - 2018-10-19
+
+- Updated version of cfn-stack-event-stream reduces the number of Cloudformation API requests made during stack creation and update.
+
 ## 2.20.0 - 2018-09-26
 
 - Create stacks via CloudFormation ChangeSets instead of CreateStack API
