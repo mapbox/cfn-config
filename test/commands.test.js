@@ -281,7 +281,6 @@ test('[commands.delete] no overrides', function(assert) {
     var context = Object.assign({}, basicContext, {
       next: function() {
         assert.pass('called next to begin process');
-        assert.equal(context.monitorInterval, 5000, 'sets monitorInterval');
         assert.deepEqual(context.overrides, {}, 'sets empty overrides');
         commands.commandContext.restore();
         assert.end();
@@ -306,7 +305,6 @@ test('[commands.delete] with overrides', function(assert) {
     var context = Object.assign({}, basicContext, {
       next: function() {
         assert.pass('called next to begin process');
-        assert.equal(context.monitorInterval, 5000, 'sets monitorInterval');
         assert.deepEqual(context.overrides, { force: true }, 'sets empty overrides');
         commands.commandContext.restore();
         assert.end();
@@ -2311,7 +2309,7 @@ test('[commands.operations.deleteStack] success', function(assert) {
 });
 
 test('[commands.operations.monitorStack] failure', function(assert) {
-  sinon.stub(actions, 'monitor').callsFake(function(name, region, pollInterval, callback) {
+  sinon.stub(actions, 'monitor').callsFake(function(name, region, callback) {
     callback(new actions.CloudFormationError('failure'));
   });
 
@@ -2327,15 +2325,13 @@ test('[commands.operations.monitorStack] failure', function(assert) {
 });
 
 test('[commands.operations.monitorStack] success', function(assert) {
-  sinon.stub(actions, 'monitor').callsFake(function(name, region, pollInterval, callback) {
+  sinon.stub(actions, 'monitor').callsFake(function(name, region, callback) {
     assert.equal(name, context.stackName, 'monitor expected stack');
     assert.equal(region, context.stackRegion, 'monitor in expected region');
-    assert.equal(pollInterval, 5000, 'monitor with overriden pollInterval');
     callback();
   });
 
   var context = Object.assign({}, basicContext, {
-    monitorInterval: 5000,
     next: function(err) {
       assert.ifError(err, 'success');
       actions.monitor.restore();
