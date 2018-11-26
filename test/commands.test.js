@@ -2315,7 +2315,7 @@ test('[commands.operations.monitorStack] failure', function(assert) {
 
   var context = Object.assign({}, basicContext, {
     abort: function(err) {
-      assert.equal(err.message, 'Failed during stack monitoring. Stack adjustments will continue.');
+      assert.equal(err.message, 'Connection was lost while monitoring your deploy. Your stack update in region us-east-1 will continue. No action required.');
       actions.monitor.restore();
       assert.end();
     }
