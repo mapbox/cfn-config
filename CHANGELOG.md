@@ -1,6 +1,10 @@
 # Change Log
 All notable changes to this project will be documented in this file. For change log formatting, see http://keepachangelog.com/
 
+## 2.21.0 - 2019-03-06
+- Updated error message on stack monitoring failure
+- Updated nyc and eslint dev-dependencies
+
 ## 2.20.1 - 2018-10-19
 
 - Updated version of cfn-stack-event-stream reduces the number of Cloudformation API requests made during stack creation and update.
