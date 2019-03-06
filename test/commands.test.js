@@ -2315,7 +2315,7 @@ test('[commands.operations.monitorStack] failure', function(assert) {
 
   var context = Object.assign({}, basicContext, {
     abort: function(err) {
-      assert.equal(err.message, 'Connection was lost while monitoring your deploy. Your stack update in region us-east-1 will continue. No action required.');
+      assert.equal(err.message, `Monitoring your deploy failed, but the deploy in region ${context.stackRegion} will continue. Check on your stack's status in the CloudFormation console.`);
       actions.monitor.restore();
       assert.end();
     }
