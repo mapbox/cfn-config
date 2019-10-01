@@ -1,6 +1,9 @@
 # Change Log
 All notable changes to this project will be documented in this file. For change log formatting, see http://keepachangelog.com/
 
+## 2.22.0 - 2019-09-30
+- Added support for china regions other than cn-north-1
+
 ## 2.21.0 - 2019-03-06
 - Updated error message on stack monitoring failure
 - Updated nyc and eslint dev-dependencies
