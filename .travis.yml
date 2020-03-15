@@ -1,5 +1,5 @@
 language: node_js
 sudo: false
 nodejs:
-  - "6"
-  - "8"
+  - "10"
+  - "12"

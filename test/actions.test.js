@@ -687,6 +687,27 @@ test('[actions.saveTemplate] us-east-1', function(assert) {
   });
 });
 
+test('[actions.saveTemplate] needs whitespace removal', function(assert) {
+  var url = 'https://s3.amazonaws.com/my-bucket/cirjpj94c0000s5nzc1j452o7-my-stack.template.json';
+  var template = require('./fixtures/huge-template');
+
+  AWS.stub('S3', 'putObject', function(params, callback) {
+    assert.deepEqual(params, {
+      Bucket: 'my-bucket',
+      Key: 'cirjpj94c0000s5nzc1j452o7-my-stack.template.json',
+      Body: JSON.stringify(template)
+    }, 'template put to expected s3 destination, and whitespace was removed');
+
+    callback();
+  });
+
+  actions.saveTemplate(url, JSON.stringify(template, null, 2), function(err) {
+    assert.ifError(err, 'success');
+    AWS.S3.restore();
+    assert.end();
+  });
+});
+
 test('[actions.saveTemplate] cn-north-1', function(assert) {
   var url = 'https://s3-cn-north-1.amazonaws.com.cn/my-bucket/cirjpj94c0000s5nzc1j452o7-my-stack.template.json';
   var template = fs.readFileSync(path.resolve(__dirname, 'fixtures', 'template.json'));
