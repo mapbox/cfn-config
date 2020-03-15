@@ -1,6 +1,9 @@
 # Change Log
 All notable changes to this project will be documented in this file. For change log formatting, see http://keepachangelog.com/
 
+## 2.22.1 - 2020-03-14
+- When a template would be too large for CloudFormation, remove excess indentation and whitespace to try and stay under the limit.
+
 ## 2.22.0 - 2019-10-01
 - Added support for china regions other than cn-north-1
 
