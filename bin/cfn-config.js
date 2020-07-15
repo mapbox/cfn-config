@@ -10,6 +10,6 @@ cli.main(parsed, finished);
 
 function finished(err, data) {
   if (err) process.stderr.write(err.message + '\n');
-  if (data) process.stdout.write(JSON.stringify(data, null, 2) + '\n');
+  if (data && data !== true) process.stdout.write(JSON.stringify(data, null, 2) + '\n');
   process.exit(err ? 1 : 0);
 }
