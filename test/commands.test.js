@@ -1040,6 +1040,30 @@ test('[commands.operations.promptParameters] reject overrides that are not in ol
   commands.operations.promptParameters(context);
 });
 
+test('[commands.operations.promptParameters] changesetParameters use previous value for unchanged parameter values', function(assert) {
+  var oldParameters = { old: 'parameters', the: 'answers' };
+  var newParameters = { old: 'newvalue', the: 'answers' };
+
+  sinon.stub(prompt, 'parameters').callsFake(function(questions, callback) {
+    callback(null, newParameters);
+  });
+
+  var context = Object.assign({}, basicContext, {
+    stackRegion: 'us-west-2',
+    newTemplate: { new: 'template' },
+    oldParameters: oldParameters,
+    overrides: {},
+    next: function(err) {
+      assert.ifError(err, 'success');
+      assert.deepEqual(context.changesetParameters, [{ ParameterKey: 'old', ParameterValue: 'newvalue' }, { ParameterKey: 'the', UsePreviousValue: true }]);
+      prompt.parameters.restore();
+      assert.end();
+    }
+  });
+
+  commands.operations.promptParameters(context);
+});
+
 test('[commands.operations.confirmParameters] force-mode', function(assert) {
   var context = Object.assign({}, basicContext, {
     overrides: { force: true },
