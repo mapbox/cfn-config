@@ -259,14 +259,14 @@ test('[actions.diff] success', function(assert) {
     });
   });
 
-  var parameters = {
-    Name: 'Chuck',
-    Age: 18,
-    Handedness: 'right',
-    Pets: 'Duck,Wombat',
-    LuckyNumbers: '3,7,42',
-    SecretPassword: 'secret'
-  };
+  var parameters = [
+    { ParameterKey: 'Name', ParameterValue: 'Chuck' },
+    { ParameterKey: 'Age', ParameterValue: 18 },
+    { ParameterKey: 'Handedness', ParameterValue: 'right' },
+    { ParameterKey: 'Pets', ParameterValue: 'Duck,Wombat' },
+    { ParameterKey: 'LuckyNumbers', ParameterValue: '3,7,42' },
+    { ParameterKey: 'SecretPassword', ParameterValue: 'secret' }
+  ];
 
   actions.diff('my-stack', 'us-east-1', 'UPDATE', url, parameters, function(err, data) {
     assert.ifError(err, 'success');
