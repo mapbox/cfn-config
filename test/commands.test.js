@@ -987,7 +987,7 @@ test('[commands.operations.promptParameters] with parameter and kms overrides', 
   });
 
   sinon.stub(prompt, 'parameters').callsFake(function(questions, callback) {
-    callback({ the: 'answers' });
+    callback(null, { the: 'answers' });
   });
 
   var context = Object.assign({}, basicContext, {
@@ -1032,6 +1032,30 @@ test('[commands.operations.promptParameters] reject overrides that are not in ol
     next: function(err) {
       assert.ifError(err, 'success');
       assert.notOk(context.oldParameters.Born, 'excludes extraneous parameter override');
+      prompt.parameters.restore();
+      assert.end();
+    }
+  });
+
+  commands.operations.promptParameters(context);
+});
+
+test('[commands.operations.promptParameters] changesetParameters use previous value for unchanged parameter values', function(assert) {
+  var oldParameters = { old: 'parameters', the: 'answers' };
+  var newParameters = { old: 'newvalue', the: 'answers' };
+
+  sinon.stub(prompt, 'parameters').callsFake(function(questions, callback) {
+    callback(null, newParameters);
+  });
+
+  var context = Object.assign({}, basicContext, {
+    stackRegion: 'us-west-2',
+    newTemplate: { new: 'template' },
+    oldParameters: oldParameters,
+    overrides: {},
+    next: function(err) {
+      assert.ifError(err, 'success');
+      assert.deepEqual(context.changesetParameters, [{ ParameterKey: 'old', ParameterValue: 'newvalue' }, { ParameterKey: 'the', UsePreviousValue: true }]);
       prompt.parameters.restore();
       assert.end();
     }
@@ -1610,7 +1634,7 @@ test('[commands.operations.getChangeset] success', function(assert) {
     assert.equal(region, context.stackRegion, 'changeset in the correct region');
     assert.equal(changeSetType, 'UPDATE', 'changeSetType set correctly');
     assert.equal(url, context.templateUrl, 'changeset for the correct template');
-    assert.deepEqual(params, context.newParameters, 'changeset using new parameters');
+    assert.deepEqual(params, context.changesetParameters, 'changeset using changeset parameters');
     callback(null, details);
   });
 
@@ -1618,6 +1642,7 @@ test('[commands.operations.getChangeset] success', function(assert) {
     stackName: 'my-stack-testing',
     stackRegion: 'us-east-1',
     newParameters: { new: 'parameters' },
+    changesetParameters: { ParameterKey: 'new', ParameterValue: 'parameters' },
     templateUrl: 'https://s3.amazonaws.com/my-template-bucket/my-stack-testing.template.json',
     abort: function() {
       assert.fail('should not abort');
