@@ -1064,6 +1064,54 @@ test('[commands.operations.promptParameters] changesetParameters use previous va
   commands.operations.promptParameters(context);
 });
 
+test('[commands.operations.promptParameters] changesetParameters does not set UsePreviousValue when overrides set the value', function(assert) {
+  var oldParameters = { beep: 'bop' };
+  var newParameters = { beep: 'boop' };
+
+  sinon.stub(prompt, 'parameters').callsFake(function(questions, callback) {
+    callback(null, newParameters);
+  });
+
+  var context = Object.assign({}, basicContext, {
+    stackRegion: 'us-west-2',
+    newTemplate: { new: 'template' },
+    oldParameters: oldParameters,
+    overrides: { parameters: { beep: 'boop' } },
+    next: function(err) {
+      assert.ifError(err, 'success');
+      assert.deepEqual(context.changesetParameters, [{ ParameterKey: 'beep', ParameterValue: 'boop' }]);
+      prompt.parameters.restore();
+      assert.end();
+    }
+  });
+
+  commands.operations.promptParameters(context);
+});
+
+test('[commands.operations.promptParameters] changesetParameters sets UsePreviousValue to true in the absence of overrides', function(assert) {
+  var oldParameters = { beep: 'bop' };
+  var newParameters = { beep: 'bop' };
+
+  sinon.stub(prompt, 'parameters').callsFake(function(questions, callback) {
+    callback(null, newParameters);
+  });
+
+  var context = Object.assign({}, basicContext, {
+    stackRegion: 'us-west-2',
+    newTemplate: { new: 'template' },
+    oldParameters: oldParameters,
+    overrides: {},
+    next: function(err) {
+      assert.ifError(err, 'success');
+      assert.deepEqual(context.changesetParameters, [{ ParameterKey: 'beep', UsePreviousValue: true }]);
+      prompt.parameters.restore();
+      assert.end();
+    }
+  });
+
+  commands.operations.promptParameters(context);
+});
+
 test('[commands.operations.confirmParameters] force-mode', function(assert) {
   var context = Object.assign({}, basicContext, {
     overrides: { force: true },
