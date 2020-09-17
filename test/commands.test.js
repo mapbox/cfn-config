@@ -1112,6 +1112,32 @@ test('[commands.operations.promptParameters] changesetParameters sets UsePreviou
   commands.operations.promptParameters(context);
 });
 
+test('[commands.operations.promptParameters] do not set UsePreviousValue when creating a new stack', function(assert) {
+  var oldParameters = { beep: 'bop' };
+  var newParameters = { beep: 'boop' };
+
+  sinon.stub(prompt, 'parameters').callsFake(function(questions, callback) {
+    callback(null, newParameters);
+  });
+
+  var context = Object.assign({}, basicContext, {
+    stackRegion: 'us-west-2',
+    newTemplate: { new: 'template' },
+    create: true,
+    oldParameters: oldParameters,
+    overrides: { parameters: { beep: 'boop' } },
+    next: function(err) {
+      assert.ifError(err, 'success');
+      assert.ok(context.create, 'context.create is set to true');
+      assert.deepEqual(context.changesetParameters, [{ ParameterKey: 'beep', ParameterValue: 'boop' }]);
+      prompt.parameters.restore();
+      assert.end();
+    }
+  });
+
+  commands.operations.promptParameters(context);
+});
+
 test('[commands.operations.confirmParameters] force-mode', function(assert) {
   var context = Object.assign({}, basicContext, {
     overrides: { force: true },
@@ -2026,6 +2052,7 @@ test('[commands.operations.createPreamble] success', function(assert) {
       assert.ifError(err, 'success');
       assert.deepEqual(context.newTemplate, { new: 'template' }, 'set context.newTemplate');
       assert.deepEqual(context.configNames, ['config'], 'set context.configNames');
+      assert.ok(context.create, 'context.create is set to true');
       template.read.restore();
       lookup.configurations.restore();
       assert.end();
@@ -2055,6 +2082,7 @@ test('[commands.operations.createPreamble] success with template object', functi
       assert.ifError(err, 'success');
       assert.deepEqual(context.newTemplate, context.template, 'set context.newTemplate');
       assert.deepEqual(context.configNames, ['config'], 'set context.configNames');
+      assert.ok(context.create, 'context.create is set to true');
       template.read.restore();
       lookup.configurations.restore();
       assert.end();
