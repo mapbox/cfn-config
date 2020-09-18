@@ -1065,7 +1065,7 @@ test('[commands.operations.promptParameters] changesetParameters use previous va
 });
 
 test('[commands.operations.promptParameters] changesetParameters does not set UsePreviousValue when overrides set the value', function(assert) {
-  var oldParameters = { beep: 'bop' };
+  var oldParameters = { beep: 'boop' };
   var newParameters = { beep: 'boop' };
 
   sinon.stub(prompt, 'parameters').callsFake(function(questions, callback) {
@@ -1113,7 +1113,7 @@ test('[commands.operations.promptParameters] changesetParameters sets UsePreviou
 });
 
 test('[commands.operations.promptParameters] do not set UsePreviousValue when creating a new stack', function(assert) {
-  var oldParameters = { beep: 'bop' };
+  var oldParameters = { beep: 'boop' };
   var newParameters = { beep: 'boop' };
 
   sinon.stub(prompt, 'parameters').callsFake(function(questions, callback) {
