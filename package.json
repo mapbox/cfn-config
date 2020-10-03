@@ -20,6 +20,7 @@
     "easy-table": "^1.0.0",
     "fasterror": "^1.0.0",
     "inquirer": "^6.1.0",
+    "js-yaml": "^3.14.0",
     "json-diff": "^0.5.2",
     "json-stable-stringify": "1.0.1",
     "meow": "^5.0.0",
