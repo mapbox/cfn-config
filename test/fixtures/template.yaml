@@ -30,6 +30,14 @@ Parameters:
 Resources:
   Topic:
     Type: AWS::SNS::Topic
+    Properties:
+      Tags:
+        - Key: Handedness
+          Value: !Join
+            - /
+            - - !Ref Name
+              - Ref:
+                  Handedness
 Outputs:
   Blah:
     Value: blah
