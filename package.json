@@ -20,8 +20,6 @@
     "easy-table": "^1.0.0",
     "fasterror": "^1.0.0",
     "inquirer": "^6.1.0",
-    "js-yaml": "^3.14.0",
-    "js-yaml-cloudformation-schema": "^1.0.0",
     "json-diff": "^0.5.2",
     "json-stable-stringify": "1.0.1",
     "meow": "^5.0.0",
@@ -33,6 +31,7 @@
     "coverage": "nyc --reporter html tape test/*.test.js && opener coverage/index.html"
   },
   "devDependencies": {
+    "@aws-cdk/yaml-cfn": "^1.66.0",
     "@mapbox/mock-aws-sdk-js": "^1.0.0",
     "eslint": "^5.15.1",
     "nyc": "^15.0.0",
