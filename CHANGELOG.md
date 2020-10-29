@@ -1,6 +1,9 @@
 # Change Log
 All notable changes to this project will be documented in this file. For change log formatting, see http://keepachangelog.com/
 
+## HEAD
+- Template lookups always get the `Original` template stage. This means that the template diff will compare your new template with the existing template before CloudFormation transforms and macros were applied to it.
+
 ## 3.0.0 - 2020-07-31
 - When a stack parameter value is not changed, then `UsePreviousValue` is set to `true` in CloudFormation UpdateStack API calls.
 - This solves a bug where template parameters defined with `NoEcho: true` would see their values replaced by `****` during an update.

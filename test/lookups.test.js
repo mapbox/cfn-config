@@ -351,6 +351,11 @@ test('[lookup.template] stack does not exist', function(assert) {
 
 test('[lookup.template] success', function(assert) {
   AWS.stub('CloudFormation', 'getTemplate', function(params, callback) {
+    assert.deepEqual(params, {
+      StackName: 'my-stack',
+      TemplateStage: 'Original'
+    }, 'getTemplate call sets the TemplateStage');
+
     callback(null, {
       RequestMetadata: { RequestId: 'db317457-46f2-11e6-8ee0-fbc06d2d1322' },
       TemplateBody: JSON.stringify(template)
