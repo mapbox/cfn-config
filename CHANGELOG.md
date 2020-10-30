@@ -1,7 +1,7 @@
 # Change Log
 All notable changes to this project will be documented in this file. For change log formatting, see http://keepachangelog.com/
 
-## HEAD
+## 3.1.0 - 2020-10-30
 - Template lookups always get the `Original` template stage. This means that the template diff will compare your new template with the existing template before CloudFormation transforms and macros were applied to it.
 
 ## 3.0.0 - 2020-07-31
