@@ -166,7 +166,7 @@ test('[actions.diff] success', function(assert) {
       ChangeSetName: params.ChangeSetName,
       ChangeSetType: 'UPDATE',
       StackName: 'my-stack',
-      Capabilities: ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
+      Capabilities: ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM', 'CAPABILITY_AUTO_EXPAND'],
       Parameters: [
         { ParameterKey: 'Name', ParameterValue: 'Chuck' },
         { ParameterKey: 'Age', ParameterValue: 18 },
@@ -268,7 +268,7 @@ test('[actions.diff] success', function(assert) {
     { ParameterKey: 'SecretPassword', ParameterValue: 'secret' }
   ];
 
-  actions.diff('my-stack', 'us-east-1', 'UPDATE', url, parameters, false, function(err, data) {
+  actions.diff('my-stack', 'us-east-1', 'UPDATE', url, parameters, true, function(err, data) {
     assert.ifError(err, 'success');
     assert.deepEqual(data, {
       id: 'aa507e2bdfc55947035a07271e75384efe',
