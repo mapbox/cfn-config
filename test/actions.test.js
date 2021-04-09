@@ -12,7 +12,7 @@ test('[actions.diff] stack does not exist', function(assert) {
     callback(err);
   });
 
-  actions.diff('my-stack', 'us-east-1', 'UPDATE', 'https://my-bucket.s3.amazonaws.com/my-template.json', {}, function(err) {
+  actions.diff('my-stack', 'us-east-1', 'UPDATE', 'https://my-bucket.s3.amazonaws.com/my-template.json', {}, false, function(err) {
     assert.ok(err instanceof actions.CloudFormationError, 'expected error returned');
     AWS.CloudFormation.restore();
     assert.end();
@@ -26,7 +26,7 @@ test('[actions.diff] invalid parameters', function(assert) {
     callback(err);
   });
 
-  actions.diff('my-stack', 'us-east-1', 'UPDATE', 'https://my-bucket.s3.amazonaws.com/my-template.json', {}, function(err) {
+  actions.diff('my-stack', 'us-east-1', 'UPDATE', 'https://my-bucket.s3.amazonaws.com/my-template.json', {}, false, function(err) {
     assert.ok(err instanceof actions.CloudFormationError, 'expected error returned');
     AWS.CloudFormation.restore();
     assert.end();
@@ -40,7 +40,7 @@ test('[actions.diff] template url does not exist', function(assert) {
     callback(err);
   });
 
-  actions.diff('my-stack', 'us-east-1', 'UPDATE', 'https://my-bucket.s3.amazonaws.com/my-template.json', {}, function(err) {
+  actions.diff('my-stack', 'us-east-1', 'UPDATE', 'https://my-bucket.s3.amazonaws.com/my-template.json', {}, false, function(err) {
     assert.ok(err instanceof actions.CloudFormationError, 'expected error returned');
     AWS.CloudFormation.restore();
     assert.end();
@@ -54,7 +54,7 @@ test('[actions.diff] template url is invalid', function(assert) {
     callback(err);
   });
 
-  actions.diff('my-stack', 'us-east-1', 'UPDATE', 'https://my-bucket.s3.amazonaws.com/my-template.json', {}, function(err) {
+  actions.diff('my-stack', 'us-east-1', 'UPDATE', 'https://my-bucket.s3.amazonaws.com/my-template.json', {}, false, function(err) {
     assert.ok(err instanceof actions.CloudFormationError, 'expected error returned');
     AWS.CloudFormation.restore();
     assert.end();
@@ -68,7 +68,7 @@ test('[actions.diff] template is invalid', function(assert) {
     callback(err);
   });
 
-  actions.diff('my-stack', 'us-east-1', 'UPDATE', 'https://my-bucket.s3.amazonaws.com/my-template.json', {}, function(err) {
+  actions.diff('my-stack', 'us-east-1', 'UPDATE', 'https://my-bucket.s3.amazonaws.com/my-template.json', {}, false, function(err) {
     assert.ok(err instanceof actions.CloudFormationError, 'expected error returned');
     AWS.CloudFormation.restore();
     assert.end();
@@ -84,7 +84,7 @@ test('[actions.diff] createChangeSet error on wrong changeSetType', function(ass
     callback(err);
   });
 
-  actions.diff('my-stack', 'us-east-1', 'INVALID', url, {}, function(err) {
+  actions.diff('my-stack', 'us-east-1', 'INVALID', url, {}, false, function(err) {
     assert.ok(err instanceof actions.CloudFormationError, 'expected error returned');
     AWS.CloudFormation.restore();
     assert.end();
@@ -98,7 +98,7 @@ test('[actions.diff] unexpected createChangeSet error', function(assert) {
     callback(new Error('unexpected'));
   });
 
-  actions.diff('my-stack', 'us-east-1', 'UPDATE', url, {}, function(err) {
+  actions.diff('my-stack', 'us-east-1', 'UPDATE', url, {}, false, function(err) {
     assert.ok(err instanceof actions.CloudFormationError, 'expected error returned');
     AWS.CloudFormation.restore();
     assert.end();
@@ -116,7 +116,7 @@ test('[actions.diff] unexpected describeChangeSet error', function(assert) {
     callback(new Error('unexpected'));
   });
 
-  actions.diff('my-stack', 'us-east-1', 'UPDATE', url, {}, function(err) {
+  actions.diff('my-stack', 'us-east-1', 'UPDATE', url, {}, false, function(err) {
     assert.ok(err instanceof actions.CloudFormationError, 'expected error returned');
     AWS.CloudFormation.restore();
     assert.end();
@@ -143,7 +143,7 @@ test('[actions.diff] changeset failed to create', function(assert) {
     });
   });
 
-  actions.diff('my-stack', 'us-east-1', 'UPDATE', url, {}, function(err, data) {
+  actions.diff('my-stack', 'us-east-1', 'UPDATE', url, {}, false, function(err, data) {
     assert.ifError(err, 'success');
     assert.deepEqual(data, {
       id: changesetId,
@@ -166,7 +166,7 @@ test('[actions.diff] success', function(assert) {
       ChangeSetName: params.ChangeSetName,
       ChangeSetType: 'UPDATE',
       StackName: 'my-stack',
-      Capabilities: ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM', 'CAPABILITY_AUTO_EXPAND'],
+      Capabilities: ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
       Parameters: [
         { ParameterKey: 'Name', ParameterValue: 'Chuck' },
         { ParameterKey: 'Age', ParameterValue: 18 },
@@ -268,7 +268,7 @@ test('[actions.diff] success', function(assert) {
     { ParameterKey: 'SecretPassword', ParameterValue: 'secret' }
   ];
 
-  actions.diff('my-stack', 'us-east-1', 'UPDATE', url, parameters, function(err, data) {
+  actions.diff('my-stack', 'us-east-1', 'UPDATE', url, parameters, false, function(err, data) {
     assert.ifError(err, 'success');
     assert.deepEqual(data, {
       id: 'aa507e2bdfc55947035a07271e75384efe',

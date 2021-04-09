@@ -1679,7 +1679,7 @@ test('[commands.operations.beforeUpdateHook] hook success', function(assert) {
 });
 
 test('[commands.operations.getChangeset] failure', function(assert) {
-  sinon.stub(actions, 'diff').callsFake(function(name, region, changeSetType, url, params, callback) {
+  sinon.stub(actions, 'diff').callsFake(function(name, region, changeSetType, url, params, expand, callback) {
     callback(new actions.CloudFormationError('failure'));
   });
 
@@ -1703,7 +1703,7 @@ test('[commands.operations.getChangeset] success', function(assert) {
 
   var details = { changeset: 'details' };
 
-  sinon.stub(actions, 'diff').callsFake(function(name, region, changeSetType, url, params, callback) {
+  sinon.stub(actions, 'diff').callsFake(function(name, region, changeSetType, url, params, expand, callback) {
     assert.equal(name, context.stackName, 'changeset for correct stack');
     assert.equal(region, context.stackRegion, 'changeset in the correct region');
     assert.equal(changeSetType, 'UPDATE', 'changeSetType set correctly');
