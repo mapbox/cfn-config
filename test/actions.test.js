@@ -166,7 +166,7 @@ test('[actions.diff] success', function(assert) {
       ChangeSetName: params.ChangeSetName,
       ChangeSetType: 'UPDATE',
       StackName: 'my-stack',
-      Capabilities: ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
+      Capabilities: ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM', 'CAPABILITY_AUTO_EXPAND'],
       Parameters: [
         { ParameterKey: 'Name', ParameterValue: 'Chuck' },
         { ParameterKey: 'Age', ParameterValue: 18 },
