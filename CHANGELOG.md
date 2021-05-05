@@ -1,6 +1,9 @@
 # Change Log
 All notable changes to this project will be documented in this file. For change log formatting, see http://keepachangelog.com/
 
+## 3.2.0 - 2021-04-05
+- Adds an `--expand` flag to enable `CAPABILITY_AUTO_EXPAND` on changeset generation.
+
 ## 3.1.0 - 2020-10-30
 - Template lookups always get the `Original` template stage. This means that the template diff will compare your new template with the existing template before CloudFormation transforms and macros were applied to it.
 
