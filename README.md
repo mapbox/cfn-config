@@ -70,6 +70,9 @@ Quickly configure and start AWS CloudFormation stacks
     -f, --force             perform a create/update/delete command without any
                             prompting, accepting all defaults
     -e, --extended          display resource details with the info command
+    -x, --expand            Add CAPABILITY_AUTO_EXPAND to the changeset capabilities.
+                            This allows transformation macros to be expanded on stack
+                            creation or update.
 ```
 
 ## JavaScript Installation

@@ -1679,7 +1679,7 @@ test('[commands.operations.beforeUpdateHook] hook success', function(assert) {
 });
 
 test('[commands.operations.getChangeset] failure', function(assert) {
-  sinon.stub(actions, 'diff').callsFake(function(name, region, changeSetType, url, params, callback) {
+  sinon.stub(actions, 'diff').callsFake(function(name, region, changeSetType, url, params, expand, callback) {
     callback(new actions.CloudFormationError('failure'));
   });
 
@@ -1699,16 +1699,17 @@ test('[commands.operations.getChangeset] failure', function(assert) {
 });
 
 test('[commands.operations.getChangeset] success', function(assert) {
-  assert.plan(7);
+  assert.plan(8);
 
   var details = { changeset: 'details' };
 
-  sinon.stub(actions, 'diff').callsFake(function(name, region, changeSetType, url, params, callback) {
+  sinon.stub(actions, 'diff').callsFake(function(name, region, changeSetType, url, params, expand, callback) {
     assert.equal(name, context.stackName, 'changeset for correct stack');
     assert.equal(region, context.stackRegion, 'changeset in the correct region');
     assert.equal(changeSetType, 'UPDATE', 'changeSetType set correctly');
     assert.equal(url, context.templateUrl, 'changeset for the correct template');
     assert.deepEqual(params, context.changesetParameters, 'changeset using changeset parameters');
+    assert.equal(expand, context.overrides.expand, 'changeset using override properties');
     callback(null, details);
   });
 
@@ -1718,6 +1719,7 @@ test('[commands.operations.getChangeset] success', function(assert) {
     newParameters: { new: 'parameters' },
     changesetParameters: { ParameterKey: 'new', ParameterValue: 'parameters' },
     templateUrl: 'https://s3.amazonaws.com/my-template-bucket/my-stack-testing.template.json',
+    overrides: { expand: true },
     abort: function() {
       assert.fail('should not abort');
     },
