@@ -2,8 +2,11 @@ var test = require('tape');
 
 var lookup = require('../lib/lookup');
 var AWS = require('@mapbox/mock-aws-sdk-js');
+var fs = require('fs');
+var path = require('path');
 
 var template = require('./fixtures/template.json');
+var yamlTemplate = fs.readFileSync(path.join(__dirname, 'fixtures', 'template.yaml'), 'utf-8');
 
 test('[lookup.info] describeStacks error', function(assert) {
   AWS.stub('CloudFormation', 'describeStacks').yields(new Error('cloudformation failed'));
@@ -349,7 +352,7 @@ test('[lookup.template] stack does not exist', function(assert) {
   });
 });
 
-test('[lookup.template] success', function(assert) {
+test('[lookup.template] success with JSON', function(assert) {
   AWS.stub('CloudFormation', 'getTemplate', function(params, callback) {
     assert.deepEqual(params, {
       StackName: 'my-stack',
@@ -359,6 +362,22 @@ test('[lookup.template] success', function(assert) {
     callback(null, {
       RequestMetadata: { RequestId: 'db317457-46f2-11e6-8ee0-fbc06d2d1322' },
       TemplateBody: JSON.stringify(template)
+    });
+  });
+
+  lookup.template('my-stack', 'us-east-1', function(err, body) {
+    assert.ifError(err, 'success');
+    assert.deepEqual(body, template, 'expected template body returned');
+    AWS.CloudFormation.restore();
+    assert.end();
+  });
+});
+
+test('[lookup.template] success with YAML', function(assert) {
+  AWS.stub('CloudFormation', 'getTemplate', function(params, callback) {
+    callback(null, {
+      RequestMetadata: { RequestId: 'db317457-46f2-11e6-8ee0-fbc06d2d1322' },
+      TemplateBody: yamlTemplate
     });
   });
 

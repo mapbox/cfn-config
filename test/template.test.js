@@ -33,6 +33,14 @@ test('[template.read] local js file cannot be parsed', function(assert) {
   });
 });
 
+test('[template.read] local yaml file cannot be parsed', function(assert) {
+  template.read(path.resolve(__dirname, 'fixtures', 'malformed-template.yaml'), function(err) {
+    assert.ok(err instanceof template.InvalidTemplateError, 'returned expected error');
+    assert.ok(/Failed to parse .*/.test(err.message), 'passthrough parse error');
+    assert.end();
+  });
+});
+
 test('[template.read] S3 no access', function(assert) {
   template.read('s3://mapbox/fake', function(err) {
     assert.ok(err instanceof template.NotFoundError, 'returned expected error');
@@ -94,6 +102,14 @@ test('[template.read] S3 file cannot be parsed', function(assert) {
   template.read('s3://my/template', function(err) {
     assert.ok(err instanceof template.InvalidTemplateError, 'returned expected error');
     AWS.S3.restore();
+  });
+});
+
+test('[template.read] local YAML', function(assert) {
+  template.read(path.resolve(__dirname, 'fixtures', 'template.yaml'), function(err, found) {
+    assert.ifError(err, 'success');
+    assert.deepEqual(found, expected, 'got template JSON');
+    assert.end();
   });
 });
 

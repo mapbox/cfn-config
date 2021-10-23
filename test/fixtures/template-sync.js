@@ -35,7 +35,15 @@ module.exports = {
   },
   Resources: {
     Topic: {
-      Type: 'AWS::SNS::Topic'
+      Type: 'AWS::SNS::Topic',
+      Properties: {
+        Tags: [
+          {
+            Key: 'Handedness',
+            Value: { 'Fn::Join': ['/', [{ Ref: 'Name' }, { Ref: 'Handedness' }]] }
+          }
+        ]
+      }
     }
   },
   Outputs: {

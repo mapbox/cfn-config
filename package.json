@@ -31,6 +31,7 @@
     "coverage": "nyc --reporter html tape test/*.test.js && opener coverage/index.html"
   },
   "devDependencies": {
+    "@aws-cdk/yaml-cfn": "^1.66.0",
     "@mapbox/mock-aws-sdk-js": "^1.0.0",
     "eslint": "^5.15.1",
     "nyc": "^15.0.0",
