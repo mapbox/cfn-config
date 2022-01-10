@@ -20,7 +20,7 @@
     "easy-table": "^1.0.0",
     "fasterror": "^1.0.0",
     "inquirer": "^8.2.0",
-    "json-diff": "^0.5.2",
+    "json-diff": "^0.7.1",
     "json-stable-stringify": "1.0.1",
     "meow": "^5.0.0",
     "s3urls": "^1.5.2"
