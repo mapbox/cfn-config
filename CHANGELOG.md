@@ -1,6 +1,9 @@
 # Change Log
 All notable changes to this project will be documented in this file. For change log formatting, see http://keepachangelog.com/
 
+## 3.2.1 - 2021-01-10
+- Pins `colors` dependency to version 1.4.0. 
+
 ## 3.2.0 - 2021-04-05
 - Adds an `--expand` flag to enable `CAPABILITY_AUTO_EXPAND` on changeset generation.
 
