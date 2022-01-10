@@ -1,44 +1,44 @@
 {
-  "bin": {
-    "cfn-config": "bin/cfn-config.js"
-  },
-  "license": "BSD-2-Clause",
-  "name": "@mapbox/cfn-config",
-  "repository": {
-    "url": "https://github.com/mapbox/cfn-config.git",
-    "type": "git"
-  },
-  "author": "Mapbox",
-  "version": "3.2.1",
-  "dependencies": {
-    "aws-sdk": "^2.720.0",
-    "cfn-stack-event-stream": "^1.0.1",
-    "colors": "1.4.0",
-    "cuid": "^2.1.1",
-    "d3-queue": "^3.0.2",
-    "diff": "^3.5.0",
-    "easy-table": "^1.0.0",
-    "fasterror": "^1.0.0",
-    "inquirer": "^8.2.0",
-    "json-diff": "^0.7.1",
-    "json-stable-stringify": "1.0.1",
-    "meow": "^5.0.0",
-    "s3urls": "^1.5.2"
-  },
-  "scripts": {
-    "test": "nyc tape test/*.test.js",
-    "pretest": "eslint index.js bin lib test/*.js",
-    "coverage": "nyc --reporter html tape test/*.test.js && opener coverage/index.html"
-  },
-  "devDependencies": {
-    "@mapbox/mock-aws-sdk-js": "^1.0.0",
-    "eslint": "^5.15.1",
-    "nyc": "^15.0.0",
-    "opener": "^1.4.1",
-    "pinkie-promise": "^2.0.1",
-    "sinon": "^6.1.4",
-    "tape": "^5.4.0"
-  },
-  "main": "index.js",
-  "description": "Quickly configure and start AWS CloudFormation stacks"
+    "name": "@mapbox/cfn-config",
+    "version": "3.2.1",
+    "author": "Mapbox",
+    "description": "Quickly configure and start AWS CloudFormation stacks",
+    "license": "BSD-2-Clause",
+    "main": "index.js",
+    "repository": {
+        "url": "https://github.com/mapbox/cfn-config.git",
+        "type": "git"
+    },
+    "bin": {
+        "cfn-config": "bin/cfn-config.js"
+    },
+    "scripts": {
+        "test": "nyc tape test/*.test.js",
+        "pretest": "eslint index.js bin lib test/*.js",
+        "coverage": "nyc --reporter html tape test/*.test.js && opener coverage/index.html"
+    },
+    "dependencies": {
+        "aws-sdk": "^2.720.0",
+        "cfn-stack-event-stream": "^1.0.1",
+        "colors": "1.4.0",
+        "cuid": "^2.1.1",
+        "d3-queue": "^3.0.2",
+        "diff": "^3.5.0",
+        "easy-table": "^1.0.0",
+        "fasterror": "^1.0.0",
+        "inquirer": "^8.2.0",
+        "json-diff": "^0.7.1",
+        "json-stable-stringify": "1.0.1",
+        "meow": "^5.0.0",
+        "s3urls": "^1.5.2"
+    },
+    "devDependencies": {
+        "@mapbox/mock-aws-sdk-js": "^1.0.0",
+        "eslint": "^8.1.0",
+        "nyc": "^15.0.0",
+        "opener": "^1.4.1",
+        "pinkie-promise": "^2.0.1",
+        "sinon": "^6.1.4",
+        "tape": "^5.4.0"
+    }
 }
