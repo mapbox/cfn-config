@@ -827,7 +827,7 @@ test('[commands.operations.getMasterConfig] success', function(assert) {
       assert.end();
     },
     abort: function(err) {
-      assert.ifError(err, 'failed');
+      if (err) assert.error(err, 'failed');
     }
   });
 
