@@ -1,6 +1,6 @@
-var AWS = require('aws-sdk');
+const AWS = require('aws-sdk');
 
-var cfnConfig = {
+const cfnConfig = {
   actions: require('./lib/actions'),
   commands: require('./lib/commands'),
   lookup: require('./lib/lookup'),
@@ -10,7 +10,7 @@ var cfnConfig = {
 
 module.exports = cfnConfig;
 
-module.exports.preauth = function(credentials) {
+module.exports.preauth = (credentials) => {
   AWS.config.credentials = credentials;
   return cfnConfig;
 };
