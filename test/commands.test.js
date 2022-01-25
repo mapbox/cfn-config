@@ -1206,6 +1206,7 @@ test('[commands.operations.confirmParameters] rejected', (t) => {
         abort: function(err) {
             t.ifError(err, 'aborted');
             prompt.confirm.restore();
+            t.end();
         }
     });
 
@@ -1227,6 +1228,7 @@ test('[commands.operations.confirmParameters] accepted', (t) => {
         next: function(err) {
             t.ifError(err, 'success');
             prompt.confirm.restore();
+            t.end();
         },
         abort: function() {
             t.fail('should proceed');
@@ -1281,6 +1283,7 @@ test('[commands.operations.confirmTemplate] force-mode', (t) => {
 
 test('[commands.operations.confirmTemplate] preapproved', (t) => {
     sinon.stub(console, 'log');
+
     var context = Object.assign({}, basicContext, {
         oldTemplate: { old: 'template' },
         newTemplate: { new: 'template' },
