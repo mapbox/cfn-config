@@ -1,5 +1,5 @@
 {
-    "name": "@mapbox/cfn-config",
+    "name": "@openaddresses/cfn-config",
     "version": "3.2.1",
     "author": "Mapbox",
     "description": "Quickly configure and start AWS CloudFormation stacks",
