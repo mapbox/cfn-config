@@ -1,4 +1,5 @@
 /* eslint-disable no-console */
+/* eslint-disable no-useless-escape */
 const path = require('path');
 const test = require('tape');
 const sinon = require('sinon');
@@ -502,7 +503,7 @@ test('[commands.commandContext] callback with diffs', (t) => {
         t.equal(performed, true, 'the requested command was performed');
         t.deepEqual(diffs, {
             parameters: ' {\n\u001b[32m+  newones: "too"\u001b[39m\n }\n',
-            template: '\n\x1B[39m\x1B[32m+"new": "template"\n\x1B[39m\x1B[90m }\x1B[39m'
+            template: '\x1B[90m {\n\x1B[39m\x1B[31m-"old": "template"\n\x1B[39m\x1B[32m+"new": "template"\n\x1B[39m\x1B[90m }\x1B[39m'
         }, 'callback provides diffs as 3rd arg');
         prompt.confirm.restore();
         t.end();
@@ -1285,7 +1286,7 @@ test('[commands.operations.confirmTemplate] preapproved', async(t) => {
         newTemplate: { new: 'template' },
         overrides: {
             preapproved: {
-                template: ['\u001b[90m {\n\u001b[39m\u001b[31m-  "old": "template"\n\u001b[39m\u001b[32m+  "new": "template"\n\u001b[39m\u001b[90m }\u001b[39m']
+                template: ['\u001b[90m {\n\u001b[39m\u001b[31m-\"old\": \"template\"\n\u001b[39m\u001b[32m+\"new\": \"template\"\n\u001b[39m\u001b[90m }\u001b[39m']
             }
         },
         next: (err) => {
@@ -1309,7 +1310,7 @@ test('[commands.operations.confirmTemplate] rejected', async(t) => {
     sinon.stub(prompt, 'confirm').callsFake((message) => {
         t.equal(
             message,
-            '\x1b[90m {\n\x1b[39m\x1b[31m-  "old": "template"\n\x1b[39m\x1b[32m+  "new": "template"\n\x1b[39m\x1b[90m }\x1b[39m\nAccept template changes?',
+            '\x1B[90m {\n\x1B[39m\x1B[31m-"old": "template"\n\x1B[39m\x1B[32m+"new": "template"\n\x1B[39m\x1B[90m }\x1B[39m\nAccept template changes?',
             'prompted appropriate message');
         return Promise.resolve(false);
     });
@@ -1336,7 +1337,7 @@ test('[commands.operations.confirmTemplate] accepted', async(t) => {
     t.plan(2);
 
     sinon.stub(prompt, 'confirm').callsFake((message) => {
-        t.equal(message, '\x1b[90m {\n\x1b[39m\x1b[31m-  "old": "template"\n\x1b[39m\x1b[32m+  "new": "template"\n\x1b[39m\x1b[90m }\x1b[39m\nAccept template changes?', 'prompted appropriate message');
+        t.equal(message, '\x1B[90m {\n\x1B[39m\x1B[31m-"old": "template"\n\x1B[39m\x1B[32m+"new": "template"\n\x1B[39m\x1B[90m }\x1B[39m\nAccept template changes?', 'prompted appropriate message');
         return Promise.resolve(true);
     });
 
@@ -1360,7 +1361,7 @@ test('[commands.operations.confirmTemplate] lengthy diff, first unchanged sectio
     t.plan(2);
 
     sinon.stub(prompt, 'confirm').callsFake((message) => {
-        t.equal(message, '\x1b[90m {\n   "a": "lines",\n   "aa": "lines",\n\x1b[39m\x1b[31m-  "and": "will change too",\n\x1b[39m\x1b[32m+  "and": "has changed",\n\x1b[39m\x1b[90m   "b": "lines",\n   "ba": "lines",\n   "c": "lines",\n\x1b[39m\x1b[90m\n---------------------------------------------\n\n\x1b[39m\x1b[90m   "r": "lines",\n   "s": "lines",\n   "t": "lines",\n\x1b[39m\x1b[31m-  "this": "will change",\n\x1b[39m\x1b[32m+  "this": "has changed",\n\x1b[39m\x1b[90m   "u": "lines",\n   "v": "lines"\n }\x1b[39m\nAccept template changes?', 'prompted appropriate message');
+        t.equal(message, '\x1B[90m {\n "a": "lines",\n "aa": "lines",\n\x1B[39m\x1B[31m-"and": "will change too",\n\x1B[39m\x1B[32m+"and": "has changed",\n\x1B[39m\x1B[90m "b": "lines",\n "ba": "lines",\n "c": "lines",\n\x1B[39m\x1B[90m\n---------------------------------------------\n\n\x1B[39m\x1B[90m "r": "lines",\n "s": "lines",\n "t": "lines",\n\x1B[39m\x1B[31m-"this": "will change",\n\x1B[39m\x1B[32m+"this": "has changed",\n\x1B[39m\x1B[90m "u": "lines",\n "v": "lines"\n }\x1B[39m\nAccept template changes?', 'prompted appropriate message');
         return Promise.resolve(true);
     });
 
