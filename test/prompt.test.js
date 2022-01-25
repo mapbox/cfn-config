@@ -1,8 +1,7 @@
-var test = require('tape');
-var sinon = require('sinon');
-var inquirer = require('inquirer');
-var Promise = require('pinkie-promise');
-var prompt = require('../lib/prompt');
+const test = require('tape');
+const sinon = require('sinon');
+const inquirer = require('inquirer');
+const prompt = require('../lib/prompt');
 
 test('[prompt.confirm] single-line, confirm', function(assert) {
   sinon.stub(inquirer, 'prompt').callsFake(function(questions) {
