@@ -5,6 +5,9 @@
     "description": "Quickly configure and start AWS CloudFormation stacks",
     "license": "BSD-2-Clause",
     "main": "index.js",
+    "engines": {
+        "node": ">= 16"
+    },
     "repository": {
         "url": "https://github.com/mapbox/cfn-config.git",
         "type": "git"
