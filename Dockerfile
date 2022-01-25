@@ -1,6 +1,6 @@
 FROM node:16-alpine
 
-ADD . ./
+COPY . ./
 
 RUN npm install
 

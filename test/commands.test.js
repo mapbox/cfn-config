@@ -502,7 +502,7 @@ test('[commands.commandContext] callback with diffs', (t) => {
         t.equal(performed, true, 'the requested command was performed');
         t.deepEqual(diffs, {
             parameters: ' {\n\u001b[32m+  newones: "too"\u001b[39m\n }\n',
-            template: '\x1B[90m {\n\x1B[39m\x1B[31m-  "old": "template"\n\x1B[39m\x1B[32m+  "new": "template"\n\x1B[39m\x1B[90m }\x1B[39m'
+            template: '\n\x1B[39m\x1B[32m+"new": "template"\n\x1B[39m\x1B[90m }\x1B[39m'
         }, 'callback provides diffs as 3rd arg');
         prompt.confirm.restore();
         t.end();
