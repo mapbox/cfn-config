@@ -1167,10 +1167,10 @@ test('[commands.operations.confirmParameters] no difference', (t) => {
     commands.operations.confirmParameters(context);
 });
 
-test('[commands.operations.confirmParameters] preapproved', (t) => {
+test('[commands.operations.confirmParameters] preapproved', async(t) => {
     sinon.stub(console, 'log');
 
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         oldParameters: { old: 'parameters' },
         newParameters: { old: 'parameters', newones: 'too' },
         overrides: {
@@ -1185,10 +1185,10 @@ test('[commands.operations.confirmParameters] preapproved', (t) => {
         }
     });
 
-    commands.operations.confirmParameters(context);
+    await commands.operations.confirmParameters(context);
 });
 
-test('[commands.operations.confirmParameters] rejected', (t) => {
+test('[commands.operations.confirmParameters] rejected', async(t) => {
     t.plan(2);
 
     sinon.stub(prompt, 'confirm').callsFake((message) => {
@@ -1196,7 +1196,7 @@ test('[commands.operations.confirmParameters] rejected', (t) => {
         return Promise.resolve(false);
     });
 
-    var context = Object.assign({}, basicContext, {
+    await commands.operations.confirmParameters(Object.assign({}, basicContext, {
         oldParameters: { old: 'parameters' },
         newParameters: { new: 'parameterz' },
         overrides: {},
@@ -1208,12 +1208,10 @@ test('[commands.operations.confirmParameters] rejected', (t) => {
             prompt.confirm.restore();
             t.end();
         }
-    });
-
-    commands.operations.confirmParameters(context);
+    }));
 });
 
-test('[commands.operations.confirmParameters] accepted', (t) => {
+test('[commands.operations.confirmParameters] accepted', async(t) => {
     t.plan(2);
 
     sinon.stub(prompt, 'confirm').callsFake((message) => {
@@ -1221,7 +1219,7 @@ test('[commands.operations.confirmParameters] accepted', (t) => {
         return Promise.resolve(true);
     });
 
-    var context = Object.assign({}, basicContext, {
+    await commands.operations.confirmParameters(Object.assign({}, basicContext, {
         oldParameters: { old: 'parameters' },
         newParameters: { new: 'parameters' },
         overrides: {},
@@ -1233,9 +1231,7 @@ test('[commands.operations.confirmParameters] accepted', (t) => {
         abort: function() {
             t.fail('should proceed');
         }
-    });
-
-    commands.operations.confirmParameters(context);
+    }));
 });
 
 test('[commands.operations.confirmTemplate] no difference', (t) => {
@@ -1292,14 +1288,14 @@ test('[commands.operations.confirmTemplate] preapproved', (t) => {
                 template: ['\u001b[90m {\n\u001b[39m\u001b[31m-  "old": "template"\n\u001b[39m\u001b[32m+  "new": "template"\n\u001b[39m\u001b[90m }\u001b[39m']
             }
         },
-        next: function(err) {
+        next: (err) => {
             t.ok(console.log.calledWith('Auto-confirming template changes... Changes were pre-approved in another region.'), 'Skip notice printed');
             t.ifError(err, 'should proceed');
             t.ok(context.overrides.skipConfirmTemplate, 'sets skipConfirmTemplate');
             t.end();
             console.log.restore();
         },
-        abort: function(err) {
+        abort: (err) => {
             t.ifError(err, 'should not proceed');
         }
     });
