@@ -488,7 +488,7 @@ test('[commands.commandContext] iterates through operations', (t) => {
 });
 
 test('[commands.commandContext] callback with diffs', (t) => {
-    var ops = [
+    const ops = [
         commands.operations.confirmParameters,
         commands.operations.confirmTemplate
     ];
@@ -497,12 +497,12 @@ test('[commands.commandContext] callback with diffs', (t) => {
         return Promise.resolve(true);
     });
 
-    var context = commands.commandContext(opts, 'testing', ops, function(err, performed, diffs) {
+    const context = commands.commandContext(opts, 'testing', ops, function(err, performed, diffs) {
         t.ifError(err, 'success');
         t.equal(performed, true, 'the requested command was performed');
         t.deepEqual(diffs, {
             parameters: ' {\n\u001b[32m+  newones: "too"\u001b[39m\n }\n',
-            template: '\u001b[90m {\n\u001b[39m\u001b[31m-  "old": "template"\n\u001b[39m\u001b[32m+  "new": "template"\n\u001b[39m\u001b[90m }\u001b[39m'
+            template: '\x1B[90m {\n\x1B[39m\x1B[31m-  "old": "template"\n\x1B[39m\x1B[32m+  "new": "template"\n\x1B[39m\x1B[90m }\x1B[39m'
         }, 'callback provides diffs as 3rd arg');
         prompt.confirm.restore();
         t.end();
@@ -1280,7 +1280,7 @@ test('[commands.operations.confirmTemplate] force-mode', async(t) => {
 test('[commands.operations.confirmTemplate] preapproved', async(t) => {
     sinon.stub(console, 'log');
 
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         oldTemplate: { old: 'template' },
         newTemplate: { new: 'template' },
         overrides: {
