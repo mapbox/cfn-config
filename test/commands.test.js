@@ -493,7 +493,9 @@ test('[commands.commandContext] callback with diffs', (t) => {
         commands.operations.confirmTemplate
     ];
 
-    sinon.stub(prompt, 'confirm').yields(null, true);
+    sinon.stub(prompt, 'confirm').callsFake(() => {
+        return Promise.resolve(true);
+    });
 
     var context = commands.commandContext(opts, 'testing', ops, function(err, performed, diffs) {
         t.ifError(err, 'success');
@@ -960,9 +962,9 @@ test('[commands.operations.promptParameters] not force-mode', (t) => {
         return questions;
     });
 
-    sinon.stub(prompt, 'parameters').callsFake(function(question, callback) {
+    sinon.stub(prompt, 'parameters').callsFake((question) => {
         t.deepEqual(question, questions, 'prompts for derived questions');
-        callback(null, answers);
+        return Promise.resolve(answers);
     });
 
     var context = Object.assign({}, basicContext, {
@@ -986,8 +988,8 @@ test('[commands.operations.promptParameters] with parameter and kms overrides', 
         return { parameter: 'questions' };
     });
 
-    sinon.stub(prompt, 'parameters').callsFake(function(questions, callback) {
-        callback(null, { the: 'answers' });
+    sinon.stub(prompt, 'parameters').callsFake(() => {
+        return Promise.resolve({ the: 'answers' });
     });
 
     var context = Object.assign({}, basicContext, {
@@ -1021,8 +1023,8 @@ test('[commands.operations.promptParameters] force-mode with no parameters in ne
 });
 
 test('[commands.operations.promptParameters] reject overrides that are not in old or new template', (t) => {
-    sinon.stub(prompt, 'parameters').callsFake(function(questions, callback) {
-        callback(null, { some: 'answers' });
+    sinon.stub(prompt, 'parameters').callsFake(() => {
+        return Promise.resolve({ some: 'answers' });
     });
 
     var context = Object.assign({}, basicContext, {
@@ -1044,8 +1046,8 @@ test('[commands.operations.promptParameters] changesetParameters use previous va
     var oldParameters = { old: 'parameters', the: 'answers' };
     var newParameters = { old: 'newvalue', the: 'answers' };
 
-    sinon.stub(prompt, 'parameters').callsFake(function(questions, callback) {
-        callback(null, newParameters);
+    sinon.stub(prompt, 'parameters').callsFake(() => {
+        return Promise.resolve(newParameters);
     });
 
     var context = Object.assign({}, basicContext, {
@@ -1068,8 +1070,8 @@ test('[commands.operations.promptParameters] changesetParameters does not set Us
     var oldParameters = { beep: 'boop' };
     var newParameters = { beep: 'boop' };
 
-    sinon.stub(prompt, 'parameters').callsFake(function(questions, callback) {
-        callback(null, newParameters);
+    sinon.stub(prompt, 'parameters').callsFake(() => {
+        return Promise.resolve(newParameters);
     });
 
     var context = Object.assign({}, basicContext, {
@@ -1092,8 +1094,8 @@ test('[commands.operations.promptParameters] changesetParameters sets UsePreviou
     var oldParameters = { beep: 'bop' };
     var newParameters = { beep: 'bop' };
 
-    sinon.stub(prompt, 'parameters').callsFake(function(questions, callback) {
-        callback(null, newParameters);
+    sinon.stub(prompt, 'parameters').callsFake(() => {
+        return Promise.resolve(newParameters);
     });
 
     var context = Object.assign({}, basicContext, {
@@ -1116,8 +1118,8 @@ test('[commands.operations.promptParameters] do not set UsePreviousValue when cr
     var oldParameters = { beep: 'boop' };
     var newParameters = { beep: 'boop' };
 
-    sinon.stub(prompt, 'parameters').callsFake(function(questions, callback) {
-        callback(null, newParameters);
+    sinon.stub(prompt, 'parameters').callsFake(() => {
+        return Promise.resolve(newParameters);
     });
 
     var context = Object.assign({}, basicContext, {
@@ -1189,9 +1191,9 @@ test('[commands.operations.confirmParameters] preapproved', (t) => {
 test('[commands.operations.confirmParameters] rejected', (t) => {
     t.plan(2);
 
-    sinon.stub(prompt, 'confirm').callsFake(function(message, callback) {
+    sinon.stub(prompt, 'confirm').callsFake((message) => {
         t.equal(message, ' {\n\x1b[31m-  old: "parameters"\x1b[39m\n\x1b[32m+  new: "parameterz"\x1b[39m\n }\n\nAccept parameter changes?', 'prompted appropriate message');
-        callback(null, false);
+        return Promise.resolve(false);
     });
 
     var context = Object.assign({}, basicContext, {
@@ -1213,9 +1215,9 @@ test('[commands.operations.confirmParameters] rejected', (t) => {
 test('[commands.operations.confirmParameters] accepted', (t) => {
     t.plan(2);
 
-    sinon.stub(prompt, 'confirm').callsFake(function(message, callback) {
+    sinon.stub(prompt, 'confirm').callsFake((message) => {
         t.equal(message, ' {\n\x1b[31m-  old: "parameters"\x1b[39m\n\x1b[32m+  new: "parameters"\x1b[39m\n }\n\nAccept parameter changes?', 'prompted appropriate message');
-        callback(null, true);
+        return Promise.resolve(true);
     });
 
     var context = Object.assign({}, basicContext, {
@@ -1305,12 +1307,12 @@ test('[commands.operations.confirmTemplate] preapproved', (t) => {
 test('[commands.operations.confirmTemplate] rejected', (t) => {
     t.plan(2);
 
-    sinon.stub(prompt, 'confirm').callsFake(function(message, callback) {
+    sinon.stub(prompt, 'confirm').callsFake((message) => {
         t.equal(
             message,
             '\x1b[90m {\n\x1b[39m\x1b[31m-  "old": "template"\n\x1b[39m\x1b[32m+  "new": "template"\n\x1b[39m\x1b[90m }\x1b[39m\nAccept template changes?',
             'prompted appropriate message');
-        callback(null, false);
+        return Promise.resolve(false);
     });
 
     basicContext.overrides = {}; // some previous test has mutated this
@@ -1333,9 +1335,9 @@ test('[commands.operations.confirmTemplate] rejected', (t) => {
 test('[commands.operations.confirmTemplate] accepted', (t) => {
     t.plan(2);
 
-    sinon.stub(prompt, 'confirm').callsFake(function(message, callback) {
+    sinon.stub(prompt, 'confirm').callsFake((message) => {
         t.equal(message, '\x1b[90m {\n\x1b[39m\x1b[31m-  "old": "template"\n\x1b[39m\x1b[32m+  "new": "template"\n\x1b[39m\x1b[90m }\x1b[39m\nAccept template changes?', 'prompted appropriate message');
-        callback(null, true);
+        return Promise.resolve(true);
     });
 
     var context = Object.assign({}, basicContext, {
@@ -1357,9 +1359,9 @@ test('[commands.operations.confirmTemplate] accepted', (t) => {
 test('[commands.operations.confirmTemplate] lengthy diff, first unchanged section ignored', (t) => {
     t.plan(2);
 
-    sinon.stub(prompt, 'confirm').callsFake(function(message, callback) {
+    sinon.stub(prompt, 'confirm').callsFake((message) => {
         t.equal(message, '\x1b[90m {\n   "a": "lines",\n   "aa": "lines",\n\x1b[39m\x1b[31m-  "and": "will change too",\n\x1b[39m\x1b[32m+  "and": "has changed",\n\x1b[39m\x1b[90m   "b": "lines",\n   "ba": "lines",\n   "c": "lines",\n\x1b[39m\x1b[90m\n---------------------------------------------\n\n\x1b[39m\x1b[90m   "r": "lines",\n   "s": "lines",\n   "t": "lines",\n\x1b[39m\x1b[31m-  "this": "will change",\n\x1b[39m\x1b[32m+  "this": "has changed",\n\x1b[39m\x1b[90m   "u": "lines",\n   "v": "lines"\n }\x1b[39m\nAccept template changes?', 'prompted appropriate message');
-        callback(null, true);
+        return Promise.resolve(true);
     });
 
     var context = Object.assign({}, basicContext, {
@@ -1801,9 +1803,9 @@ test('[commands.operations.confirmChangeset] skipConfirmParams && skipConfirmTem
 });
 
 test('[commands.operations.confirmChangeset] rejected', (t) => {
-    sinon.stub(prompt, 'confirm').callsFake(function(message, defaultValue, callback) {
+    sinon.stub(prompt, 'confirm').callsFake((message, defaultValue) => {
         t.equal(defaultValue, false);
-        callback(null, false);
+        return Promise.resolve(false);
     });
 
     var context = Object.assign({}, basicContext, {
@@ -1821,10 +1823,10 @@ test('[commands.operations.confirmChangeset] rejected', (t) => {
 test('[commands.operations.confirmChangeset] acccepted', (t) => {
     t.plan(3);
 
-    sinon.stub(prompt, 'confirm').callsFake(function(message, defaultValue, callback) {
+    sinon.stub(prompt, 'confirm').callsFake((message, defaultValue) => {
         t.equal(message, '\n\n\nAccept changes and update the stack?', 'expected message');
         t.equal(defaultValue, false);
-        callback(null, true);
+        return Promise.resolve(true);
     });
 
     var context = Object.assign({}, basicContext, {
@@ -1842,10 +1844,10 @@ test('[commands.operations.confirmChangeset] acccepted', (t) => {
 });
 
 test('[commands.operations.confirmChangeset] changeset formatting', (t) => {
-    sinon.stub(prompt, 'confirm').callsFake(function(message, defaultValue, callback) {
+    sinon.stub(prompt, 'confirm').callsFake((message, defaultValue) => {
         t.equal(message, 'Action  Name  Type  Replace\n------  ----  ----  -------\n\x1b[33mModify\x1b[39m  name  type  \x1b[31mtrue\x1b[39m   \n\x1b[32mAdd\x1b[39m     name  type  \x1b[32mfalse\x1b[39m  \n\x1b[31mRemove\x1b[39m  name  type  \x1b[32mfalse\x1b[39m  \n\nAccept changes and update the stack?', 'expected message (with colors)');
         t.equal(defaultValue, false);
-        callback(null, true);
+        return Promise.resolve(true);
     });
 
     var context = Object.assign({}, basicContext, {
@@ -2114,9 +2116,9 @@ test('[commands.operations.selectConfig] force-mode', (t) => {
 });
 
 test('[commands.operations.selectConfig] new config', (t) => {
-    sinon.stub(prompt, 'configuration').callsFake(function(configs, callback) {
+    sinon.stub(prompt, 'configuration').callsFake((configs) => {
         t.deepEqual(configs, context.configNames, 'prompted with correct config names');
-        callback(null, 'New configuration');
+        return Promise.resolve('New configuration');
     });
 
     var context = Object.assign({}, basicContext, {
@@ -2133,9 +2135,9 @@ test('[commands.operations.selectConfig] new config', (t) => {
 });
 
 test('[commands.operations.selectConfig] saved config', (t) => {
-    sinon.stub(prompt, 'configuration').callsFake(function(configs, callback) {
+    sinon.stub(prompt, 'configuration').callsFake((configs) => {
         t.deepEqual(configs, context.configNames, 'prompted with correct config names');
-        callback(null, 'config');
+        return Promise.resolve('config');
     });
 
     var context = Object.assign({}, basicContext, {
@@ -2294,8 +2296,8 @@ test('[commands.operations.confirmCreate] force-mode', (t) => {
 });
 
 test('[commands.operations.confirmCreate] reject', (t) => {
-    sinon.stub(prompt, 'confirm').callsFake(function(message, callback) {
-        callback(null, false);
+    sinon.stub(prompt, 'confirm').callsFake(() => {
+        return Promise.resolve(false);
     });
 
     var context = Object.assign({}, basicContext, {
@@ -2311,9 +2313,9 @@ test('[commands.operations.confirmCreate] reject', (t) => {
 });
 
 test('[commands.operations.confirmCreate] accept', (t) => {
-    sinon.stub(prompt, 'confirm').callsFake(function(message, callback) {
+    sinon.stub(prompt, 'confirm').callsFake((message) => {
         t.equal(message, 'Ready to create the stack?', 'expected message');
-        callback(null, true);
+        return Promise.resolve(true);
     });
 
     var context = Object.assign({}, basicContext, {
@@ -2341,10 +2343,10 @@ test('[commands.operations.confirmDelete] force-mode', (t) => {
 });
 
 test('[commands.operations.confirmDelete] reject', (t) => {
-    sinon.stub(prompt, 'confirm').callsFake(function(message, defaultValue, callback) {
+    sinon.stub(prompt, 'confirm').callsFake((message, defaultValue) => {
         t.equal(message, 'Are you sure you want to delete my-stack-testing in region us-east-1?');
         t.equal(defaultValue, false);
-        callback(null, false);
+        return Promise.resolve(false);
     });
 
     var context = Object.assign({}, basicContext, {
@@ -2359,10 +2361,10 @@ test('[commands.operations.confirmDelete] reject', (t) => {
 });
 
 test('[commands.operations.confirmDelete] accept', (t) => {
-    sinon.stub(prompt, 'confirm').callsFake(function(message, defaultValue, callback) {
+    sinon.stub(prompt, 'confirm').callsFake((message, defaultValue) => {
         t.equal(message, 'Are you sure you want to delete my-stack-testing in region us-east-1?', 'expected message');
         t.equal(defaultValue, false);
-        callback(null, true);
+        return Promise.resolve(true);
     });
 
     var context = Object.assign({}, basicContext, {
@@ -2499,10 +2501,10 @@ test('[commands.operations.getOldParameters] success', (t) => {
 });
 
 test('[commands.operations.promptSaveConfig]', (t) => {
-    sinon.stub(prompt, 'input').callsFake(function(message, def, callback) {
+    sinon.stub(prompt, 'input').callsFake((message, def) => {
         t.equal(message, 'Name for saved configuration:', 'expected prompt');
         t.equal(def, context.suffix, 'expected default value');
-        callback(null, 'chuck');
+        return Promise.resolve('chuck');
     });
 
     var context = Object.assign({}, basicContext, {
@@ -2519,8 +2521,8 @@ test('[commands.operations.promptSaveConfig]', (t) => {
 });
 
 test('[commands.operations.confirmSaveConfig] reject', (t) => {
-    sinon.stub(prompt, 'confirm').callsFake(function(message, callback) {
-        callback(null, false);
+    sinon.stub(prompt, 'confirm').callsFake(() => {
+        return Promise.resolve(false);
     });
 
     var context = Object.assign({}, basicContext, {
@@ -2536,9 +2538,9 @@ test('[commands.operations.confirmSaveConfig] reject', (t) => {
 });
 
 test('[commands.operations.confirmSaveConfig] accept', (t) => {
-    sinon.stub(prompt, 'confirm').callsFake(function(message, callback) {
+    sinon.stub(prompt, 'confirm').callsFake((message) => {
         t.equal(message, 'Ready to save this configuration as "hello"?', 'expected message');
-        callback(null, true);
+        return Promise.resolve(true);
     });
 
     var context = Object.assign({}, basicContext, {
