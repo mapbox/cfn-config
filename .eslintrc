@@ -16,6 +16,7 @@
         "ecmaVersion": 13
     },
     "globals": {
+        "Promise": true,
         "process": true,
         "module": true,
         "require": true

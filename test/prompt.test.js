@@ -3,7 +3,7 @@ const sinon = require('sinon');
 const inquirer = require('inquirer');
 const prompt = require('../lib/prompt');
 
-test('[prompt.confirm] single-line, confirm', async (t) => {
+test('[prompt.confirm] single-line, confirm', async(t) => {
     sinon.stub(inquirer, 'prompt').callsFake((questions) => {
         t.deepEqual(questions, {
             default: true,
@@ -26,7 +26,7 @@ test('[prompt.confirm] single-line, confirm', async (t) => {
     t.end();
 });
 
-test('[prompt.confirm] single-line, false default', async (t) => {
+test('[prompt.confirm] single-line, false default', async(t) => {
     sinon.stub(inquirer, 'prompt').callsFake((questions) => {
         t.deepEqual(questions, {
             type: 'confirm',
@@ -49,7 +49,7 @@ test('[prompt.confirm] single-line, false default', async (t) => {
     t.end();
 });
 
-test('[prompt.confirm] multi-line, reject', async (t) => {
+test('[prompt.confirm] multi-line, reject', async(t) => {
     sinon.stub(inquirer, 'prompt').callsFake((questions) => {
         t.deepEqual(questions, {
             default: true,
@@ -72,7 +72,7 @@ test('[prompt.confirm] multi-line, reject', async (t) => {
     t.end();
 });
 
-test('[prompt.configuration] success', async (t) => {
+test('[prompt.configuration] success', async(t) => {
     sinon.stub(inquirer, 'prompt').callsFake((questions) => {
         t.deepEqual(questions, {
             type: 'list',
@@ -95,7 +95,7 @@ test('[prompt.configuration] success', async (t) => {
     t.end();
 });
 
-test('[prompt.parameters] success', async (t) => {
+test('[prompt.parameters] success', async(t) => {
     sinon.stub(inquirer, 'prompt').callsFake((questions) => {
         t.deepEqual(questions, {
             questions: 'passed through'
@@ -115,7 +115,7 @@ test('[prompt.parameters] success', async (t) => {
     t.end();
 });
 
-test('[prompt.input] no default value', async (t) => {
+test('[prompt.input] no default value', async(t) => {
     sinon.stub(inquirer, 'prompt').callsFake((questions) => {
         t.deepEqual(questions, {
             type: 'input',
@@ -138,7 +138,7 @@ test('[prompt.input] no default value', async (t) => {
     t.end();
 });
 
-test('[prompt.input] with default value', async (t) => {
+test('[prompt.input] with default value', async(t) => {
     sinon.stub(inquirer, 'prompt').callsFake((questions) => {
         t.deepEqual(questions, {
             type: 'input',
