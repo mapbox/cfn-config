@@ -14,7 +14,8 @@
     },
     "scripts": {
         "test": "nyc tape test/*.test.js",
-        "pretest": "eslint index.js bin lib test/*.js",
+        "lint": "eslint index.js bin lib test/*.js",
+        "pretest": "npm run lint",
         "coverage": "nyc --reporter html tape test/*.test.js && opener coverage/index.html"
     },
     "dependencies": {
