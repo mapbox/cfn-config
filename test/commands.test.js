@@ -1234,7 +1234,7 @@ test('[commands.operations.confirmParameters] accepted', async(t) => {
     }));
 });
 
-test('[commands.operations.confirmTemplate] no difference', (t) => {
+test('[commands.operations.confirmTemplate] no difference', async(t) => {
     var context = Object.assign({}, basicContext, {
         oldTemplate: { old: 'template' },
         newTemplate: { old: 'template' },
@@ -1244,10 +1244,10 @@ test('[commands.operations.confirmTemplate] no difference', (t) => {
         }
     });
 
-    commands.operations.confirmTemplate(context);
+    await commands.operations.confirmTemplate(context);
 });
 
-test('[commands.operations.confirmTemplate] undefined', (t) => {
+test('[commands.operations.confirmTemplate] undefined', async(t) => {
     var context = Object.assign({}, basicContext, {
         oldTemplate: { Parameters: { old: undefined } },
         newTemplate: { Parameters: {} },
@@ -1257,10 +1257,10 @@ test('[commands.operations.confirmTemplate] undefined', (t) => {
         }
     });
 
-    commands.operations.confirmTemplate(context);
+    await commands.operations.confirmTemplate(context);
 });
 
-test('[commands.operations.confirmTemplate] force-mode', (t) => {
+test('[commands.operations.confirmTemplate] force-mode', async(t) => {
     var context = Object.assign({}, basicContext, {
         oldTemplate: { old: 'template' },
         newTemplate: { new: 'template' },
@@ -1274,10 +1274,10 @@ test('[commands.operations.confirmTemplate] force-mode', (t) => {
         }
     });
 
-    commands.operations.confirmTemplate(context);
+    await commands.operations.confirmTemplate(context);
 });
 
-test('[commands.operations.confirmTemplate] preapproved', (t) => {
+test('[commands.operations.confirmTemplate] preapproved', async(t) => {
     sinon.stub(console, 'log');
 
     var context = Object.assign({}, basicContext, {
@@ -1292,18 +1292,18 @@ test('[commands.operations.confirmTemplate] preapproved', (t) => {
             t.ok(console.log.calledWith('Auto-confirming template changes... Changes were pre-approved in another region.'), 'Skip notice printed');
             t.ifError(err, 'should proceed');
             t.ok(context.overrides.skipConfirmTemplate, 'sets skipConfirmTemplate');
-            t.end();
             console.log.restore();
+            t.end();
         },
         abort: (err) => {
             t.ifError(err, 'should not proceed');
         }
     });
 
-    commands.operations.confirmTemplate(context);
+    await commands.operations.confirmTemplate(context);
 });
 
-test('[commands.operations.confirmTemplate] rejected', (t) => {
+test('[commands.operations.confirmTemplate] rejected', async(t) => {
     t.plan(2);
 
     sinon.stub(prompt, 'confirm').callsFake((message) => {
@@ -1321,6 +1321,7 @@ test('[commands.operations.confirmTemplate] rejected', (t) => {
         newTemplate: { new: 'template' },
         next: function() {
             t.fail('should not proceed');
+            t.end();
         },
         abort: function(err) {
             t.ifError(err, 'aborted');
@@ -1328,10 +1329,10 @@ test('[commands.operations.confirmTemplate] rejected', (t) => {
         }
     });
 
-    commands.operations.confirmTemplate(context);
+    await commands.operations.confirmTemplate(context);
 });
 
-test('[commands.operations.confirmTemplate] accepted', (t) => {
+test('[commands.operations.confirmTemplate] accepted', async(t) => {
     t.plan(2);
 
     sinon.stub(prompt, 'confirm').callsFake((message) => {
@@ -1345,17 +1346,17 @@ test('[commands.operations.confirmTemplate] accepted', (t) => {
         next: function(err) {
             t.ifError(err, 'success');
             prompt.confirm.restore();
-
+            t.end();
         },
         abort: function() {
             t.fail('should not abort');
         }
     });
 
-    commands.operations.confirmTemplate(context);
+    await commands.operations.confirmTemplate(context);
 });
 
-test('[commands.operations.confirmTemplate] lengthy diff, first unchanged section ignored', (t) => {
+test('[commands.operations.confirmTemplate] lengthy diff, first unchanged section ignored', async(t) => {
     t.plan(2);
 
     sinon.stub(prompt, 'confirm').callsFake((message) => {
@@ -1443,14 +1444,14 @@ test('[commands.operations.confirmTemplate] lengthy diff, first unchanged sectio
         next: function(err) {
             t.ifError(err, 'success');
             prompt.confirm.restore();
-
+            t.end();
         },
         abort: function() {
             t.fail('should not abort');
         }
     });
 
-    commands.operations.confirmTemplate(context);
+    await commands.operations.confirmTemplate(context);
 });
 
 test('[commands.operations.saveTemplate] bucket not found', (t) => {
