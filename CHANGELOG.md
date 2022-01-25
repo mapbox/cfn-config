@@ -1,8 +1,13 @@
 # Change Log
 All notable changes to this project will be documented in this file. For change log formatting, see http://keepachangelog.com/
 
+## 4.0.0 - 2022-01-25
+- Refactor internals to use classes & ES6 syntax
+- Drop support for nodejs < 16
+- Update `prompt` module to use promises internally
+
 ## 3.2.1 - 2022-01-10
-- Pins `colors` dependency to version 1.4.0. 
+- Pins `colors` dependency to version 1.4.0.
 
 ## 3.2.0 - 2021-04-05
 - Adds an `--expand` flag to enable `CAPABILITY_AUTO_EXPAND` on changeset generation.
