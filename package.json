@@ -9,7 +9,7 @@
         "node": ">= 16"
     },
     "repository": {
-        "url": "https://github.com/mapbox/cfn-config.git",
+        "url": "https://github.com/openaddresses/cfn-config.git",
         "type": "git"
     },
     "bin": {
