@@ -10,7 +10,7 @@ const expected = require('./fixtures/template.json');
 process.env.AWS_ACCESS_KEY_ID = '-';
 process.env.AWS_SECRET_ACCESS_KEY = '-';
 
-test('[template.read] local file does not exist', async (t) => {
+test('[template.read] local file does not exist', async(t) => {
     try {
         await Template.read('./fake');
         t.fail();
@@ -21,7 +21,7 @@ test('[template.read] local file does not exist', async (t) => {
     t.end();
 });
 
-test('[template.read] local file cannot be parsed', async (t) => {
+test('[template.read] local file cannot be parsed', async(t) => {
     try {
         await Template.read(path.resolve(__dirname, 'fixtures', 'malformed-template.json'));
         t.fail();
@@ -33,7 +33,7 @@ test('[template.read] local file cannot be parsed', async (t) => {
     t.end();
 });
 
-test('[template.read] local js file cannot be parsed', async (t) => {
+test('[template.read] local js file cannot be parsed', async(t) => {
     try {
         await Template.read(path.resolve(__dirname, 'fixtures', 'malformed-template.js'));
         t.fail();
@@ -45,7 +45,7 @@ test('[template.read] local js file cannot be parsed', async (t) => {
     t.end();
 });
 
-test('[template.read] S3 no access', async (t) => {
+test('[template.read] S3 no access', async(t) => {
     try {
         await Template.read('s3://mapbox/fake');
         t.fail();
@@ -56,7 +56,7 @@ test('[template.read] S3 no access', async (t) => {
     t.end();
 });
 
-test('[template.read] S3 bucket does not exist', async (t) => {
+test('[template.read] S3 bucket does not exist', async(t) => {
     AWS.stub('S3', 'getBucketLocation', (params) => {
         t.deepEqual(params, { Bucket: 'my' }, 'requested bucket location');
         const error = new Error('Bucket does not exist');
@@ -75,7 +75,7 @@ test('[template.read] S3 bucket does not exist', async (t) => {
     t.end();
 });
 
-test('[template.read] S3 file does not exist', async (t) => {
+test('[template.read] S3 file does not exist', async(t) => {
     AWS.stub('S3', 'getObject', (params) => {
         t.deepEqual(params, { Bucket: 'my', Key: 'template' }, 'requested correct S3 object');
         const error = new Error('Object does not exist');
@@ -99,7 +99,7 @@ test('[template.read] S3 file does not exist', async (t) => {
     t.end();
 });
 
-test('[template.read] S3 file cannot be parsed', async (t) => {
+test('[template.read] S3 file cannot be parsed', async(t) => {
     AWS.stub('S3', 'getObject', function(params) {
         t.deepEqual(params, { Bucket: 'my', Key: 'template' }, 'requested correct S3 object');
         const malformed = fs.readFileSync(path.resolve(__dirname, 'fixtures', 'malformed-template.json'));
@@ -122,18 +122,18 @@ test('[template.read] S3 file cannot be parsed', async (t) => {
     t.end();
 });
 
-test('[template.read] local JSON', async (t) => {
+test('[template.read] local JSON', async(t) => {
     try {
         const found = await Template.read(path.resolve(__dirname, 'fixtures', 'template.json'));
         t.deepEqual(found, expected, 'got template JSON');
     } catch (err) {
-        t.error(err)
+        t.error(err);
     }
 
     t.end();
 });
 
-test('[template.read] local sync JS', async (t) => {
+test('[template.read] local sync JS', async(t) => {
     try {
         const found = await Template.read(path.resolve(__dirname, 'fixtures', 'template-sync.js'));
         t.deepEqual(found, expected, 'got template JSON');
@@ -144,7 +144,7 @@ test('[template.read] local sync JS', async (t) => {
     t.end();
 });
 
-test('[template.read] local sync JS (relative path)', async (t) => {
+test('[template.read] local sync JS (relative path)', async(t) => {
     const relativePath = path.resolve(__dirname, 'fixtures', 'template-sync.js').replace(process.cwd(), '').substr(1);
     t.equal(relativePath[0] !== '/', true, 'relative path: ' + relativePath);
 
@@ -158,7 +158,7 @@ test('[template.read] local sync JS (relative path)', async (t) => {
     t.end();
 });
 
-test('[template.read] local async JS with options', async (t) => {
+test('[template.read] local async JS with options', async(t) => {
     try {
         const found = await Template.read(path.resolve(__dirname, 'fixtures', 'template-async.js'), { some: 'options' });
         t.deepEqual(found, { some: 'options' }, 'got template JSON');
@@ -169,7 +169,7 @@ test('[template.read] local async JS with options', async (t) => {
     t.end();
 });
 
-test('[template.read] local async JS without options', async (t) => {
+test('[template.read] local async JS without options', async(t) => {
     try {
         const found = await Template.read(path.resolve(__dirname, 'fixtures', 'template-async.js'));
         t.deepEqual(found, {}, 'got template JSON');
@@ -180,7 +180,7 @@ test('[template.read] local async JS without options', async (t) => {
     t.end();
 });
 
-test('[template.read] S3 JSON', async (t) => {
+test('[template.read] S3 JSON', async(t) => {
     AWS.stub('S3', 'getObject', function(params) {
         t.deepEqual(params, { Bucket: 'my', Key: 'template' }, 'requested correct S3 object');
         return this.request.promise.returns(Promise.resolve({ Body: new Buffer(JSON.stringify(expected)) }));
