@@ -86,7 +86,7 @@ $ npm install --save @mapbox/cfn-config
 Then, in your scripts:
 
 ```js
-var cfnConfig = require('@mapbox/cfn-config');
+const cfnConfig = require('@mapbox/cfn-config');
 ```
 
 ## JavaScript Usage
@@ -96,49 +96,59 @@ High-level prompting routines to create, update, and delete stacks are provided,
 First, create a commands object:
 
 ```js
-var options = {
-  name: 'my-stack', // the base name of the stack
-  region: 'us-east-1', // the region where the stack resides
-  templatePath: '~/my-stack/cfn.template.json', // the template file
-  configBucket: 'my-cfn-configurations', // bucket for configuration files
-  templateBucket: 'cfn-config-templates-123456789012-us-east-1' // bucket for templates
+const options = {
+    name: 'my-stack', // the base name of the stack
+    region: 'us-east-1', // the region where the stack resides
+    templatePath: '~/my-stack/cfn.template.json', // the template file
+    configBucket: 'my-cfn-configurations', // bucket for configuration files
+    templateBucket: 'cfn-config-templates-123456789012-us-east-1' // bucket for templates
 };
 
-var commands = cfnConfig.commands(options);
+const commands = cfnConfig.commands(options);
 ```
 
 Then, perform the desired operation:
 
 ```js
 // Create a stack called `my-stack-testing`
-commands.create('testing', '~/my-stack/cfn.template.json', function(err) {
-  if (err) console.error(`Create failed: ${err.message}`);
-  else console.log('Create succeeded');
-});
+try {
+    await commands.create('testing', '~/my-stack/cfn.template.json');
+    console.log('Create succeeded');
+} catch (err) {
+    console.error(`Create failed: ${err.message}`);
+}
 
 // Update the stack with a different version of the template
-commands.update('testing', '~/my-stack/cfn.template-v2.json', function(err) {
-  if (err) console.error(`Update failed: ${err.message}`);
-  else console.log('Update succeeded');
-});
+try {
+    await commands.update('testing', '~/my-stack/cfn.template-v2.json');
+    console.log('Update succeeded');
+} catch (err) {
+    console.error(`Update failed: ${err.message}`);
+}
 
 // Save the stack's configuration to S3
-commands.save('testing', function(err) {
-  if (err) console.error(`Failed to save configuration: ${err.message}`);
-  else console.log('Saved configuration');
-});
+try {
+    await commands.save('testing');
+    console.log('Saved configuration');
+} catch (err) {
+    console.error(`Failed to save configuration: ${err.message}`);
+}
 
 // Get information about the stack
-commands.info('testing', function(err, info) {
-  if (err) console.error(`Failed to read stack info: ${err.message}`);
-  else console.log(JSON.stringify(info, null, 2));
-});
+try {
+    await commands.info('testing');
+    console.log(JSON.stringify(info, null, 2));
+} catch (err) {
+    console.error(`Failed to read stack info: ${err.message}`);
+}
 
 // Delete the stack
-commands.delete('testing', function(err) {
-  if (err) console.error(`Delete failed: ${err.message}`);
-  else console.log('Delete succeeded');
-});
+try {
+    await commands.delete('testing');
+    console.log('Delete succeeded');
+} catch (err) {
+    console.error(`Delete failed: ${err.message}`);
+}
 ```
 
 For low-level functions, see documentation in the code for now. More legible docs are to come.
