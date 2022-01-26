@@ -5,7 +5,7 @@ const test = require('tape');
 const AWS = require('@mapbox/mock-aws-sdk-js');
 const Actions = require('../lib/actions');
 
-test('[actions.diff] stack does not exist', async (t) => {
+test('[actions.diff] stack does not exist', async(t) => {
     AWS.stub('CloudFormation', 'createChangeSet', () => {
         const err = new Error('Stack [my-stack] does not exist');
         err.code = 'ValidationError';
@@ -23,7 +23,7 @@ test('[actions.diff] stack does not exist', async (t) => {
     t.end();
 });
 
-test('[actions.diff] invalid parameters', async (t) => {
+test('[actions.diff] invalid parameters', async(t) => {
     AWS.stub('CloudFormation', 'createChangeSet', () => {
         const err = new Error('Parameters: [Pets, Age, Name, LuckyNumbers, SecretPassword] must have values');
         err.code = 'ValidationError';
@@ -32,7 +32,7 @@ test('[actions.diff] invalid parameters', async (t) => {
 
     try {
         await Actions.diff('my-stack', 'us-east-1', 'UPDATE', 'https://my-bucket.s3.amazonaws.com/my-template.json', {}, false);
-        t.fail()
+        t.fail();
     } catch (err) {
         t.ok(err instanceof Actions.CloudFormationError, 'expected error returned');
     }
@@ -41,7 +41,7 @@ test('[actions.diff] invalid parameters', async (t) => {
     t.end();
 });
 
-test('[actions.diff] template url does not exist', async (t) => {
+test('[actions.diff] template url does not exist', async(t) => {
     AWS.stub('CloudFormation', 'createChangeSet', () => {
         const err = new Error('Template file referenced by https://my-bucket.s3.amazonaws.com/my-template.json does not exist.');
         err.code = 'ValidationError';
@@ -59,7 +59,7 @@ test('[actions.diff] template url does not exist', async (t) => {
     t.end();
 });
 
-test('[actions.diff] template url is invalid', async (t) => {
+test('[actions.diff] template url is invalid', async(t) => {
     AWS.stub('CloudFormation', 'createChangeSet', () => {
         const err = new Error('The specified url must be an Amazon S3 URL.');
         err.code = 'ValidationError';
@@ -77,7 +77,7 @@ test('[actions.diff] template url is invalid', async (t) => {
     t.end();
 });
 
-test('[actions.diff] template is invalid', async (t) => {
+test('[actions.diff] template is invalid', async(t) => {
     AWS.stub('CloudFormation', 'createChangeSet', () => {
         const err = new Error('Template format error: At least one Resources member must be defined.');
         err.code = 'ValidationError';
@@ -95,7 +95,7 @@ test('[actions.diff] template is invalid', async (t) => {
     t.end();
 });
 
-test('[actions.diff] createChangeSet error on wrong changeSetType', async (t) => {
+test('[actions.diff] createChangeSet error on wrong changeSetType', async(t) => {
     const url = 'https://my-bucket.s3.amazonaws.com/my-template.json';
 
     AWS.stub('CloudFormation', 'createChangeSet', () => {
@@ -115,7 +115,7 @@ test('[actions.diff] createChangeSet error on wrong changeSetType', async (t) =>
     t.end();
 });
 
-test('[actions.diff] unexpected createChangeSet error', async (t) => {
+test('[actions.diff] unexpected createChangeSet error', async(t) => {
     const url = 'https://my-bucket.s3.amazonaws.com/my-template.json';
 
     AWS.stub('CloudFormation', 'createChangeSet', () => {
@@ -133,7 +133,7 @@ test('[actions.diff] unexpected createChangeSet error', async (t) => {
     t.end();
 });
 
-test('[actions.diff] unexpected describeChangeSet error', async (t) => {
+test('[actions.diff] unexpected describeChangeSet error', async(t) => {
     const url = 'https://my-bucket.s3.amazonaws.com/my-template.json';
 
     AWS.stub('CloudFormation', 'createChangeSet').returns({
@@ -155,7 +155,7 @@ test('[actions.diff] unexpected describeChangeSet error', async (t) => {
     t.end();
 });
 
-test('[actions.diff] changeset failed to create', async (t) => {
+test('[actions.diff] changeset failed to create', async(t) => {
     const url = 'https://my-bucket.s3.amazonaws.com/my-template.json';
     let changesetId;
 
@@ -191,7 +191,7 @@ test('[actions.diff] changeset failed to create', async (t) => {
     t.end();
 });
 
-test('[actions.diff] success', async (t) => {
+test('[actions.diff] success', async(t) => {
     const url = 'https://my-bucket.s3.amazonaws.com/my-template.json';
     let changesetId;
     let polled = 0;
@@ -252,7 +252,7 @@ test('[actions.diff] success', async (t) => {
                         Replacement: 'False'
                     }
                 }]
-            }))
+            }));
         } else if (polled === 3) {
             return this.request.promise.returns(Promise.resolve({
                 ChangeSetName: changesetId,
@@ -339,7 +339,7 @@ test('[actions.diff] success', async (t) => {
     t.end();
 });
 
-test('[actions.executeChangeSet] describeChangeSet error', async (t) => {
+test('[actions.executeChangeSet] describeChangeSet error', async(t) => {
     AWS.stub('CloudFormation', 'describeChangeSet', () => {
         throw new Error('unexpected');
     });
@@ -355,7 +355,7 @@ test('[actions.executeChangeSet] describeChangeSet error', async (t) => {
     t.end();
 });
 
-test('[actions.executeChangeSet] changeset not executable', async (t) => {
+test('[actions.executeChangeSet] changeset not executable', async(t) => {
     AWS.stub('CloudFormation', 'describeChangeSet').returns({
         promise: () => Promise.resolve({
             ExecutionStatus: 'UNAVAILABLE',
@@ -378,7 +378,7 @@ test('[actions.executeChangeSet] changeset not executable', async (t) => {
     t.end();
 });
 
-test('[actions.executeChangeSet] executeChangeSet error', async (t) => {
+test('[actions.executeChangeSet] executeChangeSet error', async(t) => {
     AWS.stub('CloudFormation', 'describeChangeSet').returns({
         promise: () => Promise.resolve({
             ExecutionStatus: 'AVAILABLE',
@@ -401,7 +401,7 @@ test('[actions.executeChangeSet] executeChangeSet error', async (t) => {
     t.end();
 });
 
-test('[actions.executeChangeSet] success', async (t) => {
+test('[actions.executeChangeSet] success', async(t) => {
     AWS.stub('CloudFormation', 'describeChangeSet', function(params) {
         t.deepEqual(params, {
             ChangeSetName: 'changeset-id',
@@ -434,7 +434,7 @@ test('[actions.executeChangeSet] success', async (t) => {
     t.end();
 });
 
-test('[actions.delete] stack does not exist', async (t) => {
+test('[actions.delete] stack does not exist', async(t) => {
     AWS.stub('CloudFormation', 'deleteStack', () => {
         const err = new Error('Stack [my-stack] does not exist');
         err.code = 'ValidationError';
@@ -452,7 +452,7 @@ test('[actions.delete] stack does not exist', async (t) => {
     t.end();
 });
 
-test('[actions.delete] unexpected cloudformation error', async (t) => {
+test('[actions.delete] unexpected cloudformation error', async(t) => {
     AWS.stub('CloudFormation', 'deleteStack', () => {
         throw new Error('unexpected');
     });
@@ -468,7 +468,7 @@ test('[actions.delete] unexpected cloudformation error', async (t) => {
     t.end();
 });
 
-test('[actions.delete] success', async (t) => {
+test('[actions.delete] success', async(t) => {
     AWS.stub('CloudFormation', 'deleteStack', function(params) {
         t.deepEqual(params, { StackName: 'my-stack' }, 'deleteStack with expected params');
         return this.request.promise.returns(Promise.resolve());
@@ -484,7 +484,7 @@ test('[actions.delete] success', async (t) => {
     t.end();
 });
 
-test('[actions.validate] unexpected validateTemplate error', async (t) => {
+test('[actions.validate] unexpected validateTemplate error', async(t) => {
     const url = 'https://my-bucket.s3.amazonaws.com/my-template.json';
 
     AWS.stub('CloudFormation', 'validateTemplate', (params) => {
@@ -503,7 +503,7 @@ test('[actions.validate] unexpected validateTemplate error', async (t) => {
     t.end();
 });
 
-test('[actions.validate] invalid template', async (t) => {
+test('[actions.validate] invalid template', async(t) => {
     AWS.stub('CloudFormation', 'validateTemplate', () => {
         const err = new Error('Unresolved resource dependencies [Name] in the Outputs block of the template');
         err.code = 'ValidationError';
@@ -521,7 +521,7 @@ test('[actions.validate] invalid template', async (t) => {
     t.end();
 });
 
-test('[actions.validate] valid template', async (t) => {
+test('[actions.validate] valid template', async(t) => {
     AWS.stub('CloudFormation', 'validateTemplate', function(params) {
         t.deepEqual(params, {
             TemplateURL: 'https://my-bucket.s3.amazonaws.com/my-template.json'
@@ -540,7 +540,7 @@ test('[actions.validate] valid template', async (t) => {
     t.end();
 });
 
-test('[actions.saveConfiguration] bucket does not exist', async (t) => {
+test('[actions.saveConfiguration] bucket does not exist', async(t) => {
     const parameters = {
         Name: 'Chuck',
         Age: 18,
@@ -571,7 +571,7 @@ test('[actions.saveConfiguration] bucket does not exist', async (t) => {
     t.end();
 });
 
-test('[actions.saveConfiguration] unexpected putObject error', async (t) => {
+test('[actions.saveConfiguration] unexpected putObject error', async(t) => {
     const parameters = {
         Name: 'Chuck',
         Age: 18,
@@ -600,7 +600,7 @@ test('[actions.saveConfiguration] unexpected putObject error', async (t) => {
     t.end();
 });
 
-test('[actions.saveConfiguration] success with encryption', async (t) => {
+test('[actions.saveConfiguration] success with encryption', async(t) => {
     const parameters = {
         Name: 'Chuck',
         Age: 18,
@@ -636,7 +636,7 @@ test('[actions.saveConfiguration] success with encryption', async (t) => {
     t.end();
 });
 
-test('[actions.saveConfiguration] success without encryption', async (t) => {
+test('[actions.saveConfiguration] success without encryption', async(t) => {
     const parameters = {
         Name: 'Chuck',
         Age: 18,
@@ -670,7 +670,7 @@ test('[actions.saveConfiguration] success without encryption', async (t) => {
     t.end();
 });
 
-test('[actions.saveConfiguration] config bucket in a different region', async (t) => {
+test('[actions.saveConfiguration] config bucket in a different region', async(t) => {
     const parameters = {
         Name: 'Chuck',
         Age: 18,
@@ -729,7 +729,7 @@ test('[actions.templateUrl] eu-central-1', (t) => {
     t.end();
 });
 
-test('[actions.saveTemplate] bucket does not exist', async (t) => {
+test('[actions.saveTemplate] bucket does not exist', async(t) => {
     const url = 'https://s3.amazonaws.com/my-bucket/cirjpj94c0000s5nzc1j452o7-my-stack.template.json';
     const template = fs.readFileSync(path.resolve(__dirname, 'fixtures', 'template.json'));
     const AWS = require('aws-sdk');
@@ -756,7 +756,7 @@ test('[actions.saveTemplate] bucket does not exist', async (t) => {
     t.end();
 });
 
-test('[actions.saveTemplate] s3 error', async (t) => {
+test('[actions.saveTemplate] s3 error', async(t) => {
     const url = 'https://s3.amazonaws.com/my-bucket/cirjpj94c0000s5nzc1j452o7-my-stack.template.json';
     const template = fs.readFileSync(path.resolve(__dirname, 'fixtures', 'template.json'));
     AWS.stub('S3', 'putObject', () => {
@@ -774,7 +774,7 @@ test('[actions.saveTemplate] s3 error', async (t) => {
     t.end();
 });
 
-test('[actions.saveTemplate] us-east-1', async (t) => {
+test('[actions.saveTemplate] us-east-1', async(t) => {
     const url = 'https://s3.amazonaws.com/my-bucket/cirjpj94c0000s5nzc1j452o7-my-stack.template.json';
     const template = fs.readFileSync(path.resolve(__dirname, 'fixtures', 'template.json'));
 
@@ -800,7 +800,7 @@ test('[actions.saveTemplate] us-east-1', async (t) => {
     t.end();
 });
 
-test('[actions.saveTemplate] needs whitespace removal', async (t) => {
+test('[actions.saveTemplate] needs whitespace removal', async(t) => {
     const url = 'https://s3.amazonaws.com/my-bucket/cirjpj94c0000s5nzc1j452o7-my-stack.template.json';
     const template = require('./fixtures/huge-template');
 
@@ -824,13 +824,13 @@ test('[actions.saveTemplate] needs whitespace removal', async (t) => {
     t.end();
 });
 
-test('[actions.saveTemplate] cn-north-1', async (t) => {
+test('[actions.saveTemplate] cn-north-1', async(t) => {
     const url = 'https://s3-cn-north-1.amazonaws.com.cn/my-bucket/cirjpj94c0000s5nzc1j452o7-my-stack.template.json';
     const template = fs.readFileSync(path.resolve(__dirname, 'fixtures', 'template.json'));
     const AWS = require('aws-sdk');
     const S3 = AWS.S3;
 
-    AWS.S3 = (params) => {
+    AWS.S3 = function(params) {
         t.deepEqual(params, { region: 'cn-north-1', signatureVersion: 'v4' }, 'parses cn-north-1 from s3 url');
     };
 
@@ -840,7 +840,10 @@ test('[actions.saveTemplate] cn-north-1', async (t) => {
             Key: 'cirjpj94c0000s5nzc1j452o7-my-stack.template.json',
             Body: template
         }, 'template put to expected s3 destination');
-        return this.request.promise.returns(Promise.resolve());
+
+        return {
+            promise: () => Promise.resolve()
+        };
     };
 
     try {
@@ -853,13 +856,13 @@ test('[actions.saveTemplate] cn-north-1', async (t) => {
     t.end();
 });
 
-test('[actions.saveTemplate] eu-central-1', async (t) => {
+test('[actions.saveTemplate] eu-central-1', async(t) => {
     const url = 'https://s3-eu-central-1.amazonaws.com/my-bucket/cirjpj94c0000s5nzc1j452o7-my-stack.template.json';
     const template = fs.readFileSync(path.resolve(__dirname, 'fixtures', 'template.json'));
     const AWS = require('aws-sdk');
     const S3 = AWS.S3;
 
-    AWS.S3 = (params) => {
+    AWS.S3 = function(params) {
         t.deepEqual(params, { region: 'eu-central-1', signatureVersion: 'v4' }, 'parses eu-central-1 from s3 url');
     };
     AWS.S3.prototype.putObject = function(params) {
@@ -868,7 +871,9 @@ test('[actions.saveTemplate] eu-central-1', async (t) => {
             Key: 'cirjpj94c0000s5nzc1j452o7-my-stack.template.json',
             Body: template
         }, 'template put to expected s3 destination');
-        return this.request.promise.returns(Promise.resolve());
+        return {
+            promise: () => Promise.resolve()
+        };
     };
 
     try {
@@ -881,21 +886,24 @@ test('[actions.saveTemplate] eu-central-1', async (t) => {
     t.end();
 });
 
-test('[actions.monitor] error', async (t) => {
-    AWS.stub('CloudFormation', 'describeStackEvents', function(params, callback) {
-        callback(new Error('failure'));
-        return new events.EventEmitter();
+test('[actions.monitor] error', async(t) => {
+    AWS.stub('CloudFormation', 'describeStackEvents', () => {
+        throw new Error('failure');
     });
 
-    Actions.monitor('my-stack', 'us-east-1', function(err) {
+    try {
+        await Actions.monitor('my-stack', 'us-east-1');
+        t.fail();
+    } catch (err) {
         t.ok(err instanceof Actions.CloudFormationError, 'expected error type');
-        AWS.CloudFormation.restore();
-        t.end();
-    });
+    }
+
+    AWS.CloudFormation.restore();
+    t.end();
 });
 
-test('[actions.monitor] success', async (t) => {
-    var once = true;
+test('[actions.monitor] success', async(t) => {
+    let once = true;
 
     AWS.stub('CloudFormation', 'describeStacks', function(params, callback) {
         setTimeout(callback, 1000, null, {
@@ -949,9 +957,12 @@ test('[actions.monitor] success', async (t) => {
         return new events.EventEmitter();
     });
 
-    Actions.monitor('my-stack', 'us-east-1', function(err) {
-        t.ifError(err, 'success');
-        AWS.CloudFormation.restore();
-        t.end();
-    });
+    try {
+        await Actions.monitor('my-stack', 'us-east-1');
+    } catch (err) {
+        t.error(err);
+    }
+
+    AWS.CloudFormation.restore();
+    t.end();
 });
