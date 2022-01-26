@@ -80,7 +80,7 @@ test('[cli.parse] sets options', (t) => {
 });
 
 test('[cli.parse] handles default template bucket on create & update', (t) => {
-    const parsed = cli.parse(['info', 'testing'], {});
+    let parsed = cli.parse(['info', 'testing'], {});
     t.notOk(parsed.options.templateBucket, 'not set when not needed');
 
     parsed = cli.parse(['create', 'testing'], { AWS_ACCOUNT_ID: '123456789012' });

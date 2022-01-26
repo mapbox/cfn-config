@@ -3,11 +3,11 @@
 const path = require('path');
 const test = require('tape');
 const sinon = require('sinon');
-const commands = require('../lib/commands');
-const prompt = require('../lib/prompt');
-const actions = require('../lib/actions');
-const lookup = require('../lib/lookup');
-const template = require('../lib/template');
+const Commands = require('../lib/commands');
+const Prompt = require('../lib/prompt');
+const Actions = require('../lib/actions');
+const Lookup = require('../lib/lookup');
+const Template = require('../lib/template');
 
 const opts = {
     name: 'my-stack',

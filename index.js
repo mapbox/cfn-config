@@ -1,11 +1,11 @@
 const AWS = require('aws-sdk');
 
 const cfnConfig = {
-    actions: require('./lib/actions'),
-    commands: require('./lib/commands'),
-    lookup: require('./lib/lookup'),
-    prompt: require('./lib/prompt'),
-    template: require('./lib/template')
+    Actions: require('./lib/actions'),
+    Commands: require('./lib/commands'),
+    Lookup: require('./lib/lookup'),
+    Prompt: require('./lib/prompt'),
+    Template: require('./lib/template')
 };
 
 module.exports = cfnConfig;
