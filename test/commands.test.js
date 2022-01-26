@@ -16,7 +16,7 @@ const opts = {
     templateBucket: 'my-template-bucket'
 };
 
-var basicContext = commands.commandContext(opts, 'testing', [], function() {});
+const basicContext = commands.commandContext(opts, 'testing', [], function() {});
 
 test('[commands.create] no overrides', (t) => {
     function whenDone() {}
@@ -28,7 +28,7 @@ test('[commands.create] no overrides', (t) => {
         t.ok(operations.every(function(op) { return typeof op === 'function'; }), 'instantiate context with array of operations');
         t.equal(callback, whenDone, 'instantiate context with final callback function');
 
-        var context = Object.assign({}, basicContext, {
+        const context = Object.assign({}, basicContext, {
             next: function() {
                 t.pass('called next to begin process');
                 t.equal(context.template, 'templatePath', 'set context.template');
@@ -53,7 +53,7 @@ test('[commands.create] with overrides', (t) => {
         t.ok(operations.every(function(op) { return typeof op === 'function'; }), 'instantiate context with array of operations');
         t.equal(callback, whenDone, 'instantiate context with final callback function');
 
-        var context = Object.assign({}, basicContext, {
+        const context = Object.assign({}, basicContext, {
             next: function() {
                 t.pass('called next to begin process');
                 t.equal(context.template, 'templatePath', 'set context.template');
@@ -79,7 +79,7 @@ test('[commands.create] with template object', (t) => {
         t.ok(operations.every(function(op) { return typeof op === 'function'; }), 'instantiate context with array of operations');
         t.equal(callback, whenDone, 'instantiate context with final callback function');
 
-        var context = Object.assign({}, basicContext, {
+        const context = Object.assign({}, basicContext, {
             next: function() {
                 t.pass('called next to begin process');
                 t.deepEqual(context.template, { arbitrary: 'template' }, 'set context.template');
@@ -104,7 +104,7 @@ test('[commands.update] no overrides', (t) => {
         t.ok(operations.every(function(op) { return typeof op === 'function'; }), 'instantiate context with array of operations');
         t.equal(callback, whenDone, 'instantiate context with final callback function');
 
-        var context = Object.assign({}, basicContext, {
+        const context = Object.assign({}, basicContext, {
             next: function() {
                 t.pass('called next to begin process');
                 t.equal(context.template, 'templatePath', 'set context.template');
@@ -129,7 +129,7 @@ test('[commands.update] with overrides', (t) => {
         t.ok(operations.every(function(op) { return typeof op === 'function'; }), 'instantiate context with array of operations');
         t.equal(callback, whenDone, 'instantiate context with final callback function');
 
-        var context = Object.assign({}, basicContext, {
+        const context = Object.assign({}, basicContext, {
             next: function() {
                 t.pass('called next to begin process');
                 t.equal(context.template, 'templatePath', 'set context.template');
@@ -153,7 +153,7 @@ test('[commands.update] with multiple overrides', (t) => {
         t.ok(operations.every(function(op) { return typeof op === 'function'; }), 'instantiate context with array of operations');
         t.equal(callback, whenDone, 'instantiate context with final callback function');
 
-        var context = Object.assign({}, basicContext, {
+        const context = Object.assign({}, basicContext, {
             next: function() {
                 t.pass('called next to begin process');
                 t.equal(context.template, 'templatePath', 'set context.template');
@@ -178,7 +178,7 @@ test('[commands.update] with overrides.skipConfirmParameters', (t) => {
         t.ok(operations.every(function(op) { return typeof op === 'function'; }), 'instantiate context with array of operations');
         t.equal(callback, whenDone, 'instantiate context with final callback function');
 
-        var context = Object.assign({}, basicContext, {
+        const context = Object.assign({}, basicContext, {
             next: function() {
                 t.pass('called next to begin process');
                 t.equal(context.template, 'templatePath', 'set context.template');
@@ -203,7 +203,7 @@ test('[commands.update] with overrides.skipConfirmTemplate', (t) => {
         t.ok(operations.every(function(op) { return typeof op === 'function'; }), 'instantiate context with array of operations');
         t.equal(callback, whenDone, 'instantiate context with final callback function');
 
-        var context = Object.assign({}, basicContext, {
+        const context = Object.assign({}, basicContext, {
             next: function() {
                 t.pass('called next to begin process');
                 t.equal(context.template, 'templatePath', 'set context.template');
@@ -228,7 +228,7 @@ test('[commands.update] with overrides.skipConfirmParameters and overrides.skipC
         t.ok(operations.every(function(op) { return typeof op === 'function'; }), 'instantiate context with array of operations');
         t.equal(callback, whenDone, 'instantiate context with final callback function');
 
-        var context = Object.assign({}, basicContext, {
+        const context = Object.assign({}, basicContext, {
             next: function() {
                 t.pass('called next to begin process');
                 t.equal(context.template, 'templatePath', 'set context.template');
@@ -254,7 +254,7 @@ test('[commands.update] with template object', (t) => {
         t.ok(operations.every(function(op) { return typeof op === 'function'; }), 'instantiate context with array of operations');
         t.equal(callback, whenDone, 'instantiate context with final callback function');
 
-        var context = Object.assign({}, basicContext, {
+        const context = Object.assign({}, basicContext, {
             next: function() {
                 t.pass('called next to begin process');
                 t.deepEqual(context.template, { arbitrary: 'template' }, 'set context.template');
@@ -279,7 +279,7 @@ test('[commands.delete] no overrides', (t) => {
         t.ok(operations.every(function(op) { return typeof op === 'function'; }), 'instantiate context with array of operations');
         t.equal(callback, whenDone, 'instantiate context with final callback function');
 
-        var context = Object.assign({}, basicContext, {
+        const context = Object.assign({}, basicContext, {
             next: function() {
                 t.pass('called next to begin process');
                 t.deepEqual(context.overrides, {}, 'sets empty overrides');
@@ -303,7 +303,7 @@ test('[commands.delete] with overrides', (t) => {
         t.ok(operations.every(function(op) { return typeof op === 'function'; }), 'instantiate context with array of operations');
         t.equal(callback, whenDone, 'instantiate context with final callback function');
 
-        var context = Object.assign({}, basicContext, {
+        const context = Object.assign({}, basicContext, {
             next: function() {
                 t.pass('called next to begin process');
                 t.deepEqual(context.overrides, { force: true }, 'sets empty overrides');
@@ -404,7 +404,7 @@ test('[commands.save] kms-mode', (t) => {
         t.ok(operations.every(function(op) { return typeof op === 'function'; }), 'instantiate context with array of operations');
         t.equal(callback, whenDone, 'instantiate context with final callback function');
 
-        var context = Object.assign({}, basicContext, {
+        const context = Object.assign({}, basicContext, {
             next: function() {
                 t.pass('called next to begin process');
                 t.equal(context.kms, true, 'sets context.kms');
@@ -428,7 +428,7 @@ test('[commands.save] not kms-mode', (t) => {
         t.ok(operations.every(function(op) { return typeof op === 'function'; }), 'instantiate context with array of operations');
         t.equal(callback, whenDone, 'instantiate context with final callback function');
 
-        var context = Object.assign({}, basicContext, {
+        const context = Object.assign({}, basicContext, {
             next: function() {
                 t.pass('called next to begin process');
                 t.equal(context.kms, false, 'sets context.kms');
@@ -444,7 +444,7 @@ test('[commands.save] not kms-mode', (t) => {
 });
 
 test('[commands.commandContext] sets context', (t) => {
-    var context = commands.commandContext(opts, 'testing', opts, function() {});
+    const context = commands.commandContext(opts, 'testing', opts, function() {});
     t.equal(context.baseName, opts.name, 'sets baseName');
     t.equal(context.suffix, 'testing', 'sets suffix');
     t.equal(context.stackName, opts.name + '-testing', 'sets stackName');
@@ -459,14 +459,14 @@ test('[commands.commandContext] sets context', (t) => {
 });
 
 test('[commands.commandContext] handles null suffix', (t) => {
-    var context = commands.commandContext(opts, null, opts, function() {});
+    const context = commands.commandContext(opts, null, opts, function() {});
     t.equal(context.stackName, opts.name, 'sets stackName without trailing -');
     t.end();
 });
 
 test('[commands.commandContext] iterates through operations', (t) => {
-    var i = 0;
-    var ops = [
+    const i = 0;
+    const ops = [
         function(context) {
             t.equal(i, 0, 'called first function');
             i++;
@@ -479,7 +479,7 @@ test('[commands.commandContext] iterates through operations', (t) => {
         }
     ];
 
-    var context = commands.commandContext(opts, 'testing', ops, function(err, performed) {
+    const context = commands.commandContext(opts, 'testing', ops, function(err, performed) {
         t.ifError(err, 'success');
         t.equal(performed, true, 'the requested command was performed');
         t.end();
@@ -518,11 +518,11 @@ test('[commands.commandContext] callback with diffs', (t) => {
 });
 
 test('[commands.commandContext] aborts', (t) => {
-    var ops = [
+    const ops = [
         function(context) { context.abort(); }
     ];
 
-    var context = commands.commandContext(opts, 'testing', ops, function(err, performed) {
+    const context = commands.commandContext(opts, 'testing', ops, function(err, performed) {
         t.ifError(err, 'success');
         t.equal(performed, false, 'the requested command was not performed');
         t.end();
@@ -532,11 +532,11 @@ test('[commands.commandContext] aborts', (t) => {
 });
 
 test('[commands.commandContext] aborts with error', (t) => {
-    var ops = [
+    const ops = [
         function(context) { context.abort(new Error('failure')); }
     ];
 
-    var context = commands.commandContext(opts, 'testing', ops, function(err, performed) {
+    const context = commands.commandContext(opts, 'testing', ops, function(err, performed) {
         t.equal(err.message, 'failure', 'success');
         t.equal(performed, false, 'the requested command was not performed');
         t.end();
@@ -554,7 +554,7 @@ test('[commands.operations.updatePreamble] no template', (t) => {
         callback();
     });
 
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         next: function() {
             t.fail('should not call next');
         },
@@ -579,7 +579,7 @@ test('[commands.operations.updatePreamble] templatePath not found', (t) => {
         callback();
     });
 
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         template: '/tmp/invalid/path/nonono.template.json',
         next: function() {
             t.fail('should not call next');
@@ -609,7 +609,7 @@ test('[commands.operations.updatePreamble] template invalid', (t) => {
         callback();
     });
 
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         template: 'example.template.json',
         next: function() {
             t.fail('should not call next');
@@ -640,7 +640,7 @@ test('[commands.operations.updatePreamble] stack not found for parameters', (t) 
         callback();
     });
 
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         template: 'example.template.json',
         next: function() {
             t.fail('should not call next');
@@ -671,7 +671,7 @@ test('[commands.operations.updatePreamble] failure getting stack parameters', (t
         callback();
     });
 
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         template: 'example.template.json',
         next: function() {
             t.fail('should not call next');
@@ -702,7 +702,7 @@ test('[commands.operations.updatePreamble] stack not found for template', (t) =>
         callback(new lookup.StackNotFoundError('failure'));
     });
 
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         template: 'example.template.json',
         next: function() {
             t.fail('should not call next');
@@ -733,7 +733,7 @@ test('[commands.operations.updatePreamble] failure getting stack template', (t) 
         callback(new lookup.CloudFormationError('failure'));
     });
 
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         template: 'example.template.json',
         next: function() {
             t.fail('should not call next');
@@ -766,7 +766,7 @@ test('[commands.operations.updatePreamble] success', (t) => {
         callback(null, { old: 'template' });
     });
 
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         template: 'example.template.json',
         overrides: { templateOptions: { template: 'options' } },
         next: function() {
@@ -796,7 +796,7 @@ test('[commands.operations.updatePreamble] success with template object', (t) =>
         callback(null, { old: 'template' });
     });
 
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         template: { arbitrary: 'template' },
         next: function() {
             t.pass('calls next()');
@@ -821,7 +821,7 @@ test('[commands.operations.getMasterConfig] success', (t) => {
         callback(null, { old: 'fresh' });
     });
 
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         overrides: { masterConfig: 's3://chill.cfn.json' },
         next: function() {
             t.pass('calls next()');
@@ -845,7 +845,7 @@ test('[commands.operations.getMasterConfig] no-op', (t) => {
         callback(null, { old: 'fresh' });
     });
 
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         overrides: {},
         next: function() {
             t.pass('calls next()');
@@ -868,7 +868,7 @@ test('[commands.operations.getMasterConfig] failed', (t) => {
         callback(new Error(), {});
     });
 
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         overrides: { masterConfig: 's3://unchill.cfn.json' },
         next: function() {
             t.fail('should not call next');
@@ -889,7 +889,7 @@ test('[commands.operations.getMasterConfig] no matching oldParameters does not p
         callback(null, { bingo: 'fresh' });
     });
 
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         overrides: { masterConfig: 's3://chill.cfn.json' },
         next: function() {
             t.pass('calls next()');
@@ -912,7 +912,7 @@ test('[commands.operations.getMasterConfig] adding a newParameter that matches m
         callback(null, { old: 'fresh' });
     });
 
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         overrides: { masterConfig: 's3://chill.cfn.json' },
         next: function() {
             t.pass('calls next()');
@@ -937,7 +937,7 @@ test('[commands.operations.promptParameters] force-mode', (t) => {
         t.fail('should not build questions');
     });
 
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         newTemplate: { Parameters: { old: {}, new: {} } },
         oldParameters: { old: 'parameters', extra: 'value' },
         overrides: { force: true },
@@ -954,8 +954,8 @@ test('[commands.operations.promptParameters] force-mode', (t) => {
 });
 
 test('[commands.operations.promptParameters] not force-mode', (t) => {
-    var questions = { parameter: 'questions' };
-    var answers = { parameter: 'answers' };
+    const questions = { parameter: 'questions' };
+    const answers = { parameter: 'answers' };
 
     sinon.stub(template, 'questions').callsFake(function(template, overrides) {
         t.deepEqual(template, { new: 'template' }, 'builds questions for new template');
@@ -968,7 +968,7 @@ test('[commands.operations.promptParameters] not force-mode', (t) => {
         return Promise.resolve(answers);
     });
 
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         newTemplate: { new: 'template' },
         oldParameters: { old: 'parameters' },
         next: function(err) {
@@ -993,7 +993,7 @@ test('[commands.operations.promptParameters] with parameter and kms overrides', 
         return Promise.resolve({ the: 'answers' });
     });
 
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         stackRegion: 'us-west-2',
         newTemplate: { new: 'template' },
         oldParameters: { old: 'parameters' },
@@ -1010,7 +1010,7 @@ test('[commands.operations.promptParameters] with parameter and kms overrides', 
 });
 
 test('[commands.operations.promptParameters] force-mode with no parameters in new template', (t) => {
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         newTemplate: { new: 'template' },
         overrides: { force: true },
         next: function(err) {
@@ -1028,7 +1028,7 @@ test('[commands.operations.promptParameters] reject overrides that are not in ol
         return Promise.resolve({ some: 'answers' });
     });
 
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         newTemplate: { Parameters: { Name: {} } },
         oldParameters: { Name: 'name', Age: 'age' },
         overrides: { parameters: { Name: 'overriden', Born: 'ignored' } },
@@ -1044,14 +1044,14 @@ test('[commands.operations.promptParameters] reject overrides that are not in ol
 });
 
 test('[commands.operations.promptParameters] changesetParameters use previous value for unchanged parameter values', (t) => {
-    var oldParameters = { old: 'parameters', the: 'answers' };
-    var newParameters = { old: 'newvalue', the: 'answers' };
+    const oldParameters = { old: 'parameters', the: 'answers' };
+    const newParameters = { old: 'newvalue', the: 'answers' };
 
     sinon.stub(prompt, 'parameters').callsFake(() => {
         return Promise.resolve(newParameters);
     });
 
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         stackRegion: 'us-west-2',
         newTemplate: { new: 'template' },
         oldParameters: oldParameters,
@@ -1068,14 +1068,14 @@ test('[commands.operations.promptParameters] changesetParameters use previous va
 });
 
 test('[commands.operations.promptParameters] changesetParameters does not set UsePreviousValue when overrides set the value', (t) => {
-    var oldParameters = { beep: 'boop' };
-    var newParameters = { beep: 'boop' };
+    const oldParameters = { beep: 'boop' };
+    const newParameters = { beep: 'boop' };
 
     sinon.stub(prompt, 'parameters').callsFake(() => {
         return Promise.resolve(newParameters);
     });
 
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         stackRegion: 'us-west-2',
         newTemplate: { new: 'template' },
         oldParameters: oldParameters,
@@ -1092,14 +1092,14 @@ test('[commands.operations.promptParameters] changesetParameters does not set Us
 });
 
 test('[commands.operations.promptParameters] changesetParameters sets UsePreviousValue to true in the absence of overrides', (t) => {
-    var oldParameters = { beep: 'bop' };
-    var newParameters = { beep: 'bop' };
+    const oldParameters = { beep: 'bop' };
+    const newParameters = { beep: 'bop' };
 
     sinon.stub(prompt, 'parameters').callsFake(() => {
         return Promise.resolve(newParameters);
     });
 
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         stackRegion: 'us-west-2',
         newTemplate: { new: 'template' },
         oldParameters: oldParameters,
@@ -1116,14 +1116,14 @@ test('[commands.operations.promptParameters] changesetParameters sets UsePreviou
 });
 
 test('[commands.operations.promptParameters] do not set UsePreviousValue when creating a new stack', (t) => {
-    var oldParameters = { beep: 'boop' };
-    var newParameters = { beep: 'boop' };
+    const oldParameters = { beep: 'boop' };
+    const newParameters = { beep: 'boop' };
 
     sinon.stub(prompt, 'parameters').callsFake(() => {
         return Promise.resolve(newParameters);
     });
 
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         stackRegion: 'us-west-2',
         newTemplate: { new: 'template' },
         create: true,
@@ -1142,7 +1142,7 @@ test('[commands.operations.promptParameters] do not set UsePreviousValue when cr
 });
 
 test('[commands.operations.confirmParameters] force-mode', (t) => {
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         overrides: { force: true },
         oldParameters: { old: 'parameters' },
         newParameters: { old: 'parameters' },
@@ -1156,7 +1156,7 @@ test('[commands.operations.confirmParameters] force-mode', (t) => {
 });
 
 test('[commands.operations.confirmParameters] no difference', (t) => {
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         oldParameters: { old: 'parameters' },
         newParameters: { old: 'parameters' },
         next: function() {
@@ -1236,7 +1236,7 @@ test('[commands.operations.confirmParameters] accepted', async(t) => {
 });
 
 test('[commands.operations.confirmTemplate] no difference', async(t) => {
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         oldTemplate: { old: 'template' },
         newTemplate: { old: 'template' },
         next: function() {
@@ -1249,7 +1249,7 @@ test('[commands.operations.confirmTemplate] no difference', async(t) => {
 });
 
 test('[commands.operations.confirmTemplate] undefined', async(t) => {
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         oldTemplate: { Parameters: { old: undefined } },
         newTemplate: { Parameters: {} },
         next: function() {
@@ -1262,7 +1262,7 @@ test('[commands.operations.confirmTemplate] undefined', async(t) => {
 });
 
 test('[commands.operations.confirmTemplate] force-mode', async(t) => {
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         oldTemplate: { old: 'template' },
         newTemplate: { new: 'template' },
         overrides: { force: true },
@@ -1317,7 +1317,7 @@ test('[commands.operations.confirmTemplate] rejected', async(t) => {
 
     basicContext.overrides = {}; // some previous test has mutated this
 
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         oldTemplate: { old: 'template' },
         newTemplate: { new: 'template' },
         next: function() {
@@ -1341,7 +1341,7 @@ test('[commands.operations.confirmTemplate] accepted', async(t) => {
         return Promise.resolve(true);
     });
 
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         oldTemplate: { old: 'template' },
         newTemplate: { new: 'template' },
         next: function(err) {
@@ -1365,7 +1365,7 @@ test('[commands.operations.confirmTemplate] lengthy diff, first unchanged sectio
         return Promise.resolve(true);
     });
 
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         oldTemplate: {
             old: 'template',
             a: 'lines',
@@ -1456,7 +1456,7 @@ test('[commands.operations.confirmTemplate] lengthy diff, first unchanged sectio
 });
 
 test('[commands.operations.saveTemplate] bucket not found', (t) => {
-    var url = 'https://s3.amazonaws.com/my-template-bucket/my-stack-testing.template.json';
+    const url = 'https://s3.amazonaws.com/my-template-bucket/my-stack-testing.template.json';
 
     sinon.stub(actions, 'templateUrl').callsFake(function() {
         return url;
@@ -1466,7 +1466,7 @@ test('[commands.operations.saveTemplate] bucket not found', (t) => {
         callback(new actions.BucketNotFoundError('failure'));
     });
 
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         abort: function(err) {
             t.ok(err instanceof actions.BucketNotFoundError, 'expected error type');
             t.equal(err.message, 'Could not find template bucket: failure', 'expected error message');
@@ -1480,7 +1480,7 @@ test('[commands.operations.saveTemplate] bucket not found', (t) => {
 });
 
 test('[commands.operations.saveTemplate] failed to save template', (t) => {
-    var url = 'https://s3.amazonaws.com/my-template-bucket/my-stack-testing.template.json';
+    const url = 'https://s3.amazonaws.com/my-template-bucket/my-stack-testing.template.json';
 
     sinon.stub(actions, 'templateUrl').callsFake(function() {
         return url;
@@ -1490,7 +1490,7 @@ test('[commands.operations.saveTemplate] failed to save template', (t) => {
         callback(new actions.S3Error('failure'));
     });
 
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         abort: function(err) {
             t.ok(err instanceof actions.S3Error, 'expected error type');
             t.equal(err.message, 'Failed to save template: failure', 'expected error message');
@@ -1504,7 +1504,7 @@ test('[commands.operations.saveTemplate] failed to save template', (t) => {
 });
 
 test('[commands.operations.saveTemplate] success', (t) => {
-    var templateUrl = 'https://s3.amazonaws.com/my-template-bucket/my-stack-testing.template.json';
+    const templateUrl = 'https://s3.amazonaws.com/my-template-bucket/my-stack-testing.template.json';
 
     sinon.stub(actions, 'templateUrl').callsFake(function(bucket, region, suffix) {
         t.equal(bucket, context.templateBucket, 'template url in proper bucket');
@@ -1519,7 +1519,7 @@ test('[commands.operations.saveTemplate] success', (t) => {
         callback();
     });
 
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         newTemplate: { new: 'template' },
         next: function(err) {
             t.ifError(err, 'success');
@@ -1538,7 +1538,7 @@ test('[commands.operations.validateTemplate] invalid', (t) => {
         callback(new actions.CloudFormationError('failure'));
     });
 
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         templateUrl: 'https://s3.amazonaws.com/my-template-bucket/my-stack-testing.template.json',
         abort: function(err) {
             t.ok(err instanceof actions.CloudFormationError, 'correct error type');
@@ -1560,7 +1560,7 @@ test('[commands.operations.validateTemplate] valid', (t) => {
         callback();
     });
 
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         templateUrl: 'https://s3.amazonaws.com/my-template-bucket/my-stack-testing.template.json',
         abort: function() {
             t.fail('failed');
@@ -1575,7 +1575,7 @@ test('[commands.operations.validateTemplate] valid', (t) => {
 });
 
 test('[commands.operations.beforeUpdateHook] no hook', (t) => {
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         abort: function() {
             t.fail('failed');
         },
@@ -1589,7 +1589,7 @@ test('[commands.operations.beforeUpdateHook] no hook', (t) => {
 });
 
 test('[commands.operations.validateParametersHook] no hook', (t) => {
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         abort: function() {
             t.fail('failed');
         },
@@ -1603,7 +1603,7 @@ test('[commands.operations.validateParametersHook] no hook', (t) => {
 });
 
 test('[commands.operations.validateParametersHook] hook error', (t) => {
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         overrides: {
             validateParameters: function(context, callback) {
                 callback(new Error('failure'));
@@ -1623,7 +1623,7 @@ test('[commands.operations.validateParametersHook] hook error', (t) => {
 
 test('[commands.operations.validateParametersHook] hook success', (t) => {
     t.plan(2);
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         overrides: {
             validateParameters: function(arg, callback) {
                 t.deepEqual(arg, context, 'provided hook with runtime context');
@@ -1642,7 +1642,7 @@ test('[commands.operations.validateParametersHook] hook success', (t) => {
 });
 
 test('[commands.operations.beforeUpdateHook] hook error', (t) => {
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         overrides: {
             beforeUpdate: function(context, callback) {
                 callback(new Error('failure'));
@@ -1663,7 +1663,7 @@ test('[commands.operations.beforeUpdateHook] hook error', (t) => {
 test('[commands.operations.beforeUpdateHook] hook success', (t) => {
     t.plan(2);
 
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         overrides: {
             beforeUpdate: function(arg, callback) {
                 t.deepEqual(arg, context, 'provided hook with runtime context');
@@ -1686,7 +1686,7 @@ test('[commands.operations.getChangeset] failure', (t) => {
         callback(new actions.CloudFormationError('failure'));
     });
 
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         abort: function(err) {
             t.ok(err instanceof actions.CloudFormationError, 'correct error type');
             t.equal(err.message, 'Failed to generate changeset: failure', 'expected error message');
@@ -1704,7 +1704,7 @@ test('[commands.operations.getChangeset] failure', (t) => {
 test('[commands.operations.getChangeset] success', (t) => {
     t.plan(8);
 
-    var details = { changeset: 'details' };
+    const details = { changeset: 'details' };
 
     sinon.stub(actions, 'diff').callsFake(function(name, region, changeSetType, url, params, expand, callback) {
         t.equal(name, context.stackName, 'changeset for correct stack');
@@ -1716,7 +1716,7 @@ test('[commands.operations.getChangeset] success', (t) => {
         callback(null, details);
     });
 
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         stackName: 'my-stack-testing',
         stackRegion: 'us-east-1',
         newParameters: { new: 'parameters' },
@@ -1774,7 +1774,7 @@ test('[commands.operations.getChangesetUpdate] success', (t) => {
 });
 
 test('[commands.operations.confirmChangeset] force-mode', (t) => {
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         overrides: { force: true },
         next: function() {
             t.pass('accepted with no prompt');
@@ -1789,7 +1789,7 @@ test('[commands.operations.confirmChangeset] force-mode', (t) => {
 });
 
 test('[commands.operations.confirmChangeset] skipConfirmParams && skipConfirmTemplate', (t) => {
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         overrides: { skipConfirmParameters: true, skipConfirmTemplate: true },
         next: function() {
             t.pass('accepted with no prompt');
@@ -1809,7 +1809,7 @@ test('[commands.operations.confirmChangeset] rejected', (t) => {
         return Promise.resolve(false);
     });
 
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         changeset: { changes: [] },
         abort: function(err) {
             t.ifError(err, 'aborted');
@@ -1830,7 +1830,7 @@ test('[commands.operations.confirmChangeset] acccepted', (t) => {
         return Promise.resolve(true);
     });
 
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         changeset: { changes: [] },
         abort: function() {
             t.fail('should not abort');
@@ -1851,7 +1851,7 @@ test('[commands.operations.confirmChangeset] changeset formatting', (t) => {
         return Promise.resolve(true);
     });
 
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         changeset: {
             changes: [
                 { id: 'id', name: 'name', type: 'type', action: 'Modify', replacement: true },
@@ -1877,7 +1877,7 @@ test('[commands.operations.executeChangeSet] failure', (t) => {
         callback(new actions.CloudFormationError('failure'));
     });
 
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         changeset: { id: 'changeset:arn' },
         abort: function(err) {
             t.ok(err instanceof actions.CloudFormationError, 'expected error type');
@@ -1892,13 +1892,13 @@ test('[commands.operations.executeChangeSet] failure', (t) => {
 
 test('[commands.operations.executeChangeSet] not executable', (t) => {
     sinon.stub(actions, 'executeChangeSet').callsFake(function(name, region, id, callback) {
-        var err = new actions.ChangeSetNotExecutableError('failure');
+        const err = new actions.ChangeSetNotExecutableError('failure');
         err.execution = 'OBSOLETE';
         err.reason = 'outdated';
         callback(err);
     });
 
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         changeset: { id: 'changeset:arn' },
         abort: function(err) {
             t.ok(err instanceof actions.ChangeSetNotExecutableError, 'expected error type');
@@ -1921,7 +1921,7 @@ test('[commands.operations.executeChangeSet] success', (t) => {
         callback();
     });
 
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         changeset: { id: 'changeset:arn' },
         next: function() {
             t.pass('success');
@@ -1938,7 +1938,7 @@ test('[commands.operations.createPreamble] no template', (t) => {
         callback();
     });
 
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         abort: function(err) {
             t.ok(err instanceof template.NotFoundError, 'expected error type');
             t.equal(err.message, 'Could not load template: No template passed');
@@ -1955,7 +1955,7 @@ test('[commands.operations.createPreamble] template not found', (t) => {
         callback();
     });
 
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         template: '/tmp/invalid/path/nonono.template.json',
         abort: function(err) {
             t.ok(err instanceof template.NotFoundError, 'expected error type');
@@ -1977,7 +1977,7 @@ test('[commands.operations.createPreamble] template invalid', (t) => {
         callback();
     });
 
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         template: 'example.template.json',
         abort: function(err) {
             t.ok(err instanceof template.InvalidTemplateError, 'expected error type');
@@ -2000,7 +2000,7 @@ test('[commands.operations.createPreamble] config bucket not found', (t) => {
         callback(new lookup.BucketNotFoundError('failure'));
     });
 
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         template: 'example.template.json',
         abort: function(err) {
             t.ok(err instanceof lookup.BucketNotFoundError, 'expected error type');
@@ -2023,7 +2023,7 @@ test('[commands.operations.createPreamble] failed to read configurations', (t) =
         callback(new lookup.S3Error('failure'));
     });
 
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         template: 'example.template.json',
         abort: function(err) {
             t.ok(err instanceof lookup.S3Error, 'expected error type');
@@ -2050,7 +2050,7 @@ test('[commands.operations.createPreamble] success', (t) => {
         callback(null, ['config']);
     });
 
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         template: 'example.template.json',
         overrides: { templateOptions: { template: 'options' } },
         next: function(err) {
@@ -2080,7 +2080,7 @@ test('[commands.operations.createPreamble] success with template object', (t) =>
         callback(null, ['config']);
     });
 
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         template: { arbitrary: 'template' },
         overrides: { templateOptions: { template: 'options' } },
         next: function(err) {
@@ -2103,7 +2103,7 @@ test('[commands.operations.selectConfig] force-mode', (t) => {
         callback(new Error('failure'));
     });
 
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         overrides: { force: true },
         next: function(err) {
             t.ifError(err, 'success');
@@ -2122,7 +2122,7 @@ test('[commands.operations.selectConfig] new config', (t) => {
         return Promise.resolve('New configuration');
     });
 
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         configNames: ['config'],
         next: function(err) {
             t.ifError(err, 'success');
@@ -2141,7 +2141,7 @@ test('[commands.operations.selectConfig] saved config', (t) => {
         return Promise.resolve('config');
     });
 
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         configNames: ['config'],
         next: function(err) {
             t.ifError(err, 'success');
@@ -2155,7 +2155,7 @@ test('[commands.operations.selectConfig] saved config', (t) => {
 });
 
 test('[commands.operations.loadConfig] no saved config, no default', (t) => {
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         next: function(err) {
             t.ifError(err, 'success');
             t.deepEqual(context.oldParameters, {}, 'does not set context.oldParameters');
@@ -2172,7 +2172,7 @@ test('[commands.operations.loadConfig] no saved config, has default', (t) => {
         callback(null, { default: 'configuration' });
     });
 
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         overrides: { defaultConfig: 's3://my-bucket/my-default.cfn.json' },
         next: function(err) {
             t.ifError(err, 'success');
@@ -2190,7 +2190,7 @@ test('[commands.operations.loadConfig] bucket not found', (t) => {
         callback(new lookup.BucketNotFoundError('failure'));
     });
 
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         configName: 'config',
         abort: function(err) {
             t.ok(err instanceof lookup.BucketNotFoundError, 'expected error type');
@@ -2208,7 +2208,7 @@ test('[commands.operations.loadConfig] config not found', (t) => {
         callback(new lookup.ConfigurationNotFoundError('failure'));
     });
 
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         configName: 'config',
         abort: function(err) {
             t.ok(err instanceof lookup.ConfigurationNotFoundError, 'expected error type');
@@ -2226,7 +2226,7 @@ test('[commands.operations.loadConfig] invalid config', (t) => {
         callback(new lookup.InvalidConfigurationError('failure'));
     });
 
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         configName: 'config',
         abort: function(err) {
             t.ok(err instanceof lookup.InvalidConfigurationError, 'expected error type');
@@ -2244,7 +2244,7 @@ test('[commands.operations.loadConfig] failed to load config', (t) => {
         callback(new lookup.S3Error('failure'));
     });
 
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         configName: 'config',
         abort: function(err) {
             t.ok(err instanceof lookup.S3Error, 'expected error type');
@@ -2265,7 +2265,7 @@ test('[commands.operations.loadConfig] success', (t) => {
         callback(null, { saved: 'configuration' });
     });
 
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         configName: 'config',
         next: function(err) {
             t.ifError(err, 'success');
@@ -2284,7 +2284,7 @@ test('[commands.operations.confirmCreate] force-mode', (t) => {
         callback(new Error('failure'));
     });
 
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         overrides: { force: true },
         next: function(err) {
             t.ifError(err, 'success');
@@ -2301,7 +2301,7 @@ test('[commands.operations.confirmCreate] reject', (t) => {
         return Promise.resolve(false);
     });
 
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         configName: 'config',
         abort: function(err) {
             t.ifError(err, 'aborted');
@@ -2319,7 +2319,7 @@ test('[commands.operations.confirmCreate] accept', (t) => {
         return Promise.resolve(true);
     });
 
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         configName: 'config',
         next: function(err) {
             t.ifError(err, 'success');
@@ -2332,7 +2332,7 @@ test('[commands.operations.confirmCreate] accept', (t) => {
 });
 
 test('[commands.operations.confirmDelete] force-mode', (t) => {
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         overrides: { force: true },
         next: function(err) {
             t.ifError(err, 'no prompt');
@@ -2350,7 +2350,7 @@ test('[commands.operations.confirmDelete] reject', (t) => {
         return Promise.resolve(false);
     });
 
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         abort: function(err) {
             t.ifError(err, 'aborted');
             prompt.confirm.restore();
@@ -2368,7 +2368,7 @@ test('[commands.operations.confirmDelete] accept', (t) => {
         return Promise.resolve(true);
     });
 
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         next: function(err) {
             t.ifError(err, 'success');
             prompt.confirm.restore();
@@ -2384,7 +2384,7 @@ test('[commands.operations.deleteStack] failure', (t) => {
         callback(new actions.CloudFormationError('failure'));
     });
 
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         abort: function(err) {
             t.ok(err instanceof actions.CloudFormationError, 'expected error type');
             t.equal(err.message, 'Failed to delete stack: failure', 'expected error message');
@@ -2403,7 +2403,7 @@ test('[commands.operations.deleteStack] success', (t) => {
         callback();
     });
 
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         next: function(err) {
             t.ifError(err, 'success');
             actions.delete.restore();
@@ -2419,7 +2419,7 @@ test('[commands.operations.monitorStack] failure', (t) => {
         callback(new actions.CloudFormationError('failure'));
     });
 
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         abort: function(err) {
             t.equal(err.message, `Monitoring your deploy failed, but the deploy in region ${context.stackRegion} will continue. Check on your stack's status in the CloudFormation console.`);
             actions.monitor.restore();
@@ -2437,7 +2437,7 @@ test('[commands.operations.monitorStack] success', (t) => {
         callback();
     });
 
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         next: function(err) {
             t.ifError(err, 'success');
             actions.monitor.restore();
@@ -2453,7 +2453,7 @@ test('[commands.operations.getOldParameters] missing stack', (t) => {
         callback(new lookup.StackNotFoundError('failure'));
     });
 
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         abort: function(err) {
             t.ok(err instanceof lookup.StackNotFoundError, 'expected error type');
             t.equal(err.message, 'Missing stack: failure', 'expected error message');
@@ -2470,7 +2470,7 @@ test('[commands.operations.getOldParameters] failed to lookup stack', (t) => {
         callback(new lookup.CloudFormationError('failure'));
     });
 
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         abort: function(err) {
             t.ok(err instanceof lookup.CloudFormationError, 'expected error type');
             t.equal(err.message, 'Failed to find existing stack: failure', 'expected error message');
@@ -2489,7 +2489,7 @@ test('[commands.operations.getOldParameters] success', (t) => {
         callback(null, { old: 'parameters' });
     });
 
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         next: function(err) {
             t.ifError(err, 'success');
             t.deepEqual(context.oldParameters, { old: 'parameters' }, 'set context.oldParameters');
@@ -2508,7 +2508,7 @@ test('[commands.operations.promptSaveConfig]', (t) => {
         return Promise.resolve('chuck');
     });
 
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         oldParameters: { old: 'parameters' },
         next: function(err) {
             t.ifError(err, 'success');
@@ -2526,7 +2526,7 @@ test('[commands.operations.confirmSaveConfig] reject', (t) => {
         return Promise.resolve(false);
     });
 
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         oldParameters: { old: 'parameters' },
         abort: function(err) {
             t.ifError(err, 'aborted');
@@ -2544,7 +2544,7 @@ test('[commands.operations.confirmSaveConfig] accept', (t) => {
         return Promise.resolve(true);
     });
 
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         saveName: 'hello',
         oldParameters: { old: 'parameters' },
         next: function(err) {
@@ -2562,7 +2562,7 @@ test('[commands.operations.saveConfig] bucket not found', (t) => {
         callback(new actions.BucketNotFoundError('failure'));
     });
 
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         oldParameters: { old: 'parameters' },
         kms: true,
         abort: function(err) {
@@ -2581,7 +2581,7 @@ test('[commands.operations.saveConfig] failure', (t) => {
         callback(new actions.S3Error('failure'));
     });
 
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         oldParameters: { old: 'parameters' },
         kms: true,
         abort: function(err) {
@@ -2606,7 +2606,7 @@ test('[commands.operations.saveConfig] success', (t) => {
         callback();
     });
 
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         newParameters: { new: 'parameters' },
         overrides: { kms: true },
         next: function(err) {
@@ -2620,7 +2620,7 @@ test('[commands.operations.saveConfig] success', (t) => {
 });
 
 test('[commands.operations.mergeMetadata]', (t) => {
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         stackRegion: 'us-west-2',
         newTemplate: { new: 'template' },
         oldParameters: { old: 'parameters' },
@@ -2639,7 +2639,7 @@ test('[commands.operations.mergeMetadata]', (t) => {
 });
 
 test('[commands.operations.mergeMetadata] error', (t) => {
-    var context = Object.assign({}, basicContext, {
+    const context = Object.assign({}, basicContext, {
         stackRegion: 'us-west-2',
         newTemplate: { new: 'template', Metadata: { LastDeploy: 'jane' } },
         oldParameters: { old: 'parameters' },

@@ -5,8 +5,8 @@ const cli = require('../lib/cli');
 const cfnConfig = require('..');
 
 test('[cli.parse] aliases and defaults', (t) => {
-    var args = ['create', 'testing', 'relative/path', '-c', 'config', '-t', 'template'];
-    var parsed = cli.parse(args, {});
+    const args = ['create', 'testing', 'relative/path', '-c', 'config', '-t', 'template'];
+    const parsed = cli.parse(args, {});
 
     t.equal(parsed.command, 'create', 'contains command');
     t.equal(parsed.environment, 'testing', 'contains environment');
@@ -39,7 +39,7 @@ test('[cli.parse] aliases and defaults', (t) => {
 });
 
 test('[cli.parse] sets options', (t) => {
-    var args = [
+    const args = [
         'create', 'testing', 'relative/path',
         '-c', 'config',
         '-t', 'template',
@@ -50,7 +50,7 @@ test('[cli.parse] sets options', (t) => {
         '-p', '{}'
     ];
 
-    var parsed = cli.parse(args, {});
+    const parsed = cli.parse(args, {});
 
     t.deepEqual(parsed.options, {
         d: true,
@@ -80,7 +80,7 @@ test('[cli.parse] sets options', (t) => {
 });
 
 test('[cli.parse] handles default template bucket on create & update', (t) => {
-    var parsed = cli.parse(['info', 'testing'], {});
+    const parsed = cli.parse(['info', 'testing'], {});
     t.notOk(parsed.options.templateBucket, 'not set when not needed');
 
     parsed = cli.parse(['create', 'testing'], { AWS_ACCOUNT_ID: '123456789012' });
@@ -104,7 +104,7 @@ test('[cli.parse] handles default template bucket on create & update', (t) => {
     t.end();
 });
 
-var base = {
+const base = {
     command: 'create',
     environment: 'testing',
     templatePath: '/my/template',
@@ -122,7 +122,7 @@ var base = {
 };
 
 test('[cli.main] no command', (t) => {
-    var parsed = Object.assign({}, base, { command: undefined });
+    const parsed = Object.assign({}, base, { command: undefined });
 
     cli.main(parsed, function(err) {
         t.equal(err.message, 'Error: invalid command\n\n' + parsed.help, 'expected error message');
@@ -131,7 +131,7 @@ test('[cli.main] no command', (t) => {
 });
 
 test('[cli.main] bad command', (t) => {
-    var parsed = Object.assign({}, base, { command: 'hibbity' });
+    const parsed = Object.assign({}, base, { command: 'hibbity' });
 
     cli.main(parsed, function(err) {
         t.equal(err.message, 'Error: invalid command\n\n' + parsed.help, 'expected error message');
@@ -140,7 +140,7 @@ test('[cli.main] bad command', (t) => {
 });
 
 test('[cli.main] no environment', (t) => {
-    var parsed = Object.assign({}, base, { environment: undefined });
+    const parsed = Object.assign({}, base, { environment: undefined });
 
     cli.main(parsed, function(err) {
         t.equal(err.message, 'Error: missing environment\n\n' + parsed.help, 'expected error message');
@@ -149,7 +149,7 @@ test('[cli.main] no environment', (t) => {
 });
 
 test('[cli.main] no template path (create)', (t) => {
-    var parsed = Object.assign({}, base, { templatePath: undefined });
+    const parsed = Object.assign({}, base, { templatePath: undefined });
 
     cli.main(parsed, function(err) {
         t.equal(err.message, 'Error: missing templatePath\n\n' + parsed.help, 'expected error message');
@@ -162,7 +162,7 @@ test('[cli.main] no template path (info)', (t) => {
         return { info: function() { Array.from(arguments).pop()(); } };
     });
 
-    var parsed = Object.assign({}, base, { command: 'info', templatePath: undefined });
+    const parsed = Object.assign({}, base, { command: 'info', templatePath: undefined });
 
     cli.main(parsed, function(err) {
         t.ifError(err, 'success');
@@ -204,7 +204,7 @@ test('[cli.main] update', (t) => {
         };
     });
 
-    var parsed = Object.assign({}, base, { command: 'update' });
+    const parsed = Object.assign({}, base, { command: 'update' });
 
     cli.main(parsed, function(err) {
         t.ifError(err, 'success');
@@ -225,7 +225,7 @@ test('[cli.main] delete', (t) => {
         };
     });
 
-    var parsed = Object.assign({}, base, { command: 'delete' });
+    const parsed = Object.assign({}, base, { command: 'delete' });
 
     cli.main(parsed, function(err) {
         t.ifError(err, 'success');
@@ -247,7 +247,7 @@ test('[cli.main] info', (t) => {
         };
     });
 
-    var parsed = Object.assign({}, base, { command: 'info' });
+    const parsed = Object.assign({}, base, { command: 'info' });
 
     cli.main(parsed, function(err) {
         t.ifError(err, 'success');
@@ -268,7 +268,7 @@ test('[cli.main] save (with kms)', (t) => {
         };
     });
 
-    var parsed = Object.assign({}, base, { command: 'save' });
+    const parsed = Object.assign({}, base, { command: 'save' });
     parsed.overrides.kms = true;
 
     cli.main(parsed, function(err) {
@@ -289,8 +289,7 @@ test('[cli.main] save (without kms)', (t) => {
         };
     });
 
-    var parsed = Object.assign({}, base, { command: 'save' });
-
+    const parsed = Object.assign({}, base, { command: 'save' });
 
     cli.main(parsed, function(err) {
         t.ifError(err, 'success');

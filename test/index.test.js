@@ -8,7 +8,7 @@ test('[preauth]', (t) => {
         secretAccessKey: 'b'
     });
 
-    var cfn = new AWS.CloudFormation({ region: 'us-east-1' });
+    const cfn = new AWS.CloudFormation({ region: 'us-east-1' });
     t.deepEqual(cfn.config.credentials, {
         accessKeyId: 'a',
         secretAccessKey: 'b'

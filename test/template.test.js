@@ -57,8 +57,6 @@ test('[template.read] S3 no access', async (t) => {
 });
 
 test('[template.read] S3 bucket does not exist', async (t) => {
-    t.plan(2);
-
     AWS.stub('S3', 'getBucketLocation', (params) => {
         t.deepEqual(params, { Bucket: 'my' }, 'requested bucket location');
         const error = new Error('Bucket does not exist');
@@ -78,8 +76,6 @@ test('[template.read] S3 bucket does not exist', async (t) => {
 });
 
 test('[template.read] S3 file does not exist', async (t) => {
-    t.plan(3);
-
     AWS.stub('S3', 'getObject', (params) => {
         t.deepEqual(params, { Bucket: 'my', Key: 'template' }, 'requested correct S3 object');
         const error = new Error('Object does not exist');
@@ -104,8 +100,6 @@ test('[template.read] S3 file does not exist', async (t) => {
 });
 
 test('[template.read] S3 file cannot be parsed', async (t) => {
-    t.plan(3);
-
     AWS.stub('S3', 'getObject', function(params) {
         t.deepEqual(params, { Bucket: 'my', Key: 'template' }, 'requested correct S3 object');
         const malformed = fs.readFileSync(path.resolve(__dirname, 'fixtures', 'malformed-template.json'));
@@ -187,8 +181,6 @@ test('[template.read] local async JS without options', async (t) => {
 });
 
 test('[template.read] S3 JSON', async (t) => {
-    t.plan(4);
-
     AWS.stub('S3', 'getObject', function(params) {
         t.deepEqual(params, { Bucket: 'my', Key: 'template' }, 'requested correct S3 object');
         return this.request.promise.returns(Promise.resolve({ Body: new Buffer(JSON.stringify(expected)) }));
@@ -211,14 +203,14 @@ test('[template.read] S3 JSON', async (t) => {
 });
 
 test('[template.questions] provides expected questions without encryption', (t) => {
-    const questions = template.questions(expected);
+    const questions = Template.questions(expected);
 
     t.equal(questions.length, 6, 'all questions provided');
 
     const q = queue(1);
 
     q.defer(function(next) {
-        var name = questions[0];
+        const name = questions[0];
         t.equal(name.type, 'input', 'correct type for Name');
         t.equal(name.name, 'Name', 'correct name for Name');
         t.equal(name.message, 'Name. Someone\'s first name:', 'correct message for Name');
@@ -229,7 +221,7 @@ test('[template.questions] provides expected questions without encryption', (t) 
     });
 
     q.defer(function(next) {
-        var age = questions[1];
+        const age = questions[1];
         t.equal(age.type, 'input', 'correct type for Age');
         t.equal(age.name, 'Age', 'correct name for Age');
         t.equal(age.message, 'Age:', 'correct message for Age');
@@ -241,7 +233,7 @@ test('[template.questions] provides expected questions without encryption', (t) 
     });
 
     q.defer(function(next) {
-        var handedness = questions[2];
+        const handedness = questions[2];
         t.equal(handedness.type, 'list', 'correct type for Handedness');
         t.equal(handedness.name, 'Handedness', 'correct name for Handedness');
         t.equal(handedness.message, 'Handedness. Their dominant hand:', 'correct message for Handedness');
@@ -251,7 +243,7 @@ test('[template.questions] provides expected questions without encryption', (t) 
     });
 
     q.defer(function(next) {
-        var pets = questions[3];
+        const pets = questions[3];
         t.equal(pets.type, 'input', 'correct type for Pets');
         t.equal(pets.name, 'Pets', 'correct name for Pets');
         t.equal(pets.message, 'Pets. The names of their pets:', 'correct message for Pets');
@@ -259,7 +251,7 @@ test('[template.questions] provides expected questions without encryption', (t) 
     });
 
     q.defer(function(next) {
-        var numbers = questions[4];
+        const numbers = questions[4];
         t.equal(numbers.type, 'input', 'correct type for LuckyNumbers');
         t.equal(numbers.name, 'LuckyNumbers', 'correct name for LuckyNumbers');
         t.equal(numbers.message, 'LuckyNumbers. Their lucky numbers:', 'correct message for LuckyNumbers');
@@ -269,7 +261,7 @@ test('[template.questions] provides expected questions without encryption', (t) 
     });
 
     q.defer(function(next) {
-        var password = questions[5];
+        const password = questions[5];
         t.equal(password.type, 'password', 'correct type for SecretPassword');
         t.equal(password.name, 'SecretPassword', 'correct name for SecretPassword');
         t.equal(password.message, 'SecretPassword. [secure] Their secret password:', 'correct message for SecretPassword');
@@ -297,19 +289,19 @@ test('[template.questions] respects overrides', (t) => {
         return callback(null, { CiphertextBlob: new Buffer(params.Plaintext) });
     });
 
-    var overrides = {
+    const overrides = {
         defaults: { Name: 'Chuck' },
         messages: { Name: 'Somebody' },
         choices: { Handedness: ['top', 'bottom'] },
         kmsKeyId: 'this is a bomb key'
     };
 
-    var questions = template.questions(expected, overrides);
+    const questions = Template.questions(expected, overrides);
 
-    var q = queue(1);
+    const q = queue(1);
 
     q.defer(function(next) {
-        var name = questions[0];
+        const name = questions[0];
         t.equal(name.default, 'Chuck', 'overriden default for Name');
         t.equal(name.message, 'Somebody', 'overriden message for Name');
         name.async = function() {
@@ -323,14 +315,14 @@ test('[template.questions] respects overrides', (t) => {
     });
 
     q.defer(function(next) {
-        var handedness = questions[2];
+        const handedness = questions[2];
         t.deepEqual(handedness.choices, ['top', 'bottom'], 'overriden choices for Handedness');
         next();
     });
 
 
     q.defer(function(next) {
-        var password = questions[5];
+        const password = questions[5];
         password.async = function() {
             return function(err, encrypted) {
                 t.ifError(err, 'encryption doesn\'t cause errors');
@@ -343,7 +335,7 @@ test('[template.questions] respects overrides', (t) => {
     });
 
     q.defer(function(next) {
-        var password = questions[5];
+        const password = questions[5];
         password.async = function() {
             return function(err, encrypted) {
                 t.ifError(err, 'encryption doesn\'t cause errors');
@@ -367,9 +359,9 @@ test('[template.questions] defaults kms key to correct default', (t) => {
         return callback(null, { CiphertextBlob: new Buffer(params.Plaintext) });
     });
 
-    var questions = template.questions(expected, { kmsKeyId: true });
+    const questions = Template.questions(expected, { kmsKeyId: true });
 
-    var password = questions[5];
+    const password = questions[5];
     password.async = function() {
         return function(err, encrypted) {
             t.ifError(err, 'encryption doesn\'t cause errors');
@@ -383,13 +375,13 @@ test('[template.questions] defaults kms key to correct default', (t) => {
 });
 
 test('[template.questions] no parameters', (t) => {
-    var questions = template.questions({});
+    const questions = Template.questions({});
     t.deepEqual(questions, [], 'no further questions');
     t.end();
 });
 
 test('[template.questions] no description = no encryption', (t) => {
-    var questions = template.questions({ Parameters: { Undefined: {} } }, { kmsKeyId: 'my-key' });
+    const questions = Template.questions({ Parameters: { Undefined: {} } }, { kmsKeyId: 'my-key' });
     questions[0].async = function() {
         return function(err, input) {
             t.ifError(err, 'success');
@@ -402,17 +394,17 @@ test('[template.questions] no description = no encryption', (t) => {
 
 test('[template.questions] handles failure during kms encryption', (t) => {
     AWS.stub('KMS', 'encrypt', function(params, callback) {
-        var err = new Error('Bad encryption error');
+        const err = new Error('Bad encryption error');
         err.code = 'Whoops';
         return callback(err);
     });
 
-    var questions = template.questions(expected, { kmsKeyId: true });
+    const questions = Template.questions(expected, { kmsKeyId: true });
 
-    var password = questions[5];
+    const password = questions[5];
     password.async = function() {
         return function(err, encrypted) {
-            t.ok(err instanceof template.KmsError, 'expected error type');
+            t.ok(err instanceof Template.KmsError, 'expected error type');
             t.equal(err.toString(), 'KmsError: Whoops: Bad encryption error', 'correct error');
             t.equal(encrypted, undefined, 'no encrypted return value');
             AWS.KMS.restore();
@@ -424,17 +416,17 @@ test('[template.questions] handles failure during kms encryption', (t) => {
 
 test('[template.questions] handles kms key lookup failure during kms encryption with special message', (t) => {
     AWS.stub('KMS', 'encrypt', function(params, callback) {
-        var error = new Error('Invalid key');
+        const error = new Error('Invalid key');
         error.code = 'NotFoundException';
         return callback(error);
     });
 
-    var questions = template.questions(expected, { kmsKeyId: 'garbage' });
+    const questions = Template.questions(expected, { kmsKeyId: 'garbage' });
 
-    var password = questions[5];
+    const password = questions[5];
     password.async = function() {
         return function(err, encrypted) {
-            t.ok(err instanceof template.NotFoundError, 'expected error type');
+            t.ok(err instanceof Template.NotFoundError, 'expected error type');
             t.equal(err.toString(), 'NotFoundError: Unable to find KMS encryption key "garbage"', 'correct error');
             t.equal(encrypted, undefined, 'no encrypted return value');
             AWS.KMS.restore();
@@ -445,10 +437,10 @@ test('[template.questions] handles kms key lookup failure during kms encryption 
 });
 
 test('[template.questions] reject defaults that are not in a list of allowed values', (t) => {
-    var parameters = { List: { Type: 'String', AllowedValues: ['one', 'two'] } };
-    var overrides = { defaults: { List: 'three' } };
+    const parameters = { List: { Type: 'String', AllowedValues: ['one', 'two'] } };
+    const overrides = { defaults: { List: 'three' } };
 
-    var questions = template.questions({ Parameters: parameters }, overrides);
+    const questions = Template.questions({ Parameters: parameters }, overrides);
     t.notEqual(questions[0].default, 'three', 'rejected disallowed default value');
     t.end();
 });
