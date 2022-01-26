@@ -1,6 +1,6 @@
 const test = require('tape');
 const queue = require('d3-queue').queue;
-const template = require('../lib/template');
+const Template = require('../lib/template');
 const path = require('path');
 const fs = require('fs');
 const AWS = require('@mapbox/mock-aws-sdk-js');
@@ -10,161 +10,212 @@ const expected = require('./fixtures/template.json');
 process.env.AWS_ACCESS_KEY_ID = '-';
 process.env.AWS_SECRET_ACCESS_KEY = '-';
 
-test('[template.read] local file does not exist', (t) => {
-    template.read('./fake', function(err) {
-        t.ok(err instanceof template.NotFoundError, 'returned expected error');
-        t.end();
-    });
+test('[template.read] local file does not exist', async (t) => {
+    try {
+        await Template.read('./fake');
+        t.fail();
+    } catch (err) {
+        t.ok(err instanceof Template.NotFoundError, 'returned expected error');
+    }
+
+    t.end();
 });
 
-test('[template.read] local file cannot be parsed', (t) => {
-    template.read(path.resolve(__dirname, 'fixtures', 'malformed-template.json'), function(err) {
-        t.ok(err instanceof template.InvalidTemplateError, 'returned expected error');
+test('[template.read] local file cannot be parsed', async (t) => {
+    try {
+        await Template.read(path.resolve(__dirname, 'fixtures', 'malformed-template.json'));
+        t.fail();
+    } catch (err) {
+        t.ok(err instanceof Template.InvalidTemplateError, 'returned expected error');
         t.ok(/Failed to parse .*: Unexpected end/.test(err.message), 'passthrough parse error');
-        t.end();
-    });
+    }
+
+    t.end();
 });
 
-test('[template.read] local js file cannot be parsed', (t) => {
-    template.read(path.resolve(__dirname, 'fixtures', 'malformed-template.js'), function(err) {
-        t.ok(err instanceof template.InvalidTemplateError, 'returned expected error');
+test('[template.read] local js file cannot be parsed', async (t) => {
+    try {
+        await Template.read(path.resolve(__dirname, 'fixtures', 'malformed-template.js'));
+        t.fail();
+    } catch (err) {
+        t.ok(err instanceof Template.InvalidTemplateError, 'returned expected error');
         t.ok(/Failed to parse .*/.test(err.message), 'passthrough parse error');
-        t.end();
-    });
+    }
+
+    t.end();
 });
 
-test('[template.read] S3 no access', (t) => {
-    template.read('s3://mapbox/fake', function(err) {
-        t.ok(err instanceof template.NotFoundError, 'returned expected error');
-        t.end();
-    });
+test('[template.read] S3 no access', async (t) => {
+    try {
+        await Template.read('s3://mapbox/fake');
+        t.fail();
+    } catch (err) {
+        t.ok(err instanceof Template.NotFoundError, 'returned expected error');
+    }
+
+    t.end();
 });
 
-test('[template.read] S3 bucket does not exist', (t) => {
+test('[template.read] S3 bucket does not exist', async (t) => {
     t.plan(2);
 
-    AWS.stub('S3', 'getBucketLocation', function(params, callback) {
+    AWS.stub('S3', 'getBucketLocation', (params) => {
         t.deepEqual(params, { Bucket: 'my' }, 'requested bucket location');
-        var error = new Error('Bucket does not exist');
+        const error = new Error('Bucket does not exist');
         error.code = 'NotFoundError';
-        callback(error);
+        throw err;
     });
 
-    template.read('s3://my/template', function(err) {
-        t.ok(err instanceof template.NotFoundError, 'returned expected error');
-        AWS.S3.restore();
-    });
+    try {
+        await Template.read('s3://my/template');
+        t.fail();
+    } catch (err) {
+        t.ok(err instanceof Template.NotFoundError, 'returned expected error');
+    }
+
+    AWS.S3.restore();
+    t.end();
 });
 
-test('[template.read] S3 file does not exist', (t) => {
+test('[template.read] S3 file does not exist', async (t) => {
     t.plan(3);
 
-    AWS.stub('S3', 'getObject', function(params, callback) {
+    AWS.stub('S3', 'getObject', (params) => {
         t.deepEqual(params, { Bucket: 'my', Key: 'template' }, 'requested correct S3 object');
-        var error = new Error('Object does not exist');
+        const error = new Error('Object does not exist');
         error.code = 'NotFoundError';
-        callback(error);
+        throw err;
     });
 
-    AWS.stub('S3', 'getBucketLocation', function(params, callback) {
+    AWS.stub('S3', 'getBucketLocation', function(params) {
         t.deepEqual(params, { Bucket: 'my' }, 'requested bucket location');
-        callback(null, { LocationConstraint: 'eu-central-1' });
+        return this.request.promise.returns(Promise.resolve({ LocationConstraint: 'eu-central-1' }));
     });
 
-    template.read('s3://my/template', function(err) {
-        t.ok(err instanceof template.NotFoundError, 'returned expected error');
-        AWS.S3.restore();
-    });
+    try {
+        await Template.read('s3://my/template');
+        t.fail();
+    } catch (err) {
+        t.ok(err instanceof Template.NotFoundError, 'returned expected error');
+    }
+
+    AWS.S3.restore();
+    t.end();
 });
 
-test('[template.read] S3 file cannot be parsed', (t) => {
+test('[template.read] S3 file cannot be parsed', async (t) => {
     t.plan(3);
 
-    AWS.stub('S3', 'getObject', function(params, callback) {
+    AWS.stub('S3', 'getObject', function(params) {
         t.deepEqual(params, { Bucket: 'my', Key: 'template' }, 'requested correct S3 object');
-        var malformed = fs.readFileSync(path.resolve(__dirname, 'fixtures', 'malformed-template.json'));
-        callback(null, { Body: malformed });
+        const malformed = fs.readFileSync(path.resolve(__dirname, 'fixtures', 'malformed-template.json'));
+        return this.request.promise.returns(Promise.resolve({ Body: malformed }));
     });
 
-    AWS.stub('S3', 'getBucketLocation', function(params, callback) {
+    AWS.stub('S3', 'getBucketLocation', function(params) {
         t.deepEqual(params, { Bucket: 'my' }, 'requested bucket location');
-        callback(null, { LocationConstraint: 'eu-central-1' });
+        return this.request.promise.returns(Promise.resolve({ LocationConstraint: 'eu-central-1' }));
     });
 
-    template.read('s3://my/template', function(err) {
-        t.ok(err instanceof template.InvalidTemplateError, 'returned expected error');
-        AWS.S3.restore();
-    });
+    try {
+        await Template.read('s3://my/template');
+        t.fail();
+    } catch (err) {
+        t.ok(err instanceof Template.InvalidTemplateError, 'returned expected error');
+    }
+
+    AWS.S3.restore();
+    t.end();
 });
 
-test('[template.read] local JSON', (t) => {
-    template.read(path.resolve(__dirname, 'fixtures', 'template.json'), function(err, found) {
-        t.ifError(err, 'success');
+test('[template.read] local JSON', async (t) => {
+    try {
+        const found = await Template.read(path.resolve(__dirname, 'fixtures', 'template.json'));
         t.deepEqual(found, expected, 'got template JSON');
-        t.end();
-    });
+    } catch (err) {
+        t.error(err)
+    }
+
+    t.end();
 });
 
-test('[template.read] local sync JS', (t) => {
-    template.read(path.resolve(__dirname, 'fixtures', 'template-sync.js'), function(err, found) {
-        t.ifError(err, 'success');
+test('[template.read] local sync JS', async (t) => {
+    try {
+        const found = await Template.read(path.resolve(__dirname, 'fixtures', 'template-sync.js'));
         t.deepEqual(found, expected, 'got template JSON');
-        t.end();
-    });
+    } catch (err) {
+        t.error(err);
+    }
+
+    t.end();
 });
 
-test('[template.read] local sync JS (relative path)', (t) => {
-    var relativePath = path.resolve(__dirname, 'fixtures', 'template-sync.js').replace(process.cwd(), '').substr(1);
+test('[template.read] local sync JS (relative path)', async (t) => {
+    const relativePath = path.resolve(__dirname, 'fixtures', 'template-sync.js').replace(process.cwd(), '').substr(1);
     t.equal(relativePath[0] !== '/', true, 'relative path: ' + relativePath);
-    template.read(relativePath, function(err, found) {
-        t.ifError(err, 'success');
+
+    try {
+        const found = await Template.read(relativePath);
         t.deepEqual(found, expected, 'got template JSON');
-        t.end();
-    });
+    } catch (err) {
+        t.error(err);
+    }
+
+    t.end();
 });
 
-test('[template.read] local async JS with options', (t) => {
-    template.read(path.resolve(__dirname, 'fixtures', 'template-async.js'), { some: 'options' }, function(err, found) {
-        t.ifError(err, 'success');
+test('[template.read] local async JS with options', async (t) => {
+    try {
+        const found = await Template.read(path.resolve(__dirname, 'fixtures', 'template-async.js'), { some: 'options' });
         t.deepEqual(found, { some: 'options' }, 'got template JSON');
-        t.end();
-    });
+    } catch (err) {
+        t.error(err);
+    }
+
+    t.end();
 });
 
-test('[template.read] local async JS without options', (t) => {
-    template.read(path.resolve(__dirname, 'fixtures', 'template-async.js'), function(err, found) {
-        t.ifError(err, 'success');
+test('[template.read] local async JS without options', async (t) => {
+    try {
+        const found = await Template.read(path.resolve(__dirname, 'fixtures', 'template-async.js'));
         t.deepEqual(found, {}, 'got template JSON');
-        t.end();
-    });
+    } catch (err) {
+        t.error(err);
+    }
+
+    t.end();
 });
 
-test('[template.read] S3 JSON', (t) => {
+test('[template.read] S3 JSON', async (t) => {
     t.plan(4);
 
-    AWS.stub('S3', 'getObject', function(params, callback) {
+    AWS.stub('S3', 'getObject', function(params) {
         t.deepEqual(params, { Bucket: 'my', Key: 'template' }, 'requested correct S3 object');
-        callback(null, { Body: new Buffer(JSON.stringify(expected)) });
+        return this.request.promise.returns(Promise.resolve({ Body: new Buffer(JSON.stringify(expected)) }));
     });
 
-    AWS.stub('S3', 'getBucketLocation', function(params, callback) {
+    AWS.stub('S3', 'getBucketLocation', function(params) {
         t.deepEqual(params, { Bucket: 'my' }, 'requested bucket location');
-        callback(null, { LocationConstraint: '' });
+        return this.request.promise.returns(Promise.resolve({ LocationConstraint: '' }));
     });
 
-    template.read('s3://my/template', function(err, found) {
-        t.ifError(err, 'success');
+    try {
+        const found = await Template.read('s3://my/template');
         t.deepEqual(found, expected, 'got template JSON');
-        AWS.S3.restore();
-    });
+    } catch (err) {
+        t.error(err);
+    }
+
+    AWS.S3.restore();
+    t.end();
 });
 
 test('[template.questions] provides expected questions without encryption', (t) => {
-    var questions = template.questions(expected);
+    const questions = template.questions(expected);
 
     t.equal(questions.length, 6, 'all questions provided');
 
-    var q = queue(1);
+    const q = queue(1);
 
     q.defer(function(next) {
         var name = questions[0];
