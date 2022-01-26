@@ -4,7 +4,7 @@ const AWS = require('@mapbox/mock-aws-sdk-js');
 
 const template = require('./fixtures/template.json');
 
-test('[lookup.info] describeStacks error', async (t) => {
+test('[lookup.info] describeStacks error', async(t) => {
     AWS.stub('CloudFormation', 'describeStacks').yields(new Error('cloudformation failed'));
 
     try {
@@ -18,8 +18,8 @@ test('[lookup.info] describeStacks error', async (t) => {
     t.end();
 });
 
-test('[lookup.info] stack does not exist', async (t) => {
-    AWS.stub('CloudFormation', 'describeStacks', (params) => {
+test('[lookup.info] stack does not exist', async(t) => {
+    AWS.stub('CloudFormation', 'describeStacks', () => {
         const err = new Error('Stack with id my-stack does not exist');
         err.code = 'ValidationError';
         throw err;
@@ -36,7 +36,7 @@ test('[lookup.info] stack does not exist', async (t) => {
     t.end();
 });
 
-test('[lookup.info] stack info not returned', async (t) => {
+test('[lookup.info] stack info not returned', async(t) => {
     AWS.stub('CloudFormation', 'describeStacks').returns({
         promise: () => Promise.resolve({ Stacks: [] })
     });
@@ -52,7 +52,7 @@ test('[lookup.info] stack info not returned', async (t) => {
     t.end();
 });
 
-test('[lookup.info] success', async (t) => {
+test('[lookup.info] success', async(t) => {
     const date = new Date();
 
     const stackInfo = {
@@ -110,7 +110,7 @@ test('[lookup.info] success', async (t) => {
     };
 
     AWS.stub('CloudFormation', 'describeStacks').returns({
-        promise: () => Promise.resolve({ Stacks: [ stackInfo] })
+        promise: () => Promise.resolve({ Stacks: [stackInfo] })
     });
 
     try {
@@ -123,7 +123,7 @@ test('[lookup.info] success', async (t) => {
     t.end();
 });
 
-test.test('[lookup.info] with resources', async (t) => {
+test.test('[lookup.info] with resources', async(t) => {
     AWS.stub('CloudFormation', 'describeStacks').returns({
         promise: () => Promise.resolve({ Stacks: [{}] })
     });
@@ -152,7 +152,7 @@ test.test('[lookup.info] with resources', async (t) => {
     t.end();
 });
 
-test.test('[lookup.info] resource lookup failure', async (t) => {
+test.test('[lookup.info] resource lookup failure', async(t) => {
     AWS.stub('CloudFormation', 'describeStacks').returns({
         promise: () => Promise.resolve({ Stacks: [{}] })
     });
@@ -176,7 +176,7 @@ test.test('[lookup.info] resource lookup failure', async (t) => {
     t.end();
 });
 
-test('[lookup.parameters] lookup.info error', async (t) => {
+test('[lookup.parameters] lookup.info error', async(t) => {
     AWS.stub('CloudFormation', 'describeStacks').returns({
         promise: () => Promise.resolve({ Stacks: [] })
     });
@@ -192,7 +192,7 @@ test('[lookup.parameters] lookup.info error', async (t) => {
     t.end();
 });
 
-test('[lookup.info] secure', async (t) => {
+test('[lookup.info] secure', async(t) => {
     const date = new Date();
 
     const stackInfo = {
@@ -244,9 +244,9 @@ test('[lookup.info] secure', async (t) => {
         const encrypted = new Buffer.from(params.CiphertextBlob, 'base64').toString('utf8');
 
         if (encrypted === 'EncryptedValue1') {
-            return this.request.promise.returns(Promise.resolve({ Plaintext: (new Buffer.from('DecryptedValue1')).toString('base64') }))
+            return this.request.promise.returns(Promise.resolve({ Plaintext: (new Buffer.from('DecryptedValue1')).toString('base64') }));
         } else if (encrypted === 'EncryptedValue2') {
-            return this.request.promise.returns(Promise.resolve({ Plaintext: (new Buffer.from('DecryptedValue2')).toString('base64') }))
+            return this.request.promise.returns(Promise.resolve({ Plaintext: (new Buffer.from('DecryptedValue2')).toString('base64') }));
         }
         t.fail('Unrecognized encrypted value ' + encrypted);
     });
@@ -263,7 +263,7 @@ test('[lookup.info] secure', async (t) => {
     t.end();
 });
 
-test('[lookup.info] secure error', async (t) => {
+test('[lookup.info] secure error', async(t) => {
     const stackInfo = {
         StackId: 'stack-id',
         StackName: 'my-stack',
@@ -302,7 +302,7 @@ test('[lookup.info] secure error', async (t) => {
     t.end();
 });
 
-test('[lookup.parameters] success', async (t) => {
+test('[lookup.parameters] success', async(t) => {
     const stackInfo = {
         StackId: 'stack-id',
         StackName: 'my-stack',
@@ -357,7 +357,7 @@ test('[lookup.parameters] success', async (t) => {
     t.end();
 });
 
-test('[lookup.template] getTemplate error', async (t) => {
+test('[lookup.template] getTemplate error', async(t) => {
     AWS.stub('CloudFormation', 'getTemplate').yields(new Error('cloudformation failed'));
 
     try {
@@ -371,8 +371,8 @@ test('[lookup.template] getTemplate error', async (t) => {
     t.end();
 });
 
-test('[lookup.template] stack does not exist', async (t) => {
-    AWS.stub('CloudFormation', 'getTemplate', (params) => {
+test('[lookup.template] stack does not exist', async(t) => {
+    AWS.stub('CloudFormation', 'getTemplate', () => {
         const err = new Error('Stack with id my-stack does not exist');
         err.code = 'ValidationError';
         throw err;
@@ -389,8 +389,8 @@ test('[lookup.template] stack does not exist', async (t) => {
     t.end();
 });
 
-test('[lookup.template] success', async (t) => {
-    AWS.stub('CloudFormation', 'getTemplate', function (params) {
+test('[lookup.template] success', async(t) => {
+    AWS.stub('CloudFormation', 'getTemplate', function(params) {
         t.deepEqual(params, {
             StackName: 'my-stack',
             TemplateStage: 'Original'
@@ -413,7 +413,7 @@ test('[lookup.template] success', async (t) => {
     t.end();
 });
 
-test('[lookup.configurations] bucket location error', async (t) => {
+test('[lookup.configurations] bucket location error', async(t) => {
     AWS.stub('S3', 'getBucketLocation').yields(new Error('failure'));
 
     try {
@@ -427,12 +427,12 @@ test('[lookup.configurations] bucket location error', async (t) => {
     t.end();
 });
 
-test('[lookup.configurations] bucket does not exist', async (t) => {
+test('[lookup.configurations] bucket does not exist', async(t) => {
     AWS.stub('S3', 'getBucketLocation').returns({
         promise: () => Promise.resolve('us-east-1')
     });
 
-    AWS.stub('S3', 'listObjects', (params) => {
+    AWS.stub('S3', 'listObjects', () => {
         const err = new Error('The specified bucket does not exist');
         err.code = 'NoSuchBucket';
         throw err;
@@ -449,7 +449,7 @@ test('[lookup.configurations] bucket does not exist', async (t) => {
     t.end();
 });
 
-test('[lookup.configurations] S3 error', async (t) => {
+test('[lookup.configurations] S3 error', async(t) => {
     AWS.stub('S3', 'getBucketLocation').returns({
         promise: () => Promise.resolve('us-east-1')
     });
@@ -470,7 +470,7 @@ test('[lookup.configurations] S3 error', async (t) => {
     t.end();
 });
 
-test('[lookup.configurations] no saved configs found', async (t) => {
+test('[lookup.configurations] no saved configs found', async(t) => {
     AWS.stub('S3', 'getBucketLocation').returns({
         promise: () => Promise.resolve('us-east-1')
     });
@@ -490,7 +490,7 @@ test('[lookup.configurations] no saved configs found', async (t) => {
     t.end();
 });
 
-test('[lookup.configurations] found multiple saved configs', async (t) => {
+test('[lookup.configurations] found multiple saved configs', async(t) => {
     AWS.stub('S3', 'getBucketLocation').returns({
         promise: () => Promise.resolve('us-east-1')
     });
@@ -520,7 +520,7 @@ test('[lookup.configurations] found multiple saved configs', async (t) => {
     t.end();
 });
 
-test('[lookup.configurations] region specified', async (t) => {
+test('[lookup.configurations] region specified', async(t) => {
     AWS.stub('S3', 'getBucketLocation').returns({
         promise: () => Promise.resolve('us-east-1')
     });
@@ -544,7 +544,7 @@ test('[lookup.configurations] region specified', async (t) => {
     t.end();
 });
 
-test('[lookup.configuration] bucket location error', async (t) => {
+test('[lookup.configuration] bucket location error', async(t) => {
     AWS.stub('S3', 'getBucketLocation').yields(new Error('failure'));
 
     try {
@@ -558,12 +558,12 @@ test('[lookup.configuration] bucket location error', async (t) => {
     t.end();
 });
 
-test('[lookup.configuration] bucket does not exist', async (t) => {
+test('[lookup.configuration] bucket does not exist', async(t) => {
     AWS.stub('S3', 'getBucketLocation').returns({
         promise: () => Promise.resolve('us-east-1')
     });
 
-    AWS.stub('S3', 'getObject', (params) => {
+    AWS.stub('S3', 'getObject', () => {
         const err = new Error('The specified bucket does not exist');
         err.code = 'NoSuchBucket';
         throw err;
@@ -580,7 +580,7 @@ test('[lookup.configuration] bucket does not exist', async (t) => {
     t.end();
 });
 
-test('[lookup.configuration] S3 error', async (t) => {
+test('[lookup.configuration] S3 error', async(t) => {
     AWS.stub('S3', 'getBucketLocation').returns({
         promise: () => Promise.resolve('us-east-1')
     });
@@ -601,12 +601,12 @@ test('[lookup.configuration] S3 error', async (t) => {
     t.end();
 });
 
-test('[lookup.configuration] requested configuration does not exist', async (t) => {
+test('[lookup.configuration] requested configuration does not exist', async(t) => {
     AWS.stub('S3', 'getBucketLocation').returns({
         promise: () => Promise.resolve('us-east-1')
     });
 
-    AWS.stub('S3', 'getObject', (params) => {
+    AWS.stub('S3', 'getObject', () => {
         const err = new Error('The specified key does not exist.');
         err.code = 'NoSuchKey';
         throw err;
@@ -623,7 +623,7 @@ test('[lookup.configuration] requested configuration does not exist', async (t) 
     t.end();
 });
 
-test('[lookup.configuration] cannot parse object data', async (t) => {
+test('[lookup.configuration] cannot parse object data', async(t) => {
     AWS.stub('S3', 'getBucketLocation').returns({
         promise: () => Promise.resolve('us-east-1')
     });
@@ -643,7 +643,7 @@ test('[lookup.configuration] cannot parse object data', async (t) => {
     t.end();
 });
 
-test('[lookup.configuration] success', async (t) => {
+test('[lookup.configuration] success', async(t) => {
     const info = {
         Name: 'Chuck',
         Age: 18,
@@ -677,7 +677,7 @@ test('[lookup.configuration] success', async (t) => {
     t.end();
 });
 
-test('[lookup.defaultConfiguration] bucket location error', async (t) => {
+test('[lookup.defaultConfiguration] bucket location error', async(t) => {
     AWS.stub('S3', 'getBucketLocation').yields(new Error('failure'));
 
     try {
@@ -691,12 +691,12 @@ test('[lookup.defaultConfiguration] bucket location error', async (t) => {
     t.end();
 });
 
-test('[lookup.defaultConfiguration] requested configuration does not exist', async (t) => {
+test('[lookup.defaultConfiguration] requested configuration does not exist', async(t) => {
     AWS.stub('S3', 'getBucketLocation').returns({
         promise: () => Promise.resolve('us-east-1')
     });
 
-    AWS.stub('S3', 'getObject', (params) =>  {
+    AWS.stub('S3', 'getObject', () =>  {
         const err = new Error('The specified key does not exist.');
         err.code = 'NoSuchKey';
         throw err;
@@ -706,14 +706,14 @@ test('[lookup.defaultConfiguration] requested configuration does not exist', asy
         const info = await Lookup.defaultConfiguration('s3://my-bucket/my-config.cfn.json');
         t.deepEqual(info, {}, 'provided blank info');
     } catch (err) {
-        t.error(err)
+        t.error(err);
     }
 
     AWS.S3.restore();
     t.end();
 });
 
-test('[lookup.defaultConfiguration] cannot parse object data', async (t) => {
+test('[lookup.defaultConfiguration] cannot parse object data', async(t) => {
     AWS.stub('S3', 'getBucketLocation').returns({
         promise: () => Promise.resolve('us-east-1')
     });
@@ -733,7 +733,7 @@ test('[lookup.defaultConfiguration] cannot parse object data', async (t) => {
     t.end();
 });
 
-test('[lookup.defaultConfiguration] success', async (t) => {
+test('[lookup.defaultConfiguration] success', async(t) => {
     const info = {
         Name: 'Chuck',
         Age: 18,
@@ -767,8 +767,8 @@ test('[lookup.defaultConfiguration] success', async (t) => {
     t.end();
 });
 
-test('[lookup.bucketRegion] no bucket', async (t) => {
-    AWS.stub('S3', 'getBucketLocation', (params) => {
+test('[lookup.bucketRegion] no bucket', async(t) => {
+    AWS.stub('S3', 'getBucketLocation', () => {
         const err = new Error('failure');
         err.code = 'NoSuchBucket';
         throw err;
@@ -785,7 +785,7 @@ test('[lookup.bucketRegion] no bucket', async (t) => {
     t.end();
 });
 
-test('[lookup.bucketRegion] failure', async (t) => {
+test('[lookup.bucketRegion] failure', async(t) => {
     AWS.stub('S3', 'getBucketLocation').yields(new Error('failure'));
 
     try {
@@ -799,8 +799,8 @@ test('[lookup.bucketRegion] failure', async (t) => {
     t.end();
 });
 
-test('[lookup.bucketRegion] no bucket', async (t) => {
-    AWS.stub('S3', 'getBucketLocation', (params) => {
+test('[lookup.bucketRegion] no bucket', async(t) => {
+    AWS.stub('S3', 'getBucketLocation', () => {
         const err = new Error('failure');
         err.code = 'NoSuchBucket';
         throw err;
@@ -817,8 +817,8 @@ test('[lookup.bucketRegion] no bucket', async (t) => {
     t.end();
 });
 
-test('[lookup.bucketRegion] region specified', async (t) => {
-    AWS.stub('S3', 'getBucketLocation', (params) => {
+test('[lookup.bucketRegion] region specified', async(t) => {
+    AWS.stub('S3', 'getBucketLocation', () => {
         const err = new Error('failure');
         err.code = 'NoSuchBucket';
         throw err;
@@ -839,7 +839,7 @@ test('[lookup.bucketRegion] region specified', async (t) => {
     t.end();
 });
 
-test('[lookup.decryptParameters] failure', async (t) => {
+test('[lookup.decryptParameters] failure', async(t) => {
     AWS.stub('KMS', 'decrypt',).yields(new Error('failure'));
 
     try {
@@ -855,13 +855,13 @@ test('[lookup.decryptParameters] failure', async (t) => {
     t.end();
 });
 
-test('[lookup.decryptParameters] success', async (t) => {
+test('[lookup.decryptParameters] success', async(t) => {
     AWS.stub('KMS', 'decrypt', function(params) {
         const encrypted = new Buffer.from(params.CiphertextBlob, 'base64').toString('utf8');
         if (encrypted === 'EncryptedValue1') {
-            return this.request.promise.returns(Promise.resolve({ Plaintext: (new Buffer.from('DecryptedValue1')).toString('base64') }))
+            return this.request.promise.returns(Promise.resolve({ Plaintext: (new Buffer.from('DecryptedValue1')).toString('base64') }));
         } else if (encrypted === 'EncryptedValue2') {
-            return this.request.promise.returns(Promise.resolve({ Plaintext: (new Buffer.from('DecryptedValue2')).toString('base64') }))
+            return this.request.promise.returns(Promise.resolve({ Plaintext: (new Buffer.from('DecryptedValue2')).toString('base64') }));
         }
 
         t.fail('Unrecognized encrypted value ' + encrypted);
