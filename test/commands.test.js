@@ -20,7 +20,7 @@ const opts = {
     templateBucket: 'my-template-bucket'
 };
 
-test('[commands.create] no overrides', async (t) => {
+test('[commands.create] no overrides', async(t) => {
     const cmd = new Commands(opts, true);
 
     try {
@@ -37,7 +37,7 @@ test('[commands.create] no overrides', async (t) => {
     t.end();
 });
 
-test('[commands.create] with overrides', async (t) => {
+test('[commands.create] with overrides', async(t) => {
     const cmd = new Commands(opts, true);
 
     try {
@@ -55,7 +55,7 @@ test('[commands.create] with overrides', async (t) => {
     t.end();
 });
 
-test('[commands.create] with template object', async (t) => {
+test('[commands.create] with template object', async(t) => {
     const cmd = new Commands(opts, true);
 
     try {
@@ -72,7 +72,7 @@ test('[commands.create] with template object', async (t) => {
     t.end();
 });
 
-test('[commands.update] no overrides', async (t) => {
+test('[commands.update] no overrides', async(t) => {
     const cmd = new Commands(opts, true);
 
     try {
@@ -90,7 +90,7 @@ test('[commands.update] no overrides', async (t) => {
     t.end();
 });
 
-test('[commands.update] with overrides', async (t) => {
+test('[commands.update] with overrides', async(t) => {
     const cmd = new Commands(opts, true);
 
     try {
@@ -107,7 +107,7 @@ test('[commands.update] with overrides', async (t) => {
     t.end();
 });
 
-test('[commands.update] with multiple overrides', async (t) => {
+test('[commands.update] with multiple overrides', async(t) => {
     const cmd = new Commands(opts, true);
 
     try {
@@ -124,7 +124,7 @@ test('[commands.update] with multiple overrides', async (t) => {
     t.end();
 });
 
-test('[commands.update] with overrides.skipConfirmParameters', async (t) => {
+test('[commands.update] with overrides.skipConfirmParameters', async(t) => {
     const cmd = new Commands(opts, true);
 
     try {
@@ -142,7 +142,7 @@ test('[commands.update] with overrides.skipConfirmParameters', async (t) => {
     t.end();
 });
 
-test('[commands.update] with overrides.skipConfirmTemplate', async (t) => {
+test('[commands.update] with overrides.skipConfirmTemplate', async(t) => {
     const cmd = new Commands(opts, true);
 
     try {
@@ -159,7 +159,7 @@ test('[commands.update] with overrides.skipConfirmTemplate', async (t) => {
     t.end();
 });
 
-test('[commands.update] with overrides.skipConfirmParameters and overrides.skipConfirmTemplate', async (t) => {
+test('[commands.update] with overrides.skipConfirmParameters and overrides.skipConfirmTemplate', async(t) => {
     const cmd = new Commands(opts, true);
 
     try {
@@ -176,7 +176,7 @@ test('[commands.update] with overrides.skipConfirmParameters and overrides.skipC
     t.end();
 });
 
-test('[commands.update] with template object', async (t) => {
+test('[commands.update] with template object', async(t) => {
     const cmd = new Commands(opts, true);
 
     try {
@@ -194,7 +194,7 @@ test('[commands.update] with template object', async (t) => {
     t.end();
 });
 
-test('[commands.delete] no overrides', async (t) => {
+test('[commands.delete] no overrides', async(t) => {
     const cmd = new Commands(opts, true);
 
     try {
@@ -211,7 +211,7 @@ test('[commands.delete] no overrides', async (t) => {
     t.end();
 });
 
-test('[commands.delete] with overrides', async (t) => {
+test('[commands.delete] with overrides', async(t) => {
     const cmd = new Commands(opts, true);
 
     try {
@@ -228,7 +228,7 @@ test('[commands.delete] with overrides', async (t) => {
     t.end();
 });
 
-test('[commands.info] success w/o resources', async (t) => {
+test('[commands.info] success w/o resources', async(t) => {
     sinon.stub(Lookup, 'info').callsFake((name, region, resources, decrypt) => {
         t.equal(name, 'my-stack-testing', 'lookup.info expected stack name');
         t.equal(region, 'us-east-1', 'lookup.info expected region');
@@ -249,7 +249,7 @@ test('[commands.info] success w/o resources', async (t) => {
     t.end();
 });
 
-test('[commands.info] success w/ resources', async (t) => {
+test('[commands.info] success w/ resources', async(t) => {
     sinon.stub(Lookup, 'info').callsFake((name, region, resources, decrypt) => {
         t.equal(name, 'my-stack-testing', 'lookup.info expected stack name');
         t.equal(region, 'us-east-1', 'lookup.info expected region');
@@ -270,7 +270,7 @@ test('[commands.info] success w/ resources', async (t) => {
     t.end();
 });
 
-test('[commands.info] success w/o decrypt', async (t) => {
+test('[commands.info] success w/o decrypt', async(t) => {
     sinon.stub(Lookup, 'info').callsFake((name, region, resources, decrypt) => {
         t.equal(name, 'my-stack-testing', 'lookup.info expected stack name');
         t.equal(region, 'us-east-1', 'lookup.info expected region');
@@ -291,7 +291,7 @@ test('[commands.info] success w/o decrypt', async (t) => {
     t.end();
 });
 
-test('[commands.info] success w/ decrypt', async (t) => {
+test('[commands.info] success w/ decrypt', async(t) => {
     sinon.stub(Lookup, 'info').callsFake((name, region, resources, decrypt) => {
         t.equal(name, 'my-stack-testing', 'lookup.info expected stack name');
         t.equal(region, 'us-east-1', 'lookup.info expected region');
@@ -311,7 +311,7 @@ test('[commands.info] success w/ decrypt', async (t) => {
     t.end();
 });
 
-test('[commands.info] null provided as suffix', async (t) => {
+test('[commands.info] null provided as suffix', async(t) => {
     sinon.stub(Lookup, 'info').callsFake((name, region, resources, decrypt) => {
         t.equal(name, 'my-stack', 'no trailing - on stack name');
         return Promise.resolve();
@@ -329,7 +329,7 @@ test('[commands.info] null provided as suffix', async (t) => {
     t.end();
 });
 
-test('[commands.save] kms-mode', async (t) => {
+test('[commands.save] kms-mode', async(t) => {
     const cmd = new Commands(opts, true);
 
     try {
@@ -345,7 +345,7 @@ test('[commands.save] kms-mode', async (t) => {
     t.end();
 });
 
-test('[commands.save] not kms-mode', async (t) => {
+test('[commands.save] not kms-mode', async(t) => {
     const cmd = new Commands(opts, true);
 
     try {
@@ -362,7 +362,7 @@ test('[commands.save] not kms-mode', async (t) => {
 });
 
 test('[commands.commandContext] sets context', (t) => {
-    const context = commands.commandContext(opts, 'testing', opts, function() {});
+    const context = new CommandContext(opts, 'testing', opts);
     t.equal(context.baseName, opts.name, 'sets baseName');
     t.equal(context.suffix, 'testing', 'sets suffix');
     t.equal(context.stackName, opts.name + '-testing', 'sets stackName');
@@ -371,42 +371,40 @@ test('[commands.commandContext] sets context', (t) => {
     t.equal(context.templateBucket, opts.templateBucket, 'sets templateBucket');
     t.deepEqual(context.overrides, {}, 'sets empty overrides');
     t.deepEqual(context.oldParameters, {}, 'sets empty oldParameters');
-    t.equal(typeof context.abort, 'function', 'sets abort function');
-    t.equal(typeof context.next, 'function', 'sets next function');
     t.end();
 });
 
 test('[commands.commandContext] handles null suffix', (t) => {
-    const context = commands.commandContext(opts, null, opts, function() {});
+    const context = new CommandContext(opts, null, opts);
     t.equal(context.stackName, opts.name, 'sets stackName without trailing -');
     t.end();
 });
 
-test('[commands.commandContext] iterates through operations', (t) => {
-    const i = 0;
+test('[commands.commandContext] iterates through operations', async(t) => {
+    let i = 0;
     const ops = [
-        function(context) {
+        async function(context) {
             t.equal(i, 0, 'called first function');
             i++;
-            context.next();
         },
-        function(context) {
+        async function(context) {
             t.equal(i, 1, 'called second function');
             i++;
-            context.next();
         }
     ];
 
-    const context = commands.commandContext(opts, 'testing', ops, function(err, performed) {
-        t.ifError(err, 'success');
-        t.equal(performed, true, 'the requested command was performed');
-        t.end();
-    });
+    const context = new CommandContext(opts, 'testing', ops);
+    try {
+        await context.run();
+        t.equals(i, 2);
+    } catch (err) {
+        t.error(err);
+    }
 
-    context.next();
+    t.end();
 });
 
-test('[commands.commandContext] callback with diffs', (t) => {
+test('[commands.commandContext] callback with diffs', async(t) => {
     const ops = [
         commands.operations.confirmParameters,
         commands.operations.confirmTemplate
@@ -416,7 +414,7 @@ test('[commands.commandContext] callback with diffs', (t) => {
         return Promise.resolve(true);
     });
 
-    const context = commands.commandContext(opts, 'testing', ops, function(err, performed, diffs) {
+    const context = new CommandContext(opts, 'testing', ops, function(err, performed, diffs) {
         t.ifError(err, 'success');
         t.equal(performed, true, 'the requested command was performed');
         t.deepEqual(diffs, {

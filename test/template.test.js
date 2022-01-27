@@ -59,8 +59,8 @@ test('[template.read] S3 no access', async(t) => {
 test('[template.read] S3 bucket does not exist', async(t) => {
     AWS.stub('S3', 'getBucketLocation', (params) => {
         t.deepEqual(params, { Bucket: 'my' }, 'requested bucket location');
-        const error = new Error('Bucket does not exist');
-        error.code = 'NotFoundError';
+        const err = new Error('Bucket does not exist');
+        err.code = 'NotFoundError';
         throw err;
     });
 
@@ -78,8 +78,8 @@ test('[template.read] S3 bucket does not exist', async(t) => {
 test('[template.read] S3 file does not exist', async(t) => {
     AWS.stub('S3', 'getObject', (params) => {
         t.deepEqual(params, { Bucket: 'my', Key: 'template' }, 'requested correct S3 object');
-        const error = new Error('Object does not exist');
-        error.code = 'NotFoundError';
+        const err = new Error('Object does not exist');
+        err.code = 'NotFoundError';
         throw err;
     });
 
