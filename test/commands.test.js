@@ -3,7 +3,11 @@
 const path = require('path');
 const test = require('tape');
 const sinon = require('sinon');
-const Commands = require('../lib/commands');
+const {
+    Commands,
+    CommandContext,
+    Operations
+} = require('../lib/commands');
 const Prompt = require('../lib/prompt');
 const Actions = require('../lib/actions');
 const Lookup = require('../lib/lookup');
@@ -16,358 +20,279 @@ const opts = {
     templateBucket: 'my-template-bucket'
 };
 
-const basicContext = commands.commandContext(opts, 'testing', [], function() {});
+test('[commands.create] no overrides', async (t) => {
+    const cmd = new Commands(opts, true);
 
-test('[commands.create] no overrides', (t) => {
-    function whenDone() {}
+    try {
+        const context = await cmd.create('testing', 'templatePath');
 
-    sinon.stub(commands, 'commandContext').callsFake(function(config, suffix, operations, callback) {
-        t.equal(operations.length, 13, '13 operations are run');
-        t.deepEqual(config, opts, 'instantiate context with expected config');
-        t.deepEqual(suffix, 'testing', 'instantiate context with expected suffix');
-        t.ok(operations.every(function(op) { return typeof op === 'function'; }), 'instantiate context with array of operations');
-        t.equal(callback, whenDone, 'instantiate context with final callback function');
+        t.equal(context.operations.length, 13, '13 operations are run');
+        t.deepEqual(context.config, opts, 'instantiate context with expected config');
+        t.deepEqual(context.suffix, 'testing', 'instantiate context with expected suffix');
+        t.equal(context.template, 'templatePath', 'set context.template');
+    } catch (err) {
+        t.error(err);
+    }
 
-        const context = Object.assign({}, basicContext, {
-            next: function() {
-                t.pass('called next to begin process');
-                t.equal(context.template, 'templatePath', 'set context.template');
-                commands.commandContext.restore();
-                t.end();
-            }
-        });
-
-        return context;
-    });
-
-    commands(opts).create('testing', 'templatePath', whenDone);
+    t.end();
 });
 
-test('[commands.create] with overrides', (t) => {
-    function whenDone() {}
+test('[commands.create] with overrides', async (t) => {
+    const cmd = new Commands(opts, true);
 
-    sinon.stub(commands, 'commandContext').callsFake(function(config, suffix, operations, callback) {
-        t.equal(operations.length, 13, '13 operations are run');
-        t.deepEqual(config, opts, 'instantiate context with expected config');
-        t.deepEqual(suffix, 'testing', 'instantiate context with expected suffix');
-        t.ok(operations.every(function(op) { return typeof op === 'function'; }), 'instantiate context with array of operations');
-        t.equal(callback, whenDone, 'instantiate context with final callback function');
+    try {
+        const context = await cmd.create('testing', 'templatePath', { some: 'overrides' });
 
-        const context = Object.assign({}, basicContext, {
-            next: function() {
-                t.pass('called next to begin process');
-                t.equal(context.template, 'templatePath', 'set context.template');
-                t.deepEqual(context.overrides, { some: 'overrides' }, 'sets context.overrides');
-                commands.commandContext.restore();
-                t.end();
-            }
-        });
+        t.equal(context.operations.length, 13, '13 operations are run');
+        t.deepEqual(context.config, opts, 'instantiate context with expected config');
+        t.deepEqual(context.suffix, 'testing', 'instantiate context with expected suffix');
+        t.equal(context.template, 'templatePath', 'set context.template');
+        t.deepEqual(context.overrides, { some: 'overrides' }, 'sets context.overrides');
+    } catch (err) {
+        t.error(err);
+    }
 
-        return context;
-    });
-
-    commands(opts).create('testing', 'templatePath', { some: 'overrides' }, whenDone);
+    t.end();
 });
 
-test('[commands.create] with template object', (t) => {
-    function whenDone() {}
+test('[commands.create] with template object', async (t) => {
+    const cmd = new Commands(opts, true);
 
-    sinon.stub(commands, 'commandContext').callsFake(function(config, suffix, operations, callback) {
-        t.equal(operations.length, 13, '13 operations are run');
-        t.deepEqual(config, opts, 'instantiate context with expected config');
-        t.deepEqual(suffix, 'testing', 'instantiate context with expected suffix');
-        t.ok(operations.every(function(op) { return typeof op === 'function'; }), 'instantiate context with array of operations');
-        t.equal(callback, whenDone, 'instantiate context with final callback function');
+    try {
+        const context = await cmd.create('testing', { arbitrary: 'template' });
 
-        const context = Object.assign({}, basicContext, {
-            next: function() {
-                t.pass('called next to begin process');
-                t.deepEqual(context.template, { arbitrary: 'template' }, 'set context.template');
-                commands.commandContext.restore();
-                t.end();
-            }
-        });
+        t.equal(context.operations.length, 13, '13 operations are run');
+        t.deepEqual(context.config, opts, 'instantiate context with expected config');
+        t.deepEqual(context.suffix, 'testing', 'instantiate context with expected suffix');
+        t.deepEqual(context.template, { arbitrary: 'template' }, 'set context.template');
+    } catch (err) {
+        t.error(err);
+    }
 
-        return context;
-    });
-
-    commands(opts).create('testing', { arbitrary: 'template' }, whenDone);
+    t.end();
 });
 
-test('[commands.update] no overrides', (t) => {
-    function whenDone() {}
+test('[commands.update] no overrides', async (t) => {
+    const cmd = new Commands(opts, true);
 
-    sinon.stub(commands, 'commandContext').callsFake(function(config, suffix, operations, callback) {
-        t.equal(operations.length, 15, '15 operations are run');
-        t.deepEqual(config, opts, 'instantiate context with expected config');
-        t.deepEqual(suffix, 'testing', 'instantiate context with expected suffix');
-        t.ok(operations.every(function(op) { return typeof op === 'function'; }), 'instantiate context with array of operations');
-        t.equal(callback, whenDone, 'instantiate context with final callback function');
+    try {
+        const context = await cmd.update('testing', 'templatePath');
 
-        const context = Object.assign({}, basicContext, {
-            next: function() {
-                t.pass('called next to begin process');
-                t.equal(context.template, 'templatePath', 'set context.template');
-                t.deepEqual(context.overrides, {}, 'sets empty context.overrides');
-                commands.commandContext.restore();
-                t.end();
-            }
-        });
+        t.equal(context.operations.length, 15, '15 operations are run');
+        t.deepEqual(context.config, opts, 'instantiate context with expected config');
+        t.deepEqual(context.suffix, 'testing', 'instantiate context with expected suffix');
+        t.equal(context.template, 'templatePath', 'set context.template');
+        t.deepEqual(context.overrides, {}, 'sets empty context.overrides');
+    } catch (err) {
+        t.error(err);
+    }
 
-        return context;
-    });
-
-    commands(opts).update('testing', 'templatePath', whenDone);
+    t.end();
 });
 
-test('[commands.update] with overrides', (t) => {
-    function whenDone() {}
+test('[commands.update] with overrides', async (t) => {
+    const cmd = new Commands(opts, true);
 
-    sinon.stub(commands, 'commandContext').callsFake(function(config, suffix, operations, callback) {
-        t.deepEqual(config, opts, 'instantiate context with expected config');
-        t.deepEqual(suffix, 'testing', 'instantiate context with expected suffix');
-        t.ok(operations.every(function(op) { return typeof op === 'function'; }), 'instantiate context with array of operations');
-        t.equal(callback, whenDone, 'instantiate context with final callback function');
+    try {
+        const context = await cmd.update('testing', 'templatePath', { force: true });
 
-        const context = Object.assign({}, basicContext, {
-            next: function() {
-                t.pass('called next to begin process');
-                t.equal(context.template, 'templatePath', 'set context.template');
-                t.deepEqual(context.overrides, { force: true }, 'sets context.overrides');
-                commands.commandContext.restore();
-                t.end();
-            }
-        });
-        return context;
-    });
+        t.deepEqual(context.config, opts, 'instantiate context with expected config');
+        t.deepEqual(context.suffix, 'testing', 'instantiate context with expected suffix');
+        t.equal(context.template, 'templatePath', 'set context.template');
+        t.deepEqual(context.overrides, { force: true }, 'sets context.overrides');
+    } catch (err) {
+        t.error(err);
+    }
 
-    commands(opts).update('testing', 'templatePath', { force: true }, whenDone);
+    t.end();
 });
 
-test('[commands.update] with multiple overrides', (t) => {
-    function whenDone() {}
+test('[commands.update] with multiple overrides', async (t) => {
+    const cmd = new Commands(opts, true);
 
-    sinon.stub(commands, 'commandContext').callsFake(function(config, suffix, operations, callback) {
-        t.deepEqual(config, opts, 'instantiate context with expected config');
-        t.deepEqual(suffix, 'testing', 'instantiate context with expected suffix');
-        t.ok(operations.every(function(op) { return typeof op === 'function'; }), 'instantiate context with array of operations');
-        t.equal(callback, whenDone, 'instantiate context with final callback function');
+    try {
+        const context = await cmd.update('testing', 'templatePath', { force: true, masterConfig: 's3://chill' });
 
-        const context = Object.assign({}, basicContext, {
-            next: function() {
-                t.pass('called next to begin process');
-                t.equal(context.template, 'templatePath', 'set context.template');
-                t.deepEqual(context.overrides, { force: true, masterConfig: 's3://chill' }, 'sets context.overrides');
-                commands.commandContext.restore();
-                t.end();
-            }
-        });
-        return context;
-    });
+        t.deepEqual(context.config, opts, 'instantiate context with expected config');
+        t.deepEqual(context.suffix, 'testing', 'instantiate context with expected suffix');
+        t.equal(context.template, 'templatePath', 'set context.template');
+        t.deepEqual(context.overrides, { force: true, masterConfig: 's3://chill' }, 'sets context.overrides');
+    } catch (err) {
+        t.error(err);
+    }
 
-    commands(opts).update('testing', 'templatePath', { force: true, masterConfig: 's3://chill' }, whenDone);
-
+    t.end();
 });
 
-test('[commands.update] with overrides.skipConfirmParameters', (t) => {
-    function whenDone() {}
+test('[commands.update] with overrides.skipConfirmParameters', async (t) => {
+    const cmd = new Commands(opts, true);
 
-    sinon.stub(commands, 'commandContext').callsFake(function(config, suffix, operations, callback) {
-        t.deepEqual(config, opts, 'instantiate context with expected config');
-        t.deepEqual(suffix, 'testing', 'instantiate context with expected suffix');
-        t.ok(operations.every(function(op) { return typeof op === 'function'; }), 'instantiate context with array of operations');
-        t.equal(callback, whenDone, 'instantiate context with final callback function');
+    try {
+        const context = await cmd.update('testing', 'templatePath', { force: true, masterConfig: 's3://chill', skipConfirmParameters: true });
 
-        const context = Object.assign({}, basicContext, {
-            next: function() {
-                t.pass('called next to begin process');
-                t.equal(context.template, 'templatePath', 'set context.template');
-                t.deepEqual(context.overrides, { force: true, masterConfig: 's3://chill', skipConfirmParameters: true }, 'sets context.overrides');
-                commands.commandContext.restore();
-                t.end();
-            }
-        });
-        return context;
-    });
+        t.deepEqual(context.config, opts, 'instantiate context with expected config');
+        t.deepEqual(context.suffix, 'testing', 'instantiate context with expected suffix');
+        t.equal(context.template, 'templatePath', 'set context.template');
+        t.deepEqual(context.overrides, { force: true, masterConfig: 's3://chill', skipConfirmParameters: true }, 'sets context.overrides');
 
-    commands(opts).update('testing', 'templatePath', { force: true, masterConfig: 's3://chill', skipConfirmParameters: true }, whenDone);
+    } catch (err) {
+        t.error(err);
+    }
 
+    t.end();
 });
 
-test('[commands.update] with overrides.skipConfirmTemplate', (t) => {
-    function whenDone() {}
+test('[commands.update] with overrides.skipConfirmTemplate', async (t) => {
+    const cmd = new Commands(opts, true);
 
-    sinon.stub(commands, 'commandContext').callsFake(function(config, suffix, operations, callback) {
-        t.deepEqual(config, opts, 'instantiate context with expected config');
-        t.deepEqual(suffix, 'testing', 'instantiate context with expected suffix');
-        t.ok(operations.every(function(op) { return typeof op === 'function'; }), 'instantiate context with array of operations');
-        t.equal(callback, whenDone, 'instantiate context with final callback function');
+    try {
+        const context = await cmd.update('testing', 'templatePath', { force: true, masterConfig: 's3://chill', skipConfirmTemplate: true });
 
-        const context = Object.assign({}, basicContext, {
-            next: function() {
-                t.pass('called next to begin process');
-                t.equal(context.template, 'templatePath', 'set context.template');
-                t.deepEqual(context.overrides, { force: true, masterConfig: 's3://chill', skipConfirmTemplate: true }, 'sets context.overrides');
-                commands.commandContext.restore();
-                t.end();
-            }
-        });
-        return context;
-    });
+        t.deepEqual(context.config, opts, 'instantiate context with expected config');
+        t.deepEqual(context.suffix, 'testing', 'instantiate context with expected suffix');
+        t.equal(context.template, 'templatePath', 'set context.template');
+        t.deepEqual(context.overrides, { force: true, masterConfig: 's3://chill', skipConfirmTemplate: true }, 'sets context.overrides');
+    } catch (err) {
+        t.error(err);
+    }
 
-    commands(opts).update('testing', 'templatePath', { force: true, masterConfig: 's3://chill', skipConfirmTemplate: true }, whenDone);
-
+    t.end();
 });
 
-test('[commands.update] with overrides.skipConfirmParameters and overrides.skipConfirmTemplate', (t) => {
-    function whenDone() {}
+test('[commands.update] with overrides.skipConfirmParameters and overrides.skipConfirmTemplate', async (t) => {
+    const cmd = new Commands(opts, true);
 
-    sinon.stub(commands, 'commandContext').callsFake(function(config, suffix, operations, callback) {
-        t.deepEqual(config, opts, 'instantiate context with expected config');
-        t.deepEqual(suffix, 'testing', 'instantiate context with expected suffix');
-        t.ok(operations.every(function(op) { return typeof op === 'function'; }), 'instantiate context with array of operations');
-        t.equal(callback, whenDone, 'instantiate context with final callback function');
+    try {
+        const context = await cmd.update('testing', 'templatePath', { force: true, masterConfig: 's3://chill', skipConfirmTemplate: true, skipConfirmParameters: true });
 
-        const context = Object.assign({}, basicContext, {
-            next: function() {
-                t.pass('called next to begin process');
-                t.equal(context.template, 'templatePath', 'set context.template');
-                t.deepEqual(context.overrides, { force: true, masterConfig: 's3://chill', skipConfirmTemplate: true, skipConfirmParameters: true }, 'sets context.overrides');
-                commands.commandContext.restore();
-                t.end();
-            }
-        });
-        return context;
-    });
+        t.deepEqual(context.config, opts, 'instantiate context with expected config');
+        t.deepEqual(context.suffix, 'testing', 'instantiate context with expected suffix');
+        t.equal(context.template, 'templatePath', 'set context.template');
+        t.deepEqual(context.overrides, { force: true, masterConfig: 's3://chill', skipConfirmTemplate: true, skipConfirmParameters: true }, 'sets context.overrides');
+    } catch (err) {
+        t.error(err);
+    }
 
-    commands(opts).update('testing', 'templatePath', { force: true, masterConfig: 's3://chill', skipConfirmTemplate: true, skipConfirmParameters: true }, whenDone);
-
+    t.end();
 });
 
-test('[commands.update] with template object', (t) => {
-    function whenDone() {}
+test('[commands.update] with template object', async (t) => {
+    const cmd = new Commands(opts, true);
 
-    sinon.stub(commands, 'commandContext').callsFake(function(config, suffix, operations, callback) {
-        t.equal(operations.length, 15, '15 operations are run');
-        t.deepEqual(config, opts, 'instantiate context with expected config');
-        t.deepEqual(suffix, 'testing', 'instantiate context with expected suffix');
-        t.ok(operations.every(function(op) { return typeof op === 'function'; }), 'instantiate context with array of operations');
-        t.equal(callback, whenDone, 'instantiate context with final callback function');
+    try {
+        const context = await cmd.update('testing', { arbitrary: 'template' });
 
-        const context = Object.assign({}, basicContext, {
-            next: function() {
-                t.pass('called next to begin process');
-                t.deepEqual(context.template, { arbitrary: 'template' }, 'set context.template');
-                t.deepEqual(context.overrides, {}, 'sets empty context.overrides');
-                commands.commandContext.restore();
-                t.end();
-            }
-        });
+        t.equal(context.operations.length, 15, '15 operations are run');
+        t.deepEqual(context.config, opts, 'instantiate context with expected config');
+        t.deepEqual(context.suffix, 'testing', 'instantiate context with expected suffix');
+        t.deepEqual(context.template, { arbitrary: 'template' }, 'set context.template');
+        t.deepEqual(context.overrides, {}, 'sets empty context.overrides');
+    } catch (err) {
+        t.error(err);
+    }
 
-        return context;
-    });
-
-    commands(opts).update('testing', { arbitrary: 'template' }, whenDone);
+    t.end();
 });
 
-test('[commands.delete] no overrides', (t) => {
-    function whenDone() {}
+test('[commands.delete] no overrides', async (t) => {
+    const cmd = new Commands(opts, true);
 
-    sinon.stub(commands, 'commandContext').callsFake(function(config, suffix, operations, callback) {
-        t.deepEqual(config, opts, 'instantiate context with expected config');
-        t.deepEqual(suffix, 'testing', 'instantiate context with expected suffix');
-        t.ok(operations.every(function(op) { return typeof op === 'function'; }), 'instantiate context with array of operations');
-        t.equal(callback, whenDone, 'instantiate context with final callback function');
+    try {
+        const context = await cmd.delete('testing');
 
-        const context = Object.assign({}, basicContext, {
-            next: function() {
-                t.pass('called next to begin process');
-                t.deepEqual(context.overrides, {}, 'sets empty overrides');
-                commands.commandContext.restore();
-                t.end();
-            }
-        });
+        t.equal(context.operations.length, 3, '3 operations are run');
+        t.deepEqual(context.config, opts, 'instantiate context with expected config');
+        t.deepEqual(context.suffix, 'testing', 'instantiate context with expected suffix');
+        t.deepEqual(context.overrides, {}, 'sets empty overrides');
+    } catch (err) {
+        t.error(err);
+    }
 
-        return context;
-    });
-
-    commands(opts).delete('testing', whenDone);
+    t.end();
 });
 
-test('[commands.delete] with overrides', (t) => {
-    function whenDone() {}
+test('[commands.delete] with overrides', async (t) => {
+    const cmd = new Commands(opts, true);
 
-    sinon.stub(commands, 'commandContext').callsFake(function(config, suffix, operations, callback) {
-        t.deepEqual(config, opts, 'instantiate context with expected config');
-        t.deepEqual(suffix, 'testing', 'instantiate context with expected suffix');
-        t.ok(operations.every(function(op) { return typeof op === 'function'; }), 'instantiate context with array of operations');
-        t.equal(callback, whenDone, 'instantiate context with final callback function');
+    try {
+        const context = await cmd.delete('testing', { force: true });
 
-        const context = Object.assign({}, basicContext, {
-            next: function() {
-                t.pass('called next to begin process');
-                t.deepEqual(context.overrides, { force: true }, 'sets empty overrides');
-                commands.commandContext.restore();
-                t.end();
-            }
-        });
+        t.equal(context.operations.length, 3, '3 operations are run');
+        t.deepEqual(context.config, opts, 'instantiate context with expected config');
+        t.deepEqual(context.suffix, 'testing', 'instantiate context with expected suffix');
+        t.deepEqual(context.overrides, { force: true }, 'sets empty overrides');
+    } catch (err) {
+        t.error(err);
+    }
 
-        return context;
-    });
-
-    commands(opts).delete('testing', { force: true }, whenDone);
+    t.end();
 });
 
-test('[commands.info] success w/o resources', (t) => {
-    sinon.stub(lookup, 'info').callsFake(function(name, region, resources, decrypt, callback) {
+test('[commands.info] success w/o resources', async (t) => {
+    sinon.stub(Lookup, 'info').callsFake((name, region, resources, decrypt) => {
         t.equal(name, 'my-stack-testing', 'lookup.info expected stack name');
         t.equal(region, 'us-east-1', 'lookup.info expected region');
         t.notOk(resources, 'lookup.info no resources');
         t.notOk(decrypt, 'lookup.info decrypt=false');
-        callback();
+
+        return Promise.resolve();
     });
 
-    commands(opts).info('testing', function(err) {
-        t.ifError(err, 'success');
-        lookup.info.restore();
-        t.end();
-    });
+    const cmd = new Commands(opts, true);
+    try {
+        await cmd.info('testing');
+    } catch (err) {
+        t.error(err);
+    }
+
+    Lookup.info.restore();
+    t.end();
 });
 
-test('[commands.info] success w/ resources', (t) => {
-    sinon.stub(lookup, 'info').callsFake(function(name, region, resources, decrypt, callback) {
+test('[commands.info] success w/ resources', async (t) => {
+    sinon.stub(Lookup, 'info').callsFake((name, region, resources, decrypt) => {
         t.equal(name, 'my-stack-testing', 'lookup.info expected stack name');
         t.equal(region, 'us-east-1', 'lookup.info expected region');
         t.ok(resources, 'lookup.info no resources');
         t.notOk(decrypt, 'lookup.info decrypt=false');
-        callback();
+
+        return Promise.resolve();
     });
 
-    commands(opts).info('testing', true, function(err) {
-        t.ifError(err, 'success');
-        lookup.info.restore();
-        t.end();
-    });
+    const cmd = new Commands(opts, true);
+    try {
+        await cmd.info('testing', true);
+    } catch (err) {
+        t.error(err);
+    }
+
+    Lookup.info.restore();
+    t.end();
 });
 
-test('[commands.info] success w/o decrypt', (t) => {
-    sinon.stub(lookup, 'info').callsFake(function(name, region, resources, decrypt, callback) {
+test('[commands.info] success w/o decrypt', async (t) => {
+    sinon.stub(Lookup, 'info').callsFake((name, region, resources, decrypt) => {
         t.equal(name, 'my-stack-testing', 'lookup.info expected stack name');
         t.equal(region, 'us-east-1', 'lookup.info expected region');
         t.ok(resources, 'lookup.info resources');
         t.notOk(decrypt, 'lookup.info decrypt=false');
-        callback();
+
+        return Promise.resolve();
     });
 
-    commands(opts).info('testing', true, function(err) {
-        t.ifError(err, 'success');
-        lookup.info.restore();
-        t.end();
-    });
+    const cmd = new Commands(opts, true);
+    try {
+        await cmd.info('testing', true);
+    } catch (err) {
+        t.error(err);
+    }
+
+    Lookup.info.restore();
+    t.end();
 });
 
-test('[commands.info] success w/ decrypt', (t) => {
-    sinon.stub(lookup, 'info').callsFake(function(name, region, resources, decrypt, callback) {
+test('[commands.info] success w/ decrypt', async (t) => {
+    sinon.stub(Lookup, 'info').callsFake((name, region, resources, decrypt) => {
         t.equal(name, 'my-stack-testing', 'lookup.info expected stack name');
         t.equal(region, 'us-east-1', 'lookup.info expected region');
         t.ok(resources, 'lookup.info resources');
@@ -375,72 +300,65 @@ test('[commands.info] success w/ decrypt', (t) => {
         callback();
     });
 
-    commands(opts).info('testing', true, true, function(err) {
+    const cmd = new Commands(opts, true);
+    try {
+        await cmd.info('testing', true, true);
+    } catch (err) {
         t.ifError(err, 'success');
-        lookup.info.restore();
-        t.end();
-    });
+    }
+
+    Lookup.info.restore();
+    t.end();
 });
 
-test('[commands.info] null provided as suffix', (t) => {
-    sinon.stub(lookup, 'info').callsFake(function(name, region, resources, decrypt, callback) {
+test('[commands.info] null provided as suffix', async (t) => {
+    sinon.stub(Lookup, 'info').callsFake((name, region, resources, decrypt) => {
         t.equal(name, 'my-stack', 'no trailing - on stack name');
-        callback();
+        return Promise.resolve();
     });
 
-    commands(opts).info(null, true, function(err) {
-        t.ifError(err, 'success');
-        lookup.info.restore();
-        t.end();
-    });
+    const cmd = new Commands(opts);
+
+    try {
+        await cmd.info(null, true);
+    } catch (err) {
+        t.error(err);
+    }
+
+    Lookup.info.restore();
+    t.end();
 });
 
-test('[commands.save] kms-mode', (t) => {
-    function whenDone() {}
+test('[commands.save] kms-mode', async (t) => {
+    const cmd = new Commands(opts, true);
 
-    sinon.stub(commands, 'commandContext').callsFake(function(config, suffix, operations, callback) {
-        t.deepEqual(config, opts, 'instantiate context with expected config');
-        t.deepEqual(suffix, 'testing', 'instantiate context with expected suffix');
-        t.ok(operations.every(function(op) { return typeof op === 'function'; }), 'instantiate context with array of operations');
-        t.equal(callback, whenDone, 'instantiate context with final callback function');
+    try {
+        const context = await cmd.save('testing', true);
 
-        const context = Object.assign({}, basicContext, {
-            next: function() {
-                t.pass('called next to begin process');
-                t.equal(context.kms, true, 'sets context.kms');
-                commands.commandContext.restore();
-                t.end();
-            }
-        });
+        t.deepEqual(context.config, opts, 'instantiate context with expected config');
+        t.deepEqual(context.suffix, 'testing', 'instantiate context with expected suffix');
+        t.equal(context.kms, true, 'sets context.kms');
+    } catch (err) {
+        t.error(err);
+    }
 
-        return context;
-    });
-
-    commands(opts).save('testing', true, whenDone);
+    t.end();
 });
 
-test('[commands.save] not kms-mode', (t) => {
-    function whenDone() {}
+test('[commands.save] not kms-mode', async (t) => {
+    const cmd = new Commands(opts, true);
 
-    sinon.stub(commands, 'commandContext').callsFake(function(config, suffix, operations, callback) {
-        t.deepEqual(config, opts, 'instantiate context with expected config');
-        t.deepEqual(suffix, 'testing', 'instantiate context with expected suffix');
-        t.ok(operations.every(function(op) { return typeof op === 'function'; }), 'instantiate context with array of operations');
-        t.equal(callback, whenDone, 'instantiate context with final callback function');
+    try {
+        const context = await cmd.save('testing');
 
-        const context = Object.assign({}, basicContext, {
-            next: function() {
-                t.pass('called next to begin process');
-                t.equal(context.kms, false, 'sets context.kms');
-                commands.commandContext.restore();
-                t.end();
-            }
-        });
+        t.deepEqual(context.config, opts, 'instantiate context with expected config');
+        t.deepEqual(context.suffix, 'testing', 'instantiate context with expected suffix');
+        t.equal(context.kms, false, 'sets context.kms');
+    } catch (err) {
+        t.error(err);
+    }
 
-        return context;
-    });
-
-    commands(opts).save('testing', whenDone);
+    t.end();
 });
 
 test('[commands.commandContext] sets context', (t) => {
