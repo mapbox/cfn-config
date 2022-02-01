@@ -104,7 +104,7 @@ const options = {
     templateBucket: 'cfn-config-templates-123456789012-us-east-1' // bucket for templates
 };
 
-const commands = cfnConfig.commands(options);
+const commands = new cfnConfig.Commands(options);
 ```
 
 Then, perform the desired operation:
