@@ -895,7 +895,7 @@ test('[Operations.promptParameters] not force-mode', async(t) => {
         context.newTemplate = { new: 'template' },
         context.oldParameters = { old: 'parameters' },
 
-        Operations.promptParameters(context);
+        await Operations.promptParameters(context);
 
         t.deepEqual(context.newParameters, answers, 'sets new parameters to prompt responses');
     } catch (err) {
@@ -980,20 +980,22 @@ test('[Operations.promptParameters] changesetParameters use previous value for u
         return Promise.resolve(newParameters);
     });
 
-    const context = Object.assign({}, basicContext, {
-        stackRegion: 'us-west-2',
-        newTemplate: { new: 'template' },
-        oldParameters: oldParameters,
-        overrides: {},
-        next: function(err) {
-            t.ifError(err, 'success');
-            t.deepEqual(context.changesetParameters, [{ ParameterKey: 'old', ParameterValue: 'newvalue' }, { ParameterKey: 'the', UsePreviousValue: true }]);
-            Prompt.parameters.restore();
-            t.end();
-        }
-    });
+    try {
+        const context = new CommandContext(opts, 'testing', []);
+        context.stackRegion = 'us-west-2',
+        context.newTemplate = { new: 'template' },
+        context.oldParameters = oldParameters,
+        context.overrides = {},
 
-    await Operations.promptParameters(context);
+        await Operations.promptParameters(context);
+
+        t.deepEqual(context.changesetParameters, [{ ParameterKey: 'old', ParameterValue: 'newvalue' }, { ParameterKey: 'the', UsePreviousValue: true }]);
+    } catch (err) {
+        t.error(err);
+    }
+
+    Prompt.parameters.restore();
+    t.end();
 });
 
 test('[Operations.promptParameters] changesetParameters does not set UsePreviousValue when overrides set the value', async(t) => {
@@ -1165,88 +1167,91 @@ test('[Operations.confirmParameters] accepted', async(t) => {
         return Promise.resolve(true);
     });
 
-    await Operations.confirmParameters(Object.assign({}, basicContext, {
-        oldParameters: { old: 'parameters' },
-        newParameters: { new: 'parameters' },
-        overrides: {},
-        next: function(err) {
-            t.ifError(err, 'success');
-            Prompt.confirm.restore();
-            t.end();
-        },
-        abort: function() {
-            t.fail('should proceed');
-        }
-    }));
+    try {
+        const context = new CommandContext(opts, 'testing', []);
+        context.oldParameters = { old: 'parameters' },
+        context.newParameters = { new: 'parameters' },
+        context.overrides = {},
+
+        await Operations.confirmParameters(context);
+    } catch (err) {
+        t.error(err);
+    }
+
+    Prompt.confirm.restore();
+    t.end();
 });
 
 test('[Operations.confirmTemplate] no difference', async(t) => {
-    const context = Object.assign({}, basicContext, {
-        oldTemplate: { old: 'template' },
-        newTemplate: { old: 'template' },
-        next: function() {
-            t.pass('skipped prompting');
-            t.end();
-        }
-    });
+    try {
+        const context = new CommandContext(opts, 'testing', []);
+        context.oldTemplate = { old: 'template' },
+        context.newTemplate = { old: 'template' },
 
-    await Operations.confirmTemplate(context);
+        await Operations.confirmTemplate(context);
+
+        t.pass('skipped prompting');
+    } catch (err) {
+        t.error(err);
+    }
+
+    t.end();
 });
 
 test('[Operations.confirmTemplate] undefined', async(t) => {
-    const context = Object.assign({}, basicContext, {
-        oldTemplate: { Parameters: { old: undefined } },
-        newTemplate: { Parameters: {} },
-        next: function() {
-            t.pass('skipped prompting');
-            t.end();
-        }
-    });
+    try {
+        const context = new CommandContext(opts, 'testing', []);
+        context.oldTemplate = { Parameters: { old: undefined } },
+        context.newTemplate = { Parameters: {} },
 
-    await Operations.confirmTemplate(context);
+        await Operations.confirmTemplate(context);
+
+        t.pass('skipped prompting');
+    } catch (err) {
+        t.error(err);
+    }
+
+    t.end();
 });
 
 test('[Operations.confirmTemplate] force-mode', async(t) => {
-    const context = Object.assign({}, basicContext, {
-        oldTemplate: { old: 'template' },
-        newTemplate: { new: 'template' },
-        overrides: { force: true },
-        next: function(err) {
-            t.ifError(err, 'should proceed');
-            t.end();
-        },
-        abort: function(err) {
-            t.ifError(err, 'should not proceed');
-        }
-    });
+    try {
+        const context = new CommandContext(opts, 'testing', []);
+        context.oldTemplate = { old: 'template' },
+        context.newTemplate = { new: 'template' },
+        context.overrides = { force: true },
 
-    await Operations.confirmTemplate(context);
+        await Operations.confirmTemplate(context);
+    } catch (err) {
+        t.error(err);
+    }
+
+    t.end();
 });
 
 test('[Operations.confirmTemplate] preapproved', async(t) => {
     sinon.stub(console, 'log');
 
-    const context = Object.assign({}, basicContext, {
-        oldTemplate: { old: 'template' },
-        newTemplate: { new: 'template' },
-        overrides: {
+    try {
+        const context = new CommandContext(opts, 'testing', []);
+        context.oldTemplate = { old: 'template' },
+        context.newTemplate = { new: 'template' },
+        context.overrides = {
             preapproved: {
                 template: ['\u001b[90m {\n\u001b[39m\u001b[31m-\"old\": \"template\"\n\u001b[39m\u001b[32m+\"new\": \"template\"\n\u001b[39m\u001b[90m }\u001b[39m']
             }
-        },
-        next: (err) => {
-            t.ok(console.log.calledWith('Auto-confirming template changes... Changes were pre-approved in another region.'), 'Skip notice printed');
-            t.ifError(err, 'should proceed');
-            t.ok(context.overrides.skipConfirmTemplate, 'sets skipConfirmTemplate');
-            console.log.restore();
-            t.end();
-        },
-        abort: (err) => {
-            t.ifError(err, 'should not proceed');
         }
-    });
 
-    await Operations.confirmTemplate(context);
+        await Operations.confirmTemplate(context);
+
+        t.ok(console.log.calledWith('Auto-confirming template changes... Changes were pre-approved in another region.'), 'Skip notice printed');
+        t.ok(context.overrides.skipConfirmTemplate, 'sets skipConfirmTemplate');
+    } catch (err) {
+        t.error(err);
+    }
+
+    console.log.restore();
+    t.end();
 });
 
 test('[Operations.confirmTemplate] rejected', async(t) => {
