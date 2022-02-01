@@ -800,7 +800,7 @@ test('[Operations.getMasterConfig] failed', async(t) => {
 
         t.fail();
     } catch (err) {
-        t.equals(err instanceof Error);
+        t.ok(err instanceof Error);
     }
 
     Lookup.defaultConfiguration.restore();
@@ -1135,8 +1135,6 @@ test('[Operations.confirmParameters] preapproved', async(t) => {
 });
 
 test('[Operations.confirmParameters] rejected', async(t) => {
-    t.plan(2);
-
     sinon.stub(Prompt, 'confirm').callsFake((message) => {
         t.equal(message, ' {\n\x1b[31m-  old: "parameters"\x1b[39m\n\x1b[32m+  new: "parameterz"\x1b[39m\n }\n\nAccept parameter changes?', 'prompted appropriate message');
         return Promise.resolve(false);
@@ -1160,8 +1158,6 @@ test('[Operations.confirmParameters] rejected', async(t) => {
 });
 
 test('[Operations.confirmParameters] accepted', async(t) => {
-    t.plan(2);
-
     sinon.stub(Prompt, 'confirm').callsFake((message) => {
         t.equal(message, ' {\n\x1b[31m-  old: "parameters"\x1b[39m\n\x1b[32m+  new: "parameters"\x1b[39m\n }\n\nAccept parameter changes?', 'prompted appropriate message');
         return Promise.resolve(true);
@@ -1255,8 +1251,6 @@ test('[Operations.confirmTemplate] preapproved', async(t) => {
 });
 
 test('[Operations.confirmTemplate] rejected', async(t) => {
-    t.plan(2);
-
     sinon.stub(Prompt, 'confirm').callsFake((message) => {
         t.equal(
             message,
@@ -1283,8 +1277,6 @@ test('[Operations.confirmTemplate] rejected', async(t) => {
 });
 
 test('[Operations.confirmTemplate] accepted', async(t) => {
-    t.plan(2);
-
     sinon.stub(Prompt, 'confirm').callsFake((message) => {
         t.equal(message, '\x1B[90m {\n\x1B[39m\x1B[31m-"old": "template"\n\x1B[39m\x1B[32m+"new": "template"\n\x1B[39m\x1B[90m }\x1B[39m\nAccept template changes?', 'prompted appropriate message');
         return Promise.resolve(true);
@@ -1305,8 +1297,6 @@ test('[Operations.confirmTemplate] accepted', async(t) => {
 });
 
 test('[Operations.confirmTemplate] lengthy diff, first unchanged section ignored', async(t) => {
-    t.plan(2);
-
     sinon.stub(Prompt, 'confirm').callsFake((message) => {
         t.equal(message, '\x1B[90m {\n "a": "lines",\n "aa": "lines",\n\x1B[39m\x1B[31m-"and": "will change too",\n\x1B[39m\x1B[32m+"and": "has changed",\n\x1B[39m\x1B[90m "b": "lines",\n "ba": "lines",\n "c": "lines",\n\x1B[39m\x1B[90m\n---------------------------------------------\n\n\x1B[39m\x1B[90m "r": "lines",\n "s": "lines",\n "t": "lines",\n\x1B[39m\x1B[31m-"this": "will change",\n\x1B[39m\x1B[32m+"this": "has changed",\n\x1B[39m\x1B[90m "u": "lines",\n "v": "lines"\n }\x1B[39m\nAccept template changes?', 'prompted appropriate message');
         return Promise.resolve(true);
@@ -1510,8 +1500,6 @@ test('[Operations.validateTemplate] invalid', async(t) => {
 });
 
 test('[Operations.validateTemplate] valid', async(t) => {
-    t.plan(3);
-
     const context = new CommandContext(opts, 'testing', []);
 
     sinon.stub(Actions, 'validate').callsFake((region, url) => {
@@ -1576,8 +1564,6 @@ test('[Operations.validateParametersHook] hook error', async(t) => {
 });
 
 test('[Operations.validateParametersHook] hook success', async(t) => {
-    t.plan(2);
-
     try {
         const context = new CommandContext(opts, 'testing', []);
         context.overrides = {
@@ -1616,8 +1602,6 @@ test('[Operations.beforeUpdateHook] hook error', async(t) => {
 });
 
 test('[Operations.beforeUpdateHook] hook success', async(t) => {
-    t.plan(2);
-
     try {
         const context = new CommandContext(opts, 'testing', []);
         context.overrides = {
@@ -1656,8 +1640,6 @@ test('[Operations.getChangeset] failure', async(t) => {
 });
 
 test('[Operations.getChangeset] success', async(t) => {
-    t.plan(8);
-
     const details = { changeset: 'details' };
 
     const context = new CommandContext(opts, 'testing', []);
@@ -1692,8 +1674,6 @@ test('[Operations.getChangeset] success', async(t) => {
 });
 
 test('[Operations.getChangesetCreate] success', async(t) => {
-    t.plan(1);
-
     sinon.stub(Operations, 'getChangeset').callsFake((context, changeSetType) => {
         t.equals(changeSetType, 'CREATE', 'has changeSetType');
         return Promise.resolve();
@@ -1712,8 +1692,6 @@ test('[Operations.getChangesetCreate] success', async(t) => {
 });
 
 test('[Operations.getChangesetUpdate] success', async(t) => {
-    t.plan(1);
-
     sinon.stub(Operations, 'getChangeset').callsFake((context, changeSetType) => {
         t.equals(changeSetType, 'UPDATE', 'has changeSetType');
         return Promise.resolve();
@@ -1769,7 +1747,7 @@ test('[Operations.confirmChangeset] rejected', async(t) => {
 
         await Operations.confirmChangeset(context);
     } catch (err) {
-        t.equals(err.message, ''); //TODO
+        t.equals(err.message, 'aborted');
     }
 
     Prompt.confirm.restore();
@@ -1777,8 +1755,6 @@ test('[Operations.confirmChangeset] rejected', async(t) => {
 });
 
 test('[Operations.confirmChangeset] acccepted', async(t) => {
-    t.plan(3);
-
     sinon.stub(Prompt, 'confirm').callsFake((message, defaultValue) => {
         t.equal(message, '\n\n\nAccept changes and update the stack?', 'expected message');
         t.equal(defaultValue, false);
@@ -1870,8 +1846,6 @@ test('[Operations.executeChangeSet] not executable', async(t) => {
 });
 
 test('[Operations.executeChangeSet] success', async(t) => {
-    t.plan(4);
-
     const context = new CommandContext(opts, 'testing', []);
 
     sinon.stub(Actions, 'executeChangeSet').callsFake((name, region, id) => {
