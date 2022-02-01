@@ -121,59 +121,74 @@ const base = {
     }
 };
 
-test('[cli.main] no command', (t) => {
+test('[cli.main] no command', async (t) => {
     const parsed = Object.assign({}, base, { command: undefined });
 
-    cli.main(parsed, function(err) {
+    try {
+        await cli.main(parsed);
+        t.fail();
+    } catch (err) {
         t.equal(err.message, 'Error: invalid command\n\n' + parsed.help, 'expected error message');
-        t.end();
-    });
+    }
+    t.end();
 });
 
-test('[cli.main] bad command', (t) => {
+test('[cli.main] bad command', async (t) => {
     const parsed = Object.assign({}, base, { command: 'hibbity' });
 
-    cli.main(parsed, function(err) {
+    try {
+        await cli.main(parsed);
+        t.fail();
+    } catch (err) {
         t.equal(err.message, 'Error: invalid command\n\n' + parsed.help, 'expected error message');
-        t.end();
-    });
+    }
+
+    t.end();
 });
 
-test('[cli.main] no environment', (t) => {
+test('[cli.main] no environment', async (t) => {
     const parsed = Object.assign({}, base, { environment: undefined });
 
-    cli.main(parsed, function(err) {
+    try {
+        await cli.main(parsed);
+        t.fail();
+    } catch (err) {
         t.equal(err.message, 'Error: missing environment\n\n' + parsed.help, 'expected error message');
-        t.end();
-    });
+    }
+
+    t.end();
 });
 
-test('[cli.main] no template path (create)', (t) => {
+test('[cli.main] no template path (create)', async (t) => {
     const parsed = Object.assign({}, base, { templatePath: undefined });
 
-    cli.main(parsed, function(err) {
+    try {
+        await cli.main(parsed);
+        t.fail();
+    } catch (err) {
         t.equal(err.message, 'Error: missing templatePath\n\n' + parsed.help, 'expected error message');
-        t.end();
-    });
+    }
+
+    t.end();
 });
 
-test('[cli.main] no template path (info)', (t) => {
-    sinon.stub(cfnConfig, 'commands').callsFake(function() {
-        return { info: function() { Array.from(arguments).pop()(); } };
-    });
-
+test('[cli.main] no template path (info)', async (t) => {
     const parsed = Object.assign({}, base, { command: 'info', templatePath: undefined });
 
-    cli.main(parsed, function(err) {
-        t.ifError(err, 'success');
-        cfnConfig.commands.restore();
-        t.end();
-    });
+    try {
+        await cli.main(parsed);
+    } catch (err) {
+        t.error(err);
+    }
+
+    cfnConfig.commands.restore();
+    t.end();
 });
 
-test('[cli.main] create', (t) => {
-    sinon.stub(cfnConfig, 'commands').callsFake(function(options) {
+test('[cli.main] create', async (t) => {
+    sinon.stub(cfnConfig, 'commands').callsFake((options) => {
         t.deepEqual(options, base.options, 'provided commands constructor with correct options');
+
         return {
             create: function(suffix, templatePath, overrides, callback) {
                 t.equal(suffix, base.environment, 'provides correct suffix');
@@ -184,11 +199,14 @@ test('[cli.main] create', (t) => {
         };
     });
 
-    cli.main(base, function(err) {
-        t.ifError(err, 'success');
-        cfnConfig.commands.restore();
-        t.end();
-    });
+    try {
+        await cli.main(base);
+    } catch (err) {
+        t.error(err);
+    }
+
+    cfnConfig.commands.restore();
+    t.end();
 });
 
 test('[cli.main] update', (t) => {
