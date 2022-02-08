@@ -3,11 +3,15 @@
 const path = require('path');
 const test = require('tape');
 const sinon = require('sinon');
-const commands = require('../lib/commands');
-const prompt = require('../lib/prompt');
-const actions = require('../lib/actions');
-const lookup = require('../lib/lookup');
-const template = require('../lib/template');
+const {
+    Commands,
+    CommandContext,
+    Operations
+} = require('../lib/commands');
+const Prompt = require('../lib/prompt');
+const Actions = require('../lib/actions');
+const Lookup = require('../lib/lookup');
+const Template = require('../lib/template');
 
 const opts = {
     name: 'my-stack',
@@ -16,435 +20,350 @@ const opts = {
     templateBucket: 'my-template-bucket'
 };
 
-var basicContext = commands.commandContext(opts, 'testing', [], function() {});
+test('[commands.create] no overrides', async(t) => {
+    const cmd = new Commands(opts, true);
 
-test('[commands.create] no overrides', (t) => {
-    function whenDone() {}
+    try {
+        const context = await cmd.create('testing', 'templatePath');
 
-    sinon.stub(commands, 'commandContext').callsFake(function(config, suffix, operations, callback) {
-        t.equal(operations.length, 13, '13 operations are run');
-        t.deepEqual(config, opts, 'instantiate context with expected config');
-        t.deepEqual(suffix, 'testing', 'instantiate context with expected suffix');
-        t.ok(operations.every(function(op) { return typeof op === 'function'; }), 'instantiate context with array of operations');
-        t.equal(callback, whenDone, 'instantiate context with final callback function');
+        t.equal(context.operations.length, 13, '13 operations are run');
+        t.deepEqual(context.config, opts, 'instantiate context with expected config');
+        t.deepEqual(context.suffix, 'testing', 'instantiate context with expected suffix');
+        t.equal(context.template, 'templatePath', 'set context.template');
+    } catch (err) {
+        t.error(err);
+    }
 
-        var context = Object.assign({}, basicContext, {
-            next: function() {
-                t.pass('called next to begin process');
-                t.equal(context.template, 'templatePath', 'set context.template');
-                commands.commandContext.restore();
-                t.end();
-            }
-        });
-
-        return context;
-    });
-
-    commands(opts).create('testing', 'templatePath', whenDone);
+    t.end();
 });
 
-test('[commands.create] with overrides', (t) => {
-    function whenDone() {}
+test('[commands.create] with overrides', async(t) => {
+    const cmd = new Commands(opts, true);
 
-    sinon.stub(commands, 'commandContext').callsFake(function(config, suffix, operations, callback) {
-        t.equal(operations.length, 13, '13 operations are run');
-        t.deepEqual(config, opts, 'instantiate context with expected config');
-        t.deepEqual(suffix, 'testing', 'instantiate context with expected suffix');
-        t.ok(operations.every(function(op) { return typeof op === 'function'; }), 'instantiate context with array of operations');
-        t.equal(callback, whenDone, 'instantiate context with final callback function');
+    try {
+        const context = await cmd.create('testing', 'templatePath', { some: 'overrides' });
 
-        var context = Object.assign({}, basicContext, {
-            next: function() {
-                t.pass('called next to begin process');
-                t.equal(context.template, 'templatePath', 'set context.template');
-                t.deepEqual(context.overrides, { some: 'overrides' }, 'sets context.overrides');
-                commands.commandContext.restore();
-                t.end();
-            }
-        });
+        t.equal(context.operations.length, 13, '13 operations are run');
+        t.deepEqual(context.config, opts, 'instantiate context with expected config');
+        t.deepEqual(context.suffix, 'testing', 'instantiate context with expected suffix');
+        t.equal(context.template, 'templatePath', 'set context.template');
+        t.deepEqual(context.overrides, { some: 'overrides' }, 'sets context.overrides');
+    } catch (err) {
+        t.error(err);
+    }
 
-        return context;
-    });
-
-    commands(opts).create('testing', 'templatePath', { some: 'overrides' }, whenDone);
+    t.end();
 });
 
-test('[commands.create] with template object', (t) => {
-    function whenDone() {}
+test('[commands.create] with template object', async(t) => {
+    const cmd = new Commands(opts, true);
 
-    sinon.stub(commands, 'commandContext').callsFake(function(config, suffix, operations, callback) {
-        t.equal(operations.length, 13, '13 operations are run');
-        t.deepEqual(config, opts, 'instantiate context with expected config');
-        t.deepEqual(suffix, 'testing', 'instantiate context with expected suffix');
-        t.ok(operations.every(function(op) { return typeof op === 'function'; }), 'instantiate context with array of operations');
-        t.equal(callback, whenDone, 'instantiate context with final callback function');
+    try {
+        const context = await cmd.create('testing', { arbitrary: 'template' });
 
-        var context = Object.assign({}, basicContext, {
-            next: function() {
-                t.pass('called next to begin process');
-                t.deepEqual(context.template, { arbitrary: 'template' }, 'set context.template');
-                commands.commandContext.restore();
-                t.end();
-            }
-        });
+        t.equal(context.operations.length, 13, '13 operations are run');
+        t.deepEqual(context.config, opts, 'instantiate context with expected config');
+        t.deepEqual(context.suffix, 'testing', 'instantiate context with expected suffix');
+        t.deepEqual(context.template, { arbitrary: 'template' }, 'set context.template');
+    } catch (err) {
+        t.error(err);
+    }
 
-        return context;
-    });
-
-    commands(opts).create('testing', { arbitrary: 'template' }, whenDone);
+    t.end();
 });
 
-test('[commands.update] no overrides', (t) => {
-    function whenDone() {}
+test('[commands.update] no overrides', async(t) => {
+    const cmd = new Commands(opts, true);
 
-    sinon.stub(commands, 'commandContext').callsFake(function(config, suffix, operations, callback) {
-        t.equal(operations.length, 15, '15 operations are run');
-        t.deepEqual(config, opts, 'instantiate context with expected config');
-        t.deepEqual(suffix, 'testing', 'instantiate context with expected suffix');
-        t.ok(operations.every(function(op) { return typeof op === 'function'; }), 'instantiate context with array of operations');
-        t.equal(callback, whenDone, 'instantiate context with final callback function');
+    try {
+        const context = await cmd.update('testing', 'templatePath');
 
-        var context = Object.assign({}, basicContext, {
-            next: function() {
-                t.pass('called next to begin process');
-                t.equal(context.template, 'templatePath', 'set context.template');
-                t.deepEqual(context.overrides, {}, 'sets empty context.overrides');
-                commands.commandContext.restore();
-                t.end();
-            }
-        });
+        t.equal(context.operations.length, 15, '15 operations are run');
+        t.deepEqual(context.config, opts, 'instantiate context with expected config');
+        t.deepEqual(context.suffix, 'testing', 'instantiate context with expected suffix');
+        t.equal(context.template, 'templatePath', 'set context.template');
+        t.deepEqual(context.overrides, {}, 'sets empty context.overrides');
+    } catch (err) {
+        t.error(err);
+    }
 
-        return context;
-    });
-
-    commands(opts).update('testing', 'templatePath', whenDone);
+    t.end();
 });
 
-test('[commands.update] with overrides', (t) => {
-    function whenDone() {}
+test('[commands.update] with overrides', async(t) => {
+    const cmd = new Commands(opts, true);
 
-    sinon.stub(commands, 'commandContext').callsFake(function(config, suffix, operations, callback) {
-        t.deepEqual(config, opts, 'instantiate context with expected config');
-        t.deepEqual(suffix, 'testing', 'instantiate context with expected suffix');
-        t.ok(operations.every(function(op) { return typeof op === 'function'; }), 'instantiate context with array of operations');
-        t.equal(callback, whenDone, 'instantiate context with final callback function');
+    try {
+        const context = await cmd.update('testing', 'templatePath', { force: true });
 
-        var context = Object.assign({}, basicContext, {
-            next: function() {
-                t.pass('called next to begin process');
-                t.equal(context.template, 'templatePath', 'set context.template');
-                t.deepEqual(context.overrides, { force: true }, 'sets context.overrides');
-                commands.commandContext.restore();
-                t.end();
-            }
-        });
-        return context;
-    });
+        t.deepEqual(context.config, opts, 'instantiate context with expected config');
+        t.deepEqual(context.suffix, 'testing', 'instantiate context with expected suffix');
+        t.equal(context.template, 'templatePath', 'set context.template');
+        t.deepEqual(context.overrides, { force: true }, 'sets context.overrides');
+    } catch (err) {
+        t.error(err);
+    }
 
-    commands(opts).update('testing', 'templatePath', { force: true }, whenDone);
+    t.end();
 });
 
-test('[commands.update] with multiple overrides', (t) => {
-    function whenDone() {}
+test('[commands.update] with multiple overrides', async(t) => {
+    const cmd = new Commands(opts, true);
 
-    sinon.stub(commands, 'commandContext').callsFake(function(config, suffix, operations, callback) {
-        t.deepEqual(config, opts, 'instantiate context with expected config');
-        t.deepEqual(suffix, 'testing', 'instantiate context with expected suffix');
-        t.ok(operations.every(function(op) { return typeof op === 'function'; }), 'instantiate context with array of operations');
-        t.equal(callback, whenDone, 'instantiate context with final callback function');
+    try {
+        const context = await cmd.update('testing', 'templatePath', { force: true, masterConfig: 's3://chill' });
 
-        var context = Object.assign({}, basicContext, {
-            next: function() {
-                t.pass('called next to begin process');
-                t.equal(context.template, 'templatePath', 'set context.template');
-                t.deepEqual(context.overrides, { force: true, masterConfig: 's3://chill' }, 'sets context.overrides');
-                commands.commandContext.restore();
-                t.end();
-            }
-        });
-        return context;
-    });
+        t.deepEqual(context.config, opts, 'instantiate context with expected config');
+        t.deepEqual(context.suffix, 'testing', 'instantiate context with expected suffix');
+        t.equal(context.template, 'templatePath', 'set context.template');
+        t.deepEqual(context.overrides, { force: true, masterConfig: 's3://chill' }, 'sets context.overrides');
+    } catch (err) {
+        t.error(err);
+    }
 
-    commands(opts).update('testing', 'templatePath', { force: true, masterConfig: 's3://chill' }, whenDone);
-
+    t.end();
 });
 
-test('[commands.update] with overrides.skipConfirmParameters', (t) => {
-    function whenDone() {}
+test('[commands.update] with overrides.skipConfirmParameters', async(t) => {
+    const cmd = new Commands(opts, true);
 
-    sinon.stub(commands, 'commandContext').callsFake(function(config, suffix, operations, callback) {
-        t.deepEqual(config, opts, 'instantiate context with expected config');
-        t.deepEqual(suffix, 'testing', 'instantiate context with expected suffix');
-        t.ok(operations.every(function(op) { return typeof op === 'function'; }), 'instantiate context with array of operations');
-        t.equal(callback, whenDone, 'instantiate context with final callback function');
+    try {
+        const context = await cmd.update('testing', 'templatePath', { force: true, masterConfig: 's3://chill', skipConfirmParameters: true });
 
-        var context = Object.assign({}, basicContext, {
-            next: function() {
-                t.pass('called next to begin process');
-                t.equal(context.template, 'templatePath', 'set context.template');
-                t.deepEqual(context.overrides, { force: true, masterConfig: 's3://chill', skipConfirmParameters: true }, 'sets context.overrides');
-                commands.commandContext.restore();
-                t.end();
-            }
-        });
-        return context;
-    });
+        t.deepEqual(context.config, opts, 'instantiate context with expected config');
+        t.deepEqual(context.suffix, 'testing', 'instantiate context with expected suffix');
+        t.equal(context.template, 'templatePath', 'set context.template');
+        t.deepEqual(context.overrides, { force: true, masterConfig: 's3://chill', skipConfirmParameters: true }, 'sets context.overrides');
 
-    commands(opts).update('testing', 'templatePath', { force: true, masterConfig: 's3://chill', skipConfirmParameters: true }, whenDone);
+    } catch (err) {
+        t.error(err);
+    }
 
+    t.end();
 });
 
-test('[commands.update] with overrides.skipConfirmTemplate', (t) => {
-    function whenDone() {}
+test('[commands.update] with overrides.skipConfirmTemplate', async(t) => {
+    const cmd = new Commands(opts, true);
 
-    sinon.stub(commands, 'commandContext').callsFake(function(config, suffix, operations, callback) {
-        t.deepEqual(config, opts, 'instantiate context with expected config');
-        t.deepEqual(suffix, 'testing', 'instantiate context with expected suffix');
-        t.ok(operations.every(function(op) { return typeof op === 'function'; }), 'instantiate context with array of operations');
-        t.equal(callback, whenDone, 'instantiate context with final callback function');
+    try {
+        const context = await cmd.update('testing', 'templatePath', { force: true, masterConfig: 's3://chill', skipConfirmTemplate: true });
 
-        var context = Object.assign({}, basicContext, {
-            next: function() {
-                t.pass('called next to begin process');
-                t.equal(context.template, 'templatePath', 'set context.template');
-                t.deepEqual(context.overrides, { force: true, masterConfig: 's3://chill', skipConfirmTemplate: true }, 'sets context.overrides');
-                commands.commandContext.restore();
-                t.end();
-            }
-        });
-        return context;
-    });
+        t.deepEqual(context.config, opts, 'instantiate context with expected config');
+        t.deepEqual(context.suffix, 'testing', 'instantiate context with expected suffix');
+        t.equal(context.template, 'templatePath', 'set context.template');
+        t.deepEqual(context.overrides, { force: true, masterConfig: 's3://chill', skipConfirmTemplate: true }, 'sets context.overrides');
+    } catch (err) {
+        t.error(err);
+    }
 
-    commands(opts).update('testing', 'templatePath', { force: true, masterConfig: 's3://chill', skipConfirmTemplate: true }, whenDone);
-
+    t.end();
 });
 
-test('[commands.update] with overrides.skipConfirmParameters and overrides.skipConfirmTemplate', (t) => {
-    function whenDone() {}
+test('[commands.update] with overrides.skipConfirmParameters and overrides.skipConfirmTemplate', async(t) => {
+    const cmd = new Commands(opts, true);
 
-    sinon.stub(commands, 'commandContext').callsFake(function(config, suffix, operations, callback) {
-        t.deepEqual(config, opts, 'instantiate context with expected config');
-        t.deepEqual(suffix, 'testing', 'instantiate context with expected suffix');
-        t.ok(operations.every(function(op) { return typeof op === 'function'; }), 'instantiate context with array of operations');
-        t.equal(callback, whenDone, 'instantiate context with final callback function');
+    try {
+        const context = await cmd.update('testing', 'templatePath', { force: true, masterConfig: 's3://chill', skipConfirmTemplate: true, skipConfirmParameters: true });
 
-        var context = Object.assign({}, basicContext, {
-            next: function() {
-                t.pass('called next to begin process');
-                t.equal(context.template, 'templatePath', 'set context.template');
-                t.deepEqual(context.overrides, { force: true, masterConfig: 's3://chill', skipConfirmTemplate: true, skipConfirmParameters: true }, 'sets context.overrides');
-                commands.commandContext.restore();
-                t.end();
-            }
-        });
-        return context;
-    });
+        t.deepEqual(context.config, opts, 'instantiate context with expected config');
+        t.deepEqual(context.suffix, 'testing', 'instantiate context with expected suffix');
+        t.equal(context.template, 'templatePath', 'set context.template');
+        t.deepEqual(context.overrides, { force: true, masterConfig: 's3://chill', skipConfirmTemplate: true, skipConfirmParameters: true }, 'sets context.overrides');
+    } catch (err) {
+        t.error(err);
+    }
 
-    commands(opts).update('testing', 'templatePath', { force: true, masterConfig: 's3://chill', skipConfirmTemplate: true, skipConfirmParameters: true }, whenDone);
-
+    t.end();
 });
 
-test('[commands.update] with template object', (t) => {
-    function whenDone() {}
+test('[commands.update] with template object', async(t) => {
+    const cmd = new Commands(opts, true);
 
-    sinon.stub(commands, 'commandContext').callsFake(function(config, suffix, operations, callback) {
-        t.equal(operations.length, 15, '15 operations are run');
-        t.deepEqual(config, opts, 'instantiate context with expected config');
-        t.deepEqual(suffix, 'testing', 'instantiate context with expected suffix');
-        t.ok(operations.every(function(op) { return typeof op === 'function'; }), 'instantiate context with array of operations');
-        t.equal(callback, whenDone, 'instantiate context with final callback function');
+    try {
+        const context = await cmd.update('testing', { arbitrary: 'template' });
 
-        var context = Object.assign({}, basicContext, {
-            next: function() {
-                t.pass('called next to begin process');
-                t.deepEqual(context.template, { arbitrary: 'template' }, 'set context.template');
-                t.deepEqual(context.overrides, {}, 'sets empty context.overrides');
-                commands.commandContext.restore();
-                t.end();
-            }
-        });
+        t.equal(context.operations.length, 15, '15 operations are run');
+        t.deepEqual(context.config, opts, 'instantiate context with expected config');
+        t.deepEqual(context.suffix, 'testing', 'instantiate context with expected suffix');
+        t.deepEqual(context.template, { arbitrary: 'template' }, 'set context.template');
+        t.deepEqual(context.overrides, {}, 'sets empty context.overrides');
+    } catch (err) {
+        t.error(err);
+    }
 
-        return context;
-    });
-
-    commands(opts).update('testing', { arbitrary: 'template' }, whenDone);
+    t.end();
 });
 
-test('[commands.delete] no overrides', (t) => {
-    function whenDone() {}
+test('[commands.delete] no overrides', async(t) => {
+    const cmd = new Commands(opts, true);
 
-    sinon.stub(commands, 'commandContext').callsFake(function(config, suffix, operations, callback) {
-        t.deepEqual(config, opts, 'instantiate context with expected config');
-        t.deepEqual(suffix, 'testing', 'instantiate context with expected suffix');
-        t.ok(operations.every(function(op) { return typeof op === 'function'; }), 'instantiate context with array of operations');
-        t.equal(callback, whenDone, 'instantiate context with final callback function');
+    try {
+        const context = await cmd.delete('testing');
 
-        var context = Object.assign({}, basicContext, {
-            next: function() {
-                t.pass('called next to begin process');
-                t.deepEqual(context.overrides, {}, 'sets empty overrides');
-                commands.commandContext.restore();
-                t.end();
-            }
-        });
+        t.equal(context.operations.length, 3, '3 operations are run');
+        t.deepEqual(context.config, opts, 'instantiate context with expected config');
+        t.deepEqual(context.suffix, 'testing', 'instantiate context with expected suffix');
+        t.deepEqual(context.overrides, {}, 'sets empty overrides');
+    } catch (err) {
+        t.error(err);
+    }
 
-        return context;
-    });
-
-    commands(opts).delete('testing', whenDone);
+    t.end();
 });
 
-test('[commands.delete] with overrides', (t) => {
-    function whenDone() {}
+test('[commands.delete] with overrides', async(t) => {
+    const cmd = new Commands(opts, true);
 
-    sinon.stub(commands, 'commandContext').callsFake(function(config, suffix, operations, callback) {
-        t.deepEqual(config, opts, 'instantiate context with expected config');
-        t.deepEqual(suffix, 'testing', 'instantiate context with expected suffix');
-        t.ok(operations.every(function(op) { return typeof op === 'function'; }), 'instantiate context with array of operations');
-        t.equal(callback, whenDone, 'instantiate context with final callback function');
+    try {
+        const context = await cmd.delete('testing', { force: true });
 
-        var context = Object.assign({}, basicContext, {
-            next: function() {
-                t.pass('called next to begin process');
-                t.deepEqual(context.overrides, { force: true }, 'sets empty overrides');
-                commands.commandContext.restore();
-                t.end();
-            }
-        });
+        t.equal(context.operations.length, 3, '3 operations are run');
+        t.deepEqual(context.config, opts, 'instantiate context with expected config');
+        t.deepEqual(context.suffix, 'testing', 'instantiate context with expected suffix');
+        t.deepEqual(context.overrides, { force: true }, 'sets empty overrides');
+    } catch (err) {
+        t.error(err);
+    }
 
-        return context;
-    });
-
-    commands(opts).delete('testing', { force: true }, whenDone);
+    t.end();
 });
 
-test('[commands.info] success w/o resources', (t) => {
-    sinon.stub(lookup, 'info').callsFake(function(name, region, resources, decrypt, callback) {
+test('[commands.info] success w/o resources', async(t) => {
+    sinon.stub(Lookup, 'info').callsFake((name, region, resources, decrypt) => {
         t.equal(name, 'my-stack-testing', 'lookup.info expected stack name');
         t.equal(region, 'us-east-1', 'lookup.info expected region');
         t.notOk(resources, 'lookup.info no resources');
         t.notOk(decrypt, 'lookup.info decrypt=false');
-        callback();
+
+        return Promise.resolve();
     });
 
-    commands(opts).info('testing', function(err) {
-        t.ifError(err, 'success');
-        lookup.info.restore();
-        t.end();
-    });
+    const cmd = new Commands(opts, true);
+    try {
+        await cmd.info('testing');
+    } catch (err) {
+        t.error(err);
+    }
+
+    Lookup.info.restore();
+    t.end();
 });
 
-test('[commands.info] success w/ resources', (t) => {
-    sinon.stub(lookup, 'info').callsFake(function(name, region, resources, decrypt, callback) {
+test('[commands.info] success w/ resources', async(t) => {
+    sinon.stub(Lookup, 'info').callsFake((name, region, resources, decrypt) => {
         t.equal(name, 'my-stack-testing', 'lookup.info expected stack name');
         t.equal(region, 'us-east-1', 'lookup.info expected region');
         t.ok(resources, 'lookup.info no resources');
         t.notOk(decrypt, 'lookup.info decrypt=false');
-        callback();
+
+        return Promise.resolve();
     });
 
-    commands(opts).info('testing', true, function(err) {
-        t.ifError(err, 'success');
-        lookup.info.restore();
-        t.end();
-    });
+    const cmd = new Commands(opts, true);
+    try {
+        await cmd.info('testing', true);
+    } catch (err) {
+        t.error(err);
+    }
+
+    Lookup.info.restore();
+    t.end();
 });
 
-test('[commands.info] success w/o decrypt', (t) => {
-    sinon.stub(lookup, 'info').callsFake(function(name, region, resources, decrypt, callback) {
+test('[commands.info] success w/o decrypt', async(t) => {
+    sinon.stub(Lookup, 'info').callsFake((name, region, resources, decrypt) => {
         t.equal(name, 'my-stack-testing', 'lookup.info expected stack name');
         t.equal(region, 'us-east-1', 'lookup.info expected region');
         t.ok(resources, 'lookup.info resources');
         t.notOk(decrypt, 'lookup.info decrypt=false');
-        callback();
+
+        return Promise.resolve();
     });
 
-    commands(opts).info('testing', true, function(err) {
-        t.ifError(err, 'success');
-        lookup.info.restore();
-        t.end();
-    });
+    const cmd = new Commands(opts, true);
+    try {
+        await cmd.info('testing', true);
+    } catch (err) {
+        t.error(err);
+    }
+
+    Lookup.info.restore();
+    t.end();
 });
 
-test('[commands.info] success w/ decrypt', (t) => {
-    sinon.stub(lookup, 'info').callsFake(function(name, region, resources, decrypt, callback) {
+test('[commands.info] success w/ decrypt', async(t) => {
+    sinon.stub(Lookup, 'info').callsFake((name, region, resources, decrypt) => {
         t.equal(name, 'my-stack-testing', 'lookup.info expected stack name');
         t.equal(region, 'us-east-1', 'lookup.info expected region');
         t.ok(resources, 'lookup.info resources');
         t.ok(decrypt, 'lookup.info decrypt=true');
-        callback();
+
+        return Promise.resolve();
     });
 
-    commands(opts).info('testing', true, true, function(err) {
+    const cmd = new Commands(opts, true);
+    try {
+        await cmd.info('testing', true, true);
+    } catch (err) {
         t.ifError(err, 'success');
-        lookup.info.restore();
-        t.end();
-    });
+    }
+
+    Lookup.info.restore();
+    t.end();
 });
 
-test('[commands.info] null provided as suffix', (t) => {
-    sinon.stub(lookup, 'info').callsFake(function(name, region, resources, decrypt, callback) {
+test('[commands.info] null provided as suffix', async(t) => {
+    sinon.stub(Lookup, 'info').callsFake((name) => {
         t.equal(name, 'my-stack', 'no trailing - on stack name');
-        callback();
+        return Promise.resolve();
     });
 
-    commands(opts).info(null, true, function(err) {
-        t.ifError(err, 'success');
-        lookup.info.restore();
-        t.end();
-    });
+    const cmd = new Commands(opts);
+
+    try {
+        await cmd.info(null, true);
+    } catch (err) {
+        t.error(err);
+    }
+
+    Lookup.info.restore();
+    t.end();
 });
 
-test('[commands.save] kms-mode', (t) => {
-    function whenDone() {}
+test('[commands.save] kms-mode', async(t) => {
+    const cmd = new Commands(opts, true);
 
-    sinon.stub(commands, 'commandContext').callsFake(function(config, suffix, operations, callback) {
-        t.deepEqual(config, opts, 'instantiate context with expected config');
-        t.deepEqual(suffix, 'testing', 'instantiate context with expected suffix');
-        t.ok(operations.every(function(op) { return typeof op === 'function'; }), 'instantiate context with array of operations');
-        t.equal(callback, whenDone, 'instantiate context with final callback function');
+    try {
+        const context = await cmd.save('testing', true);
 
-        var context = Object.assign({}, basicContext, {
-            next: function() {
-                t.pass('called next to begin process');
-                t.equal(context.kms, true, 'sets context.kms');
-                commands.commandContext.restore();
-                t.end();
-            }
-        });
+        t.deepEqual(context.config, opts, 'instantiate context with expected config');
+        t.deepEqual(context.suffix, 'testing', 'instantiate context with expected suffix');
+        t.equal(context.kms, true, 'sets context.kms');
+    } catch (err) {
+        t.error(err);
+    }
 
-        return context;
-    });
-
-    commands(opts).save('testing', true, whenDone);
+    t.end();
 });
 
-test('[commands.save] not kms-mode', (t) => {
-    function whenDone() {}
+test('[commands.save] not kms-mode', async(t) => {
+    const cmd = new Commands(opts, true);
 
-    sinon.stub(commands, 'commandContext').callsFake(function(config, suffix, operations, callback) {
-        t.deepEqual(config, opts, 'instantiate context with expected config');
-        t.deepEqual(suffix, 'testing', 'instantiate context with expected suffix');
-        t.ok(operations.every(function(op) { return typeof op === 'function'; }), 'instantiate context with array of operations');
-        t.equal(callback, whenDone, 'instantiate context with final callback function');
+    try {
+        const context = await cmd.save('testing');
 
-        var context = Object.assign({}, basicContext, {
-            next: function() {
-                t.pass('called next to begin process');
-                t.equal(context.kms, false, 'sets context.kms');
-                commands.commandContext.restore();
-                t.end();
-            }
-        });
+        t.deepEqual(context.config, opts, 'instantiate context with expected config');
+        t.deepEqual(context.suffix, 'testing', 'instantiate context with expected suffix');
+        t.equal(context.kms, false, 'sets context.kms');
+    } catch (err) {
+        t.error(err);
+    }
 
-        return context;
-    });
-
-    commands(opts).save('testing', whenDone);
+    t.end();
 });
 
 test('[commands.commandContext] sets context', (t) => {
-    var context = commands.commandContext(opts, 'testing', opts, function() {});
+    const context = new CommandContext(opts, 'testing', opts);
     t.equal(context.baseName, opts.name, 'sets baseName');
     t.equal(context.suffix, 'testing', 'sets suffix');
     t.equal(context.stackName, opts.name + '-testing', 'sets stackName');
@@ -453,861 +372,886 @@ test('[commands.commandContext] sets context', (t) => {
     t.equal(context.templateBucket, opts.templateBucket, 'sets templateBucket');
     t.deepEqual(context.overrides, {}, 'sets empty overrides');
     t.deepEqual(context.oldParameters, {}, 'sets empty oldParameters');
-    t.equal(typeof context.abort, 'function', 'sets abort function');
-    t.equal(typeof context.next, 'function', 'sets next function');
     t.end();
 });
 
 test('[commands.commandContext] handles null suffix', (t) => {
-    var context = commands.commandContext(opts, null, opts, function() {});
+    const context = new CommandContext(opts, null, opts);
     t.equal(context.stackName, opts.name, 'sets stackName without trailing -');
     t.end();
 });
 
-test('[commands.commandContext] iterates through operations', (t) => {
-    var i = 0;
-    var ops = [
-        function(context) {
+test('[commands.commandContext] iterates through operations', async(t) => {
+    let i = 0;
+    const ops = [
+        async() => {
             t.equal(i, 0, 'called first function');
             i++;
-            context.next();
         },
-        function(context) {
+        async() => {
             t.equal(i, 1, 'called second function');
             i++;
-            context.next();
         }
     ];
 
-    var context = commands.commandContext(opts, 'testing', ops, function(err, performed) {
-        t.ifError(err, 'success');
-        t.equal(performed, true, 'the requested command was performed');
-        t.end();
-    });
+    const context = new CommandContext(opts, 'testing', ops);
+    try {
+        await context.run();
+        t.equals(i, 2);
+    } catch (err) {
+        t.error(err);
+    }
 
-    context.next();
+    t.end();
 });
 
-test('[commands.commandContext] callback with diffs', (t) => {
-    const ops = [
-        commands.operations.confirmParameters,
-        commands.operations.confirmTemplate
-    ];
-
-    sinon.stub(prompt, 'confirm').callsFake(() => {
+test('[commands.commandContext] context.diffs', async(t) => {
+    sinon.stub(Prompt, 'confirm').callsFake(() => {
         return Promise.resolve(true);
     });
 
-    const context = commands.commandContext(opts, 'testing', ops, function(err, performed, diffs) {
-        t.ifError(err, 'success');
-        t.equal(performed, true, 'the requested command was performed');
-        t.deepEqual(diffs, {
+    try {
+        const ops = [
+            Operations.confirmParameters,
+            Operations.confirmTemplate
+        ];
+
+        const context = new CommandContext(opts, 'testing', ops);
+
+        context.oldParameters = { old: 'parameters' };
+        context.newParameters = { old: 'parameters', newones: 'too' };
+        context.oldTemplate = { old: 'template' };
+        context.newTemplate = { new: 'template' };
+
+        const performed = await context.run();
+
+        t.equals(performed, true);
+
+        t.deepEqual(context.diffs, {
             parameters: ' {\n\u001b[32m+  newones: "too"\u001b[39m\n }\n',
             template: '\x1B[90m {\n\x1B[39m\x1B[31m-"old": "template"\n\x1B[39m\x1B[32m+"new": "template"\n\x1B[39m\x1B[90m }\x1B[39m'
         }, 'callback provides diffs as 3rd arg');
-        prompt.confirm.restore();
-        t.end();
-    });
+    } catch (err) {
+        t.error(err);
+    }
 
-    context.oldParameters = { old: 'parameters' };
-    context.newParameters = { old: 'parameters', newones: 'too' };
-    context.oldTemplate = { old: 'template' };
-    context.newTemplate = { new: 'template' };
-
-    context.next();
+    Prompt.confirm.restore();
+    t.end();
 });
 
-test('[commands.commandContext] aborts', (t) => {
-    var ops = [
-        function(context) { context.abort(); }
-    ];
+test('[commands.commandContext] aborts', async(t) => {
 
-    var context = commands.commandContext(opts, 'testing', ops, function(err, performed) {
-        t.ifError(err, 'success');
+    try {
+        const ops = [
+            () => { throw new Error('aborted'); }
+        ];
+
+        const context = new CommandContext(opts, 'testing', ops);
+
+        const performed = await context.run();
+
         t.equal(performed, false, 'the requested command was not performed');
-        t.end();
-    });
+    } catch (err) {
+        t.error(err);
+    }
 
-    context.next();
+    t.end();
 });
 
-test('[commands.commandContext] aborts with error', (t) => {
-    var ops = [
-        function(context) { context.abort(new Error('failure')); }
-    ];
+test('[commands.commandContext] aborts with error', async(t) => {
+    try {
+        const ops = [
+            () => { throw new Error('failure'); }
+        ];
 
-    var context = commands.commandContext(opts, 'testing', ops, function(err, performed) {
-        t.equal(err.message, 'failure', 'success');
-        t.equal(performed, false, 'the requested command was not performed');
-        t.end();
-    });
+        const context = new CommandContext(opts, 'testing', ops);
 
-    context.next();
+        await context.run();
+        t.fail();
+    } catch (err) {
+        t.equals(err.message, 'failure');
+    }
+
+    t.end();
 });
 
-test('[commands.operations.updatePreamble] no template', (t) => {
-    sinon.stub(lookup, 'parameters').callsFake(function(name, region, callback) {
-        callback();
+test('[Operations.updatePreamble] no template', async(t) => {
+    sinon.stub(Lookup, 'parameters').callsFake(() => {
+        return Promise.resolve();
     });
 
-    sinon.stub(lookup, 'template').callsFake(function(name, region, callback) {
-        callback();
+    sinon.stub(Lookup, 'template').callsFake(() => {
+        return Promise.resolve();
     });
 
-    var context = Object.assign({}, basicContext, {
-        next: function() {
-            t.fail('should not call next');
-        },
-        abort: function(err) {
-            t.ok(err instanceof template.NotFoundError, 'expected error type');
-            t.equal(err.message, 'Could not load template: No template passed', 'expected error message');
-            lookup.parameters.restore();
-            lookup.template.restore();
-            t.end();
-        }
-    });
+    try {
+        const context = new CommandContext(opts, 'testing', []);
 
-    commands.operations.updatePreamble(context);
+        await Operations.updatePreamble(context);
+
+        t.fail();
+    } catch (err) {
+        t.ok(err instanceof Template.NotFoundError, 'expected error type');
+        t.equal(err.message, 'Could not load template: No template passed', 'expected error message');
+    }
+
+    Lookup.parameters.restore();
+    Lookup.template.restore();
+    t.end();
 });
 
-test('[commands.operations.updatePreamble] templatePath not found', (t) => {
-    sinon.stub(lookup, 'parameters').callsFake(function(name, region, callback) {
-        callback();
+test('[Operations.updatePreamble] templatePath not found', async(t) => {
+    sinon.stub(Lookup, 'parameters').callsFake(() => {
+        return Promise.resolve();
     });
 
-    sinon.stub(lookup, 'template').callsFake(function(name, region, callback) {
-        callback();
+    sinon.stub(Lookup, 'template').callsFake(() => {
+        return Promise.resolve();
     });
 
-    var context = Object.assign({}, basicContext, {
-        template: '/tmp/invalid/path/nonono.template.json',
-        next: function() {
-            t.fail('should not call next');
-        },
-        abort: function(err) {
-            t.ok(err instanceof template.NotFoundError, 'expected error type');
-            t.equal(err.message, 'Could not load template: /tmp/invalid/path/nonono.template.json does not exist', 'expected error message');
-            lookup.parameters.restore();
-            lookup.template.restore();
-            t.end();
-        }
-    });
+    try {
+        const context = new CommandContext(opts, 'testing', []);
+        context.template = '/tmp/invalid/path/nonono.template.json',
 
-    commands.operations.updatePreamble(context);
+        await Operations.updatePreamble(context);
+
+        t.fail();
+
+    } catch (err) {
+        t.ok(err instanceof Template.NotFoundError, 'expected error type');
+        t.equal(err.message, 'Could not load template: /tmp/invalid/path/nonono.template.json does not exist', 'expected error message');
+    }
+
+    Lookup.parameters.restore();
+    Lookup.template.restore();
+    t.end();
 });
 
-test('[commands.operations.updatePreamble] template invalid', (t) => {
-    sinon.stub(template, 'read').callsFake(function(templatePath, options, callback) {
-        callback(new template.InvalidTemplateError('failure'));
+test('[Operations.updatePreamble] template invalid', async(t) => {
+    sinon.stub(Template, 'read').callsFake(() => {
+        throw new Template.InvalidTemplateError('failure');
     });
 
-    sinon.stub(lookup, 'parameters').callsFake(function(name, region, callback) {
-        callback();
+    sinon.stub(Lookup, 'parameters').callsFake(() => {
+        return Promise.resolve();
     });
 
-    sinon.stub(lookup, 'template').callsFake(function(name, region, callback) {
-        callback();
+    sinon.stub(Lookup, 'template').callsFake(() => {
+        return Promise.resolve();
     });
 
-    var context = Object.assign({}, basicContext, {
-        template: 'example.template.json',
-        next: function() {
-            t.fail('should not call next');
-        },
-        abort: function(err) {
-            t.ok(err instanceof template.InvalidTemplateError, 'expected error type');
-            t.equal(err.message, 'Could not parse template: failure', 'expected error message');
-            template.read.restore();
-            lookup.parameters.restore();
-            lookup.template.restore();
-            t.end();
-        }
-    });
+    try {
+        const context = new CommandContext(opts, 'testing', []);
+        context.template = 'example.template.json',
+        await Operations.updatePreamble(context);
 
-    commands.operations.updatePreamble(context);
+        t.fail();
+    } catch (err) {
+        t.ok(err instanceof Template.InvalidTemplateError, 'expected error type');
+        t.equal(err.message, 'Could not parse template: failure', 'expected error message');
+    }
+
+    Template.read.restore();
+    Lookup.parameters.restore();
+    Lookup.template.restore();
+    t.end();
 });
 
-test('[commands.operations.updatePreamble] stack not found for parameters', (t) => {
-    sinon.stub(template, 'read').callsFake(function(templatePath, options, callback) {
-        callback();
+test('[Operations.updatePreamble] stack not found for parameters', async(t) => {
+    sinon.stub(Template, 'read').callsFake(() => {
+        return Promise.resolve();
     });
 
-    sinon.stub(lookup, 'parameters').callsFake(function(name, region, callback) {
-        callback(new lookup.StackNotFoundError('failure'));
+    sinon.stub(Lookup, 'parameters').callsFake(() => {
+        throw new Lookup.StackNotFoundError('failure');
     });
 
-    sinon.stub(lookup, 'template').callsFake(function(name, region, callback) {
-        callback();
+    sinon.stub(Lookup, 'template').callsFake(() => {
+        return Promise.resolve();
     });
 
-    var context = Object.assign({}, basicContext, {
-        template: 'example.template.json',
-        next: function() {
-            t.fail('should not call next');
-        },
-        abort: function(err) {
-            t.ok(err instanceof lookup.StackNotFoundError, 'expected error type');
-            t.equal(err.message, 'Missing stack: failure', 'expected error message');
-            template.read.restore();
-            lookup.parameters.restore();
-            lookup.template.restore();
-            t.end();
-        }
-    });
+    try {
+        const context = new CommandContext(opts, 'testing', []);
+        context.template = 'example.template.json',
 
-    commands.operations.updatePreamble(context);
+        await Operations.updatePreamble(context);
+
+        t.fail();
+    } catch (err) {
+        t.ok(err instanceof Lookup.StackNotFoundError, 'expected error type');
+        t.equal(err.message, 'Missing stack: failure', 'expected error message');
+    }
+
+    Template.read.restore();
+    Lookup.parameters.restore();
+    Lookup.template.restore();
+    t.end();
 });
 
-test('[commands.operations.updatePreamble] failure getting stack parameters', (t) => {
-    sinon.stub(template, 'read').callsFake(function(templatePath, options, callback) {
-        callback();
+test('[Operations.updatePreamble] failure getting stack parameters', async(t) => {
+    sinon.stub(Template, 'read').callsFake(() => {
+        return Promise.resolve();
     });
 
-    sinon.stub(lookup, 'parameters').callsFake(function(name, region, callback) {
-        callback(new lookup.CloudFormationError('failure'));
+    sinon.stub(Lookup, 'parameters').callsFake(() => {
+        throw new Lookup.CloudFormationError('failure');
     });
 
-    sinon.stub(lookup, 'template').callsFake(function(name, region, callback) {
-        callback();
+    sinon.stub(Lookup, 'template').callsFake(() => {
+        return Promise.resolve();
     });
 
-    var context = Object.assign({}, basicContext, {
-        template: 'example.template.json',
-        next: function() {
-            t.fail('should not call next');
-        },
-        abort: function(err) {
-            t.ok(err instanceof lookup.CloudFormationError, 'expected error type');
-            t.equal(err.message, 'Failed to find existing stack: failure', 'expected error message');
-            template.read.restore();
-            lookup.parameters.restore();
-            lookup.template.restore();
-            t.end();
-        }
-    });
+    try {
+        const context = new CommandContext(opts, 'testing', []);
+        context.template = 'example.template.json',
 
-    commands.operations.updatePreamble(context);
+        await Operations.updatePreamble(context);
+
+        t.fail();
+    } catch (err) {
+        t.ok(err instanceof Lookup.CloudFormationError, 'expected error type');
+        t.equal(err.message, 'Failed to find existing stack: failure', 'expected error message');
+    }
+
+    Template.read.restore();
+    Lookup.parameters.restore();
+    Lookup.template.restore();
+    t.end();
+
 });
 
-test('[commands.operations.updatePreamble] stack not found for template', (t) => {
-    sinon.stub(template, 'read').callsFake(function(templatePath, options, callback) {
-        callback();
+test('[Operations.updatePreamble] stack not found for template', async(t) => {
+    sinon.stub(Template, 'read').callsFake(() => {
+        return Promise.resolve();
     });
 
-    sinon.stub(lookup, 'parameters').callsFake(function(name, region, callback) {
-        callback();
+    sinon.stub(Lookup, 'parameters').callsFake(() => {
+        return Promise.resolve();
     });
 
-    sinon.stub(lookup, 'template').callsFake(function(name, region, callback) {
-        callback(new lookup.StackNotFoundError('failure'));
+    sinon.stub(Lookup, 'template').callsFake(() => {
+        throw new Lookup.StackNotFoundError('failure');
     });
 
-    var context = Object.assign({}, basicContext, {
-        template: 'example.template.json',
-        next: function() {
-            t.fail('should not call next');
-        },
-        abort: function(err) {
-            t.ok(err instanceof lookup.StackNotFoundError, 'expected error type');
-            t.equal(err.message, 'Missing stack: failure', 'expected error message');
-            template.read.restore();
-            lookup.parameters.restore();
-            lookup.template.restore();
-            t.end();
-        }
-    });
+    try {
+        const context = new CommandContext(opts, 'testing', []);
+        context.template = 'example.template.json',
 
-    commands.operations.updatePreamble(context);
+        await Operations.updatePreamble(context);
+
+        t.fail();
+    } catch (err) {
+        t.ok(err instanceof Lookup.StackNotFoundError, 'expected error type');
+        t.equal(err.message, 'Missing stack: failure', 'expected error message');
+    }
+
+    Template.read.restore();
+    Lookup.parameters.restore();
+    Lookup.template.restore();
+    t.end();
 });
 
-test('[commands.operations.updatePreamble] failure getting stack template', (t) => {
-    sinon.stub(template, 'read').callsFake(function(templatePath, options, callback) {
-        callback();
+test('[Operations.updatePreamble] failure getting stack template', async(t) => {
+    sinon.stub(Template, 'read').callsFake(() => {
+        return Promise.resolve();
     });
 
-    sinon.stub(lookup, 'parameters').callsFake(function(name, region, callback) {
-        callback();
+    sinon.stub(Lookup, 'parameters').callsFake(() => {
+        return Promise.resolve();
     });
 
-    sinon.stub(lookup, 'template').callsFake(function(name, region, callback) {
-        callback(new lookup.CloudFormationError('failure'));
+    sinon.stub(Lookup, 'template').callsFake(() => {
+        throw new Lookup.CloudFormationError('failure');
     });
 
-    var context = Object.assign({}, basicContext, {
-        template: 'example.template.json',
-        next: function() {
-            t.fail('should not call next');
-        },
-        abort: function(err) {
-            t.ok(err instanceof lookup.CloudFormationError, 'expected error type');
-            t.equal(err.message, 'Failed to find existing stack: failure', 'expected error message');
-            template.read.restore();
-            lookup.parameters.restore();
-            lookup.template.restore();
-            t.end();
-        }
-    });
+    try {
+        const context = new CommandContext(opts, 'testing', []);
+        context.template = 'example.template.json',
 
-    commands.operations.updatePreamble(context);
+        await Operations.updatePreamble(context);
+
+        t.fail();
+    } catch (err) {
+        t.ok(err instanceof Lookup.CloudFormationError, 'expected error type');
+        t.equal(err.message, 'Failed to find existing stack: failure', 'expected error message');
+    }
+
+    Template.read.restore();
+    Lookup.parameters.restore();
+    Lookup.template.restore();
+    t.end();
 });
 
-test('[commands.operations.updatePreamble] success', (t) => {
-    sinon.stub(template, 'read').callsFake(function(template, options, callback) {
+test('[Operations.updatePreamble] success', async(t) => {
+    sinon.stub(Template, 'read').callsFake((template, options) => {
         t.equal(template, path.resolve('example.template.json'), 'read correct template path');
         t.deepEqual(options, { template: 'options' }, 'passed overrides.templateOptions');
-        callback(null, { new: 'template' });
+        return Promise.resolve({ new: 'template' });
     });
 
-    sinon.stub(lookup, 'parameters').callsFake(function(name, region, callback) {
-        callback(null, { old: 'parameters' });
+    sinon.stub(Lookup, 'parameters').callsFake(() => {
+        return Promise.resolve({ old: 'parameters' });
     });
 
-    sinon.stub(lookup, 'template').callsFake(function(name, region, callback) {
-        callback(null, { old: 'template' });
+    sinon.stub(Lookup, 'template').callsFake(() => {
+        return Promise.resolve({ old: 'template' });
     });
 
-    var context = Object.assign({}, basicContext, {
-        template: 'example.template.json',
-        overrides: { templateOptions: { template: 'options' } },
-        next: function() {
-            t.pass('calls next()');
-            t.deepEqual(context.newTemplate, { new: 'template' }, 'sets context.newTemplate');
-            t.deepEqual(context.oldTemplate, { old: 'template' }, 'sets context.oldTemplate');
-            t.deepEqual(context.oldParameters, { old: 'parameters' }, 'sets context.oldParameters');
-            template.read.restore();
-            lookup.parameters.restore();
-            lookup.template.restore();
-            t.end();
-        },
-        abort: function(err) {
-            t.ifError(err, 'failed');
-        }
-    });
+    try {
+        const context = new CommandContext(opts, 'testing', []);
+        context.template = 'example.template.json',
+        context.overrides = { templateOptions: { template: 'options' } },
 
-    commands.operations.updatePreamble(context);
+        await Operations.updatePreamble(context);
+
+        t.deepEqual(context.newTemplate, { new: 'template' }, 'sets context.newTemplate');
+        t.deepEqual(context.oldTemplate, { old: 'template' }, 'sets context.oldTemplate');
+        t.deepEqual(context.oldParameters, { old: 'parameters' }, 'sets context.oldParameters');
+    } catch (err) {
+        t.error(err);
+    }
+
+    Template.read.restore();
+    Lookup.parameters.restore();
+    Lookup.template.restore();
+    t.end();
 });
 
-test('[commands.operations.updatePreamble] success with template object', (t) => {
-    sinon.stub(lookup, 'parameters').callsFake(function(name, region, callback) {
-        callback(null, { old: 'parameters' });
+test('[Operations.updatePreamble] success with template object', async(t) => {
+    sinon.stub(Lookup, 'parameters').callsFake(() => {
+        return Promise.resolve({ old: 'parameters' });
     });
 
-    sinon.stub(lookup, 'template').callsFake(function(name, region, callback) {
-        callback(null, { old: 'template' });
+    sinon.stub(Lookup, 'template').callsFake(() => {
+        return Promise.resolve({ old: 'template' });
     });
 
-    var context = Object.assign({}, basicContext, {
-        template: { arbitrary: 'template' },
-        next: function() {
-            t.pass('calls next()');
-            t.deepEqual(context.newTemplate, { arbitrary: 'template' }, 'sets context.newTemplate');
-            t.deepEqual(context.oldTemplate, { old: 'template' }, 'sets context.oldTemplate');
-            t.deepEqual(context.oldParameters, { old: 'parameters' }, 'sets context.oldParameters');
-            lookup.parameters.restore();
-            lookup.template.restore();
-            t.end();
-        },
-        abort: function(err) {
-            t.ifError(err, 'failed');
-        }
-    });
+    try {
+        const context = new CommandContext(opts, 'testing', []);
+        context.template = { arbitrary: 'template' },
 
-    commands.operations.updatePreamble(context);
+        await Operations.updatePreamble(context);
+
+        t.deepEqual(context.newTemplate, { arbitrary: 'template' }, 'sets context.newTemplate');
+        t.deepEqual(context.oldTemplate, { old: 'template' }, 'sets context.oldTemplate');
+        t.deepEqual(context.oldParameters, { old: 'parameters' }, 'sets context.oldParameters');
+    } catch (err) {
+        t.error(err);
+    }
+
+    Lookup.parameters.restore();
+    Lookup.template.restore();
+    t.end();
 });
 
-test('[commands.operations.getMasterConfig] success', (t) => {
-
-    sinon.stub(lookup, 'defaultConfiguration').callsFake(function(s3Url, callback) {
-        callback(null, { old: 'fresh' });
+test('[Operations.getMasterConfig] success', async(t) => {
+    sinon.stub(Lookup, 'defaultConfiguration').callsFake(() => {
+        return Promise.resolve({ old: 'fresh' });
     });
 
-    var context = Object.assign({}, basicContext, {
-        overrides: { masterConfig: 's3://chill.cfn.json' },
-        next: function() {
-            t.pass('calls next()');
-            t.deepEqual(context.oldParameters, { old: 'secure:staleelats' }, 'sets context.oldParameters');
-            lookup.defaultConfiguration.restore();
-            t.end();
-        },
-        abort: function(err) {
-            if (err) t.error(err, 'failed');
-        }
-    });
+    try {
+        const context = new CommandContext(opts, 'testing', []);
+        context.overrides = { masterConfig: 's3://chill.cfn.json' },
+        context.oldParameters = { old: 'secure:staleelats' };
 
+        await Operations.getMasterConfig(context);
 
-    context.oldParameters = { old: 'secure:staleelats' };
-    commands.operations.getMasterConfig(context);
+        t.deepEqual(context.oldParameters, { old: 'secure:staleelats' }, 'sets context.oldParameters');
+    } catch (err) {
+        t.error(err);
+    }
+
+    Lookup.defaultConfiguration.restore();
+    t.end();
 });
 
-test('[commands.operations.getMasterConfig] no-op', (t) => {
-
-    sinon.stub(lookup, 'defaultConfiguration').callsFake(function(s3Url, callback) {
-        callback(null, { old: 'fresh' });
+test('[Operations.getMasterConfig] no-op', async(t) => {
+    sinon.stub(Lookup, 'defaultConfiguration').callsFake(() => {
+        return Promise.resolve({ old: 'fresh' });
     });
 
-    var context = Object.assign({}, basicContext, {
-        overrides: {},
-        next: function() {
-            t.pass('calls next()');
-            t.deepEqual(context.oldParameters, { old: 'stale' }, 'context.oldParameters stays the same');
-            lookup.defaultConfiguration.restore();
-            t.end();
-        },
-        abort: function(err) {
-            t.ifError(err, 'failed');
-        }
-    });
+    try {
+        const context = new CommandContext(opts, 'testing', []);
+        context.overrides = {},
+        context.oldParameters = { old: 'stale' };
 
-    context.oldParameters = { old: 'stale' };
-    commands.operations.getMasterConfig(context);
+        await Operations.getMasterConfig(context);
+
+        t.deepEqual(context.oldParameters, { old: 'stale' }, 'context.oldParameters stays the same');
+    } catch (err) {
+        t.error(err);
+    }
+
+    Lookup.defaultConfiguration.restore();
+    t.end();
+
 });
 
-test('[commands.operations.getMasterConfig] failed', (t) => {
-
-    sinon.stub(lookup, 'defaultConfiguration').callsFake(function(s3Url, callback) {
-        callback(new Error(), {});
+test('[Operations.getMasterConfig] failed', async(t) => {
+    sinon.stub(Lookup, 'defaultConfiguration').callsFake(() => {
+        throw new Error();
     });
 
-    var context = Object.assign({}, basicContext, {
-        overrides: { masterConfig: 's3://unchill.cfn.json' },
-        next: function() {
-            t.fail('should not call next');
-        },
-        abort: function() {
-            lookup.defaultConfiguration.restore();
-            t.end();
-        }
-    });
+    try {
+        const context = new CommandContext(opts, 'testing', []);
+        context.overrides = { masterConfig: 's3://unchill.cfn.json' },
+        context.oldParameters = { old: 'stale' };
+        await Operations.getMasterConfig(context);
 
-    context.oldParameters = { old: 'stale' };
-    commands.operations.getMasterConfig(context);
+        t.fail();
+    } catch (err) {
+        t.ok(err instanceof Error);
+    }
+
+    Lookup.defaultConfiguration.restore();
+    t.end();
 });
 
-test('[commands.operations.getMasterConfig] no matching oldParameters does not put masterConfig keys into oldParameters for better looking diff at the end', (t) => {
-
-    sinon.stub(lookup, 'defaultConfiguration').callsFake(function(s3Url, callback) {
-        callback(null, { bingo: 'fresh' });
+test('[Operations.getMasterConfig] no matching oldParameters does not put masterConfig keys into oldParameters for better looking diff at the end', async(t) => {
+    sinon.stub(Lookup, 'defaultConfiguration').callsFake(() => {
+        return Promise.resolve({ bingo: 'fresh' });
     });
 
-    var context = Object.assign({}, basicContext, {
-        overrides: { masterConfig: 's3://chill.cfn.json' },
-        next: function() {
-            t.pass('calls next()');
-            t.deepEqual(context.oldParameters, { old: 'stale' }, 'leaves context.oldParameters alone');
-            lookup.defaultConfiguration.restore();
-            t.end();
-        },
-        abort: function(err) {
-            t.ifError(err, 'failed');
-        }
-    });
+    try {
+        const context = new CommandContext(opts, 'testing', []);
+        context.overrides = { masterConfig: 's3://chill.cfn.json' },
 
-    context.oldParameters = { old: 'stale' };
-    commands.operations.getMasterConfig(context);
+        context.oldParameters = { old: 'stale' };
+        await Operations.getMasterConfig(context);
+
+        t.deepEqual(context.oldParameters, { old: 'stale' }, 'leaves context.oldParameters alone');
+    } catch (err) {
+        t.error(err);
+    }
+
+    Lookup.defaultConfiguration.restore();
+    t.end();
 });
 
-test('[commands.operations.getMasterConfig] adding a newParameter that matches masterConfig parameter does not get overwritten, so that user is intentional in adding newParameters', (t) => {
-
-    sinon.stub(lookup, 'defaultConfiguration').callsFake(function(s3Url, callback) {
-        callback(null, { old: 'fresh' });
+test('[Operations.getMasterConfig] adding a newParameter that matches masterConfig parameter does not get overwritten, so that user is intentional in adding newParameters', async(t) => {
+    sinon.stub(Lookup, 'defaultConfiguration').callsFake(() => {
+        return Promise.resolve({ old: 'fresh' });
     });
 
-    var context = Object.assign({}, basicContext, {
-        overrides: { masterConfig: 's3://chill.cfn.json' },
-        next: function() {
-            t.pass('calls next()');
-            t.deepEqual(context.oldParameters, { hello: 'goodbye' }, 'no matching keys between oldParameters and masterConfig, no oldParameters are replaced');
-            t.deepEqual(context.newTemplate.Parameters, { old: 'special whale' }, 'newParameters are not replaced despite matching keys');
-            lookup.defaultConfiguration.restore();
-            t.end();
-        },
-        abort: function(err) {
-            t.ifError(err, 'failed');
-        }
-    });
+    try {
+        const context = new CommandContext(opts, 'testing', []);
+        context.overrides = { masterConfig: 's3://chill.cfn.json' },
 
-    context.oldParameters = { hello: 'goodbye' };
-    context.newTemplate = {};
-    context.newTemplate.Parameters = { old: 'special whale' };
-    commands.operations.getMasterConfig(context);
+        context.oldParameters = { hello: 'goodbye' };
+        context.newTemplate = {};
+        context.newTemplate.Parameters = { old: 'special whale' };
+        Operations.getMasterConfig(context);
+
+        t.deepEqual(context.oldParameters, { hello: 'goodbye' }, 'no matching keys between oldParameters and masterConfig, no oldParameters are replaced');
+        t.deepEqual(context.newTemplate.Parameters, { old: 'special whale' }, 'newParameters are not replaced despite matching keys');
+    } catch (err) {
+        t.error(err);
+    }
+
+    Lookup.defaultConfiguration.restore();
+    t.end();
 });
 
-test('[commands.operations.promptParameters] force-mode', (t) => {
-    sinon.stub(template, 'questions').callsFake(function() {
+test('[Operations.promptParameters] force-mode', async(t) => {
+    sinon.stub(Template, 'questions').callsFake(() => {
         t.fail('should not build questions');
     });
 
-    var context = Object.assign({}, basicContext, {
-        newTemplate: { Parameters: { old: {}, new: {} } },
-        oldParameters: { old: 'parameters', extra: 'value' },
-        overrides: { force: true },
-        next: function(err) {
-            t.ifError(err, 'success');
-            t.deepEqual(context.newParameters, { old: 'parameters' }, 'sets new parameters to old values, excluding values not present in template');
-            t.notOk(context.newParameters.new, 'does not provide a parameter value if no default for it was found');
-            template.questions.restore();
-            t.end();
-        }
-    });
+    try {
+        const context = new CommandContext(opts, 'testing', []);
+        context.newTemplate = { Parameters: { old: {}, new: {} } },
+        context.oldParameters = { old: 'parameters', extra: 'value' },
+        context.overrides = { force: true },
 
-    commands.operations.promptParameters(context);
+        await Operations.promptParameters(context);
+
+        t.deepEqual(context.newParameters, { old: 'parameters' }, 'sets new parameters to old values, excluding values not present in template');
+        t.notOk(context.newParameters.new, 'does not provide a parameter value if no default for it was found');
+    } catch (err) {
+        t.error(err);
+    }
+
+    Template.questions.restore();
+    t.end();
 });
 
-test('[commands.operations.promptParameters] not force-mode', (t) => {
-    var questions = { parameter: 'questions' };
-    var answers = { parameter: 'answers' };
+test('[Operations.promptParameters] not force-mode', async(t) => {
+    const questions = { parameter: 'questions' };
+    const answers = { parameter: 'answers' };
 
-    sinon.stub(template, 'questions').callsFake(function(template, overrides) {
+    sinon.stub(Template, 'questions').callsFake((template, overrides) => {
         t.deepEqual(template, { new: 'template' }, 'builds questions for new template');
         t.deepEqual(overrides, { defaults: { old: 'parameters' }, kmsKeyId: undefined, region: 'us-east-1' }, 'uses old parameters as default values');
         return questions;
     });
 
-    sinon.stub(prompt, 'parameters').callsFake((question) => {
+    sinon.stub(Prompt, 'parameters').callsFake((question) => {
         t.deepEqual(question, questions, 'prompts for derived questions');
         return Promise.resolve(answers);
     });
 
-    var context = Object.assign({}, basicContext, {
-        newTemplate: { new: 'template' },
-        oldParameters: { old: 'parameters' },
-        next: function(err) {
-            t.ifError(err, 'success');
-            t.deepEqual(context.newParameters, answers, 'sets new parameters to prompt responses');
-            template.questions.restore();
-            prompt.parameters.restore();
-            t.end();
-        }
-    });
+    try {
+        const context = new CommandContext(opts, 'testing', []);
+        context.newTemplate = { new: 'template' },
+        context.oldParameters = { old: 'parameters' },
 
-    commands.operations.promptParameters(context);
+        await Operations.promptParameters(context);
+
+        t.deepEqual(context.newParameters, answers, 'sets new parameters to prompt responses');
+    } catch (err) {
+        t.error(err);
+    }
+
+    Template.questions.restore();
+    Prompt.parameters.restore();
+    t.end();
 });
 
-test('[commands.operations.promptParameters] with parameter and kms overrides', (t) => {
-    sinon.stub(template, 'questions').callsFake(function(template, overrides) {
+test('[Operations.promptParameters] with parameter and kms overrides', async(t) => {
+    sinon.stub(Template, 'questions').callsFake((template, overrides) => {
         t.deepEqual(overrides, { defaults: { old: 'overriden' }, kmsKeyId: 'this is a bomb key', region: 'us-west-2' }, 'uses override parameters');
         return { parameter: 'questions' };
     });
 
-    sinon.stub(prompt, 'parameters').callsFake(() => {
+    sinon.stub(Prompt, 'parameters').callsFake(() => {
         return Promise.resolve({ the: 'answers' });
     });
 
-    var context = Object.assign({}, basicContext, {
-        stackRegion: 'us-west-2',
-        newTemplate: { new: 'template' },
-        oldParameters: { old: 'parameters' },
-        overrides: { parameters: { old: 'overriden' }, kms: 'this is a bomb key' },
-        next: function(err) {
-            t.ifError(err, 'success');
-            template.questions.restore();
-            prompt.parameters.restore();
-            t.end();
-        }
-    });
+    try {
+        const context = new CommandContext(opts, 'testing', []);
+        context.stackRegion = 'us-west-2',
+        context.newTemplate = { new: 'template' },
+        context.oldParameters = { old: 'parameters' },
+        context.overrides = { parameters: { old: 'overriden' }, kms: 'this is a bomb key' },
 
-    commands.operations.promptParameters(context);
+        await Operations.promptParameters(context);
+    } catch (err) {
+        t.error(err);
+    }
+
+    Template.questions.restore();
+    Prompt.parameters.restore();
+    t.end();
 });
 
-test('[commands.operations.promptParameters] force-mode with no parameters in new template', (t) => {
-    var context = Object.assign({}, basicContext, {
-        newTemplate: { new: 'template' },
-        overrides: { force: true },
-        next: function(err) {
-            t.ifError(err, 'success');
-            t.deepEqual(context.newParameters, {}, 'sets context.newParameters to empty');
-            t.end();
-        }
-    });
+test('[Operations.promptParameters] force-mode with no parameters in new template', async(t) => {
+    try {
+        const context = new CommandContext(opts, 'testing', []);
+        context.newTemplate = { new: 'template' },
+        context.overrides = { force: true },
 
-    commands.operations.promptParameters(context);
+        await Operations.promptParameters(context);
+
+        t.deepEqual(context.newParameters, {}, 'sets context.newParameters to empty');
+    } catch (err) {
+        t.error(err);
+    }
+
+    t.end();
 });
 
-test('[commands.operations.promptParameters] reject overrides that are not in old or new template', (t) => {
-    sinon.stub(prompt, 'parameters').callsFake(() => {
+test('[Operations.promptParameters] reject overrides that are not in old or new template', async(t) => {
+    sinon.stub(Prompt, 'parameters').callsFake(() => {
         return Promise.resolve({ some: 'answers' });
     });
 
-    var context = Object.assign({}, basicContext, {
-        newTemplate: { Parameters: { Name: {} } },
-        oldParameters: { Name: 'name', Age: 'age' },
-        overrides: { parameters: { Name: 'overriden', Born: 'ignored' } },
-        next: function(err) {
-            t.ifError(err, 'success');
-            t.notOk(context.oldParameters.Born, 'excludes extraneous parameter override');
-            prompt.parameters.restore();
-            t.end();
-        }
-    });
+    try {
+        const context = new CommandContext(opts, 'testing', []);
+        context.newTemplate = { Parameters: { Name: {} } };
+        context.oldParameters = { Name: 'name', Age: 'age' };
+        context.overrides = { parameters: { Name: 'overriden', Born: 'ignored' } };
 
-    commands.operations.promptParameters(context);
+        await Operations.promptParameters(context);
+
+        t.notOk(context.oldParameters.Born, 'excludes extraneous parameter override');
+    } catch (err) {
+        t.error(err);
+    }
+
+    Prompt.parameters.restore();
+    t.end();
 });
 
-test('[commands.operations.promptParameters] changesetParameters use previous value for unchanged parameter values', (t) => {
-    var oldParameters = { old: 'parameters', the: 'answers' };
-    var newParameters = { old: 'newvalue', the: 'answers' };
+test('[Operations.promptParameters] changesetParameters use previous value for unchanged parameter values', async(t) => {
+    const oldParameters = { old: 'parameters', the: 'answers' };
+    const newParameters = { old: 'newvalue', the: 'answers' };
 
-    sinon.stub(prompt, 'parameters').callsFake(() => {
+    sinon.stub(Prompt, 'parameters').callsFake(() => {
         return Promise.resolve(newParameters);
     });
 
-    var context = Object.assign({}, basicContext, {
-        stackRegion: 'us-west-2',
-        newTemplate: { new: 'template' },
-        oldParameters: oldParameters,
-        overrides: {},
-        next: function(err) {
-            t.ifError(err, 'success');
-            t.deepEqual(context.changesetParameters, [{ ParameterKey: 'old', ParameterValue: 'newvalue' }, { ParameterKey: 'the', UsePreviousValue: true }]);
-            prompt.parameters.restore();
-            t.end();
-        }
-    });
+    try {
+        const context = new CommandContext(opts, 'testing', []);
+        context.stackRegion = 'us-west-2',
+        context.newTemplate = { new: 'template' },
+        context.oldParameters = oldParameters,
+        context.overrides = {},
 
-    commands.operations.promptParameters(context);
+        await Operations.promptParameters(context);
+
+        t.deepEqual(context.changesetParameters, [{ ParameterKey: 'old', ParameterValue: 'newvalue' }, { ParameterKey: 'the', UsePreviousValue: true }]);
+    } catch (err) {
+        t.error(err);
+    }
+
+    Prompt.parameters.restore();
+    t.end();
 });
 
-test('[commands.operations.promptParameters] changesetParameters does not set UsePreviousValue when overrides set the value', (t) => {
-    var oldParameters = { beep: 'boop' };
-    var newParameters = { beep: 'boop' };
+test('[Operations.promptParameters] changesetParameters does not set UsePreviousValue when overrides set the value', async(t) => {
+    const oldParameters = { beep: 'boop' };
+    const newParameters = { beep: 'boop' };
 
-    sinon.stub(prompt, 'parameters').callsFake(() => {
+    sinon.stub(Prompt, 'parameters').callsFake(() => {
         return Promise.resolve(newParameters);
     });
 
-    var context = Object.assign({}, basicContext, {
-        stackRegion: 'us-west-2',
-        newTemplate: { new: 'template' },
-        oldParameters: oldParameters,
-        overrides: { parameters: { beep: 'boop' } },
-        next: function(err) {
-            t.ifError(err, 'success');
-            t.deepEqual(context.changesetParameters, [{ ParameterKey: 'beep', ParameterValue: 'boop' }]);
-            prompt.parameters.restore();
-            t.end();
-        }
-    });
+    try {
+        const context = new CommandContext(opts, 'testing', []);
+        context.stackRegion = 'us-west-2',
+        context.newTemplate = { new: 'template' },
+        context.oldParameters = oldParameters,
+        context.overrides = { parameters: { beep: 'boop' } },
 
-    commands.operations.promptParameters(context);
+        await Operations.promptParameters(context);
+
+        t.deepEqual(context.changesetParameters, [{ ParameterKey: 'beep', ParameterValue: 'boop' }]);
+    } catch (err) {
+        t.error(err);
+    }
+    Prompt.parameters.restore();
+    t.end();
 });
 
-test('[commands.operations.promptParameters] changesetParameters sets UsePreviousValue to true in the absence of overrides', (t) => {
-    var oldParameters = { beep: 'bop' };
-    var newParameters = { beep: 'bop' };
+test('[Operations.promptParameters] changesetParameters sets UsePreviousValue to true in the absence of overrides', async(t) => {
+    const oldParameters = { beep: 'bop' };
+    const newParameters = { beep: 'bop' };
 
-    sinon.stub(prompt, 'parameters').callsFake(() => {
+    sinon.stub(Prompt, 'parameters').callsFake(() => {
         return Promise.resolve(newParameters);
     });
 
-    var context = Object.assign({}, basicContext, {
-        stackRegion: 'us-west-2',
-        newTemplate: { new: 'template' },
-        oldParameters: oldParameters,
-        overrides: {},
-        next: function(err) {
-            t.ifError(err, 'success');
-            t.deepEqual(context.changesetParameters, [{ ParameterKey: 'beep', UsePreviousValue: true }]);
-            prompt.parameters.restore();
-            t.end();
-        }
-    });
+    try {
+        const context = new CommandContext(opts, 'testing', []);
+        context.stackRegion = 'us-west-2',
+        context.newTemplate = { new: 'template' },
+        context.oldParameters = oldParameters,
+        context.overrides = {},
 
-    commands.operations.promptParameters(context);
+        await Operations.promptParameters(context);
+
+        t.deepEqual(context.changesetParameters, [{ ParameterKey: 'beep', UsePreviousValue: true }]);
+    } catch (err) {
+        t.error(err);
+    }
+
+    Prompt.parameters.restore();
+    t.end();
 });
 
-test('[commands.operations.promptParameters] do not set UsePreviousValue when creating a new stack', (t) => {
-    var oldParameters = { beep: 'boop' };
-    var newParameters = { beep: 'boop' };
+test('[Operations.promptParameters] do not set UsePreviousValue when creating a new stack', async(t) => {
+    const oldParameters = { beep: 'boop' };
+    const newParameters = { beep: 'boop' };
 
-    sinon.stub(prompt, 'parameters').callsFake(() => {
+    sinon.stub(Prompt, 'parameters').callsFake(() => {
         return Promise.resolve(newParameters);
     });
 
-    var context = Object.assign({}, basicContext, {
-        stackRegion: 'us-west-2',
-        newTemplate: { new: 'template' },
-        create: true,
-        oldParameters: oldParameters,
-        overrides: { parameters: { beep: 'boop' } },
-        next: function(err) {
-            t.ifError(err, 'success');
-            t.ok(context.create, 'context.create is set to true');
-            t.deepEqual(context.changesetParameters, [{ ParameterKey: 'beep', ParameterValue: 'boop' }]);
-            prompt.parameters.restore();
-            t.end();
-        }
-    });
+    try {
+        const context = new CommandContext(opts, 'testing', []);
+        context.stackRegion = 'us-west-2';
+        context.newTemplate = { new: 'template' };
+        context.create = true;
+        context.oldParameters = oldParameters;
+        context.overrides = { parameters: { beep: 'boop' } };
 
-    commands.operations.promptParameters(context);
+        await Operations.promptParameters(context);
+
+        t.ok(context.create, 'context.create is set to true');
+        t.deepEqual(context.changesetParameters, [{ ParameterKey: 'beep', ParameterValue: 'boop' }]);
+    } catch (err) {
+        t.error(err);
+    }
+
+    Prompt.parameters.restore();
+    t.end();
 });
 
-test('[commands.operations.confirmParameters] force-mode', (t) => {
-    var context = Object.assign({}, basicContext, {
-        overrides: { force: true },
-        oldParameters: { old: 'parameters' },
-        newParameters: { old: 'parameters' },
-        next: function() {
-            t.pass('skipped prompting');
-            t.end();
-        }
-    });
+test('[Operations.confirmParameters] force-mode', async(t) => {
+    try {
+        const context = new CommandContext(opts, 'testing', []);
+        context.overrides = { force: true };
+        context.oldParameters = { old: 'parameters' };
+        context.newParameters = { old: 'parameters' };
 
-    commands.operations.confirmParameters(context);
+        await Operations.confirmParameters(context);
+
+        t.pass('skipped prompting');
+    } catch (err) {
+        t.error(err);
+    }
+
+    t.end();
 });
 
-test('[commands.operations.confirmParameters] no difference', (t) => {
-    var context = Object.assign({}, basicContext, {
-        oldParameters: { old: 'parameters' },
-        newParameters: { old: 'parameters' },
-        next: function() {
-            t.pass('skipped prompting');
-            t.end();
-        }
-    });
+test('[Operations.confirmParameters] no difference', async(t) => {
+    try {
+        const context = new CommandContext(opts, 'testing', []);
+        context.oldParameters = { old: 'parameters' };
+        context.newParameters = { old: 'parameters' };
 
-    commands.operations.confirmParameters(context);
+        await Operations.confirmParameters(context);
+
+        t.pass('skipped prompting');
+    } catch (err) {
+        t.error(err);
+    }
+
+    t.end();
 });
 
-test('[commands.operations.confirmParameters] preapproved', async(t) => {
+test('[Operations.confirmParameters] preapproved', async(t) => {
     sinon.stub(console, 'log');
 
-    const context = Object.assign({}, basicContext, {
-        oldParameters: { old: 'parameters' },
-        newParameters: { old: 'parameters', newones: 'too' },
-        overrides: {
+    try {
+        const context = new CommandContext(opts, 'testing', []);
+        context.oldParameters = { old: 'parameters' };
+        context.newParameters = { old: 'parameters', newones: 'too' };
+        context.overrides = {
             preapproved: { parameters: [' {\n\u001b[32m+  newones: "too"\u001b[39m\n }\n'] }
-        },
-        next: function() {
-            t.ok(console.log.calledWith('Auto-confirming parameter changes... Changes were pre-approved in another region.'), 'Skip notice printed');
-            t.pass('skipped prompting');
-            t.ok(context.overrides.skipConfirmParameters, 'sets skipConfirmParameters');
-            console.log.restore();
-            t.end();
-        }
-    });
+        };
 
-    await commands.operations.confirmParameters(context);
+        await Operations.confirmParameters(context);
+
+        t.ok(console.log.calledWith('Auto-confirming parameter changes... Changes were pre-approved in another region.'), 'Skip notice printed');
+        t.pass('skipped prompting');
+        t.ok(context.overrides.skipConfirmParameters, 'sets skipConfirmParameters');
+    } catch (err) {
+        t.error(err);
+    }
+
+    console.log.restore();
+    t.end();
 });
 
-test('[commands.operations.confirmParameters] rejected', async(t) => {
-    t.plan(2);
-
-    sinon.stub(prompt, 'confirm').callsFake((message) => {
+test('[Operations.confirmParameters] rejected', async(t) => {
+    sinon.stub(Prompt, 'confirm').callsFake((message) => {
         t.equal(message, ' {\n\x1b[31m-  old: "parameters"\x1b[39m\n\x1b[32m+  new: "parameterz"\x1b[39m\n }\n\nAccept parameter changes?', 'prompted appropriate message');
         return Promise.resolve(false);
     });
 
-    await commands.operations.confirmParameters(Object.assign({}, basicContext, {
-        oldParameters: { old: 'parameters' },
-        newParameters: { new: 'parameterz' },
-        overrides: {},
-        next: function() {
-            t.fail('should not proceed');
-        },
-        abort: function(err) {
-            t.ifError(err, 'aborted');
-            prompt.confirm.restore();
-            t.end();
-        }
-    }));
+    try {
+        const context = new CommandContext(opts, 'testing', []);
+        context.oldParameters = { old: 'parameters' };
+        context.newParameters = { new: 'parameterz' };
+        context.overrides = {};
+
+        await Operations.confirmParameters(context);
+
+        t.fail();
+    } catch (err) {
+        t.equals(err.message, 'aborted'); // new
+    }
+
+    Prompt.confirm.restore();
+    t.end();
 });
 
-test('[commands.operations.confirmParameters] accepted', async(t) => {
-    t.plan(2);
-
-    sinon.stub(prompt, 'confirm').callsFake((message) => {
+test('[Operations.confirmParameters] accepted', async(t) => {
+    sinon.stub(Prompt, 'confirm').callsFake((message) => {
         t.equal(message, ' {\n\x1b[31m-  old: "parameters"\x1b[39m\n\x1b[32m+  new: "parameters"\x1b[39m\n }\n\nAccept parameter changes?', 'prompted appropriate message');
         return Promise.resolve(true);
     });
 
-    await commands.operations.confirmParameters(Object.assign({}, basicContext, {
-        oldParameters: { old: 'parameters' },
-        newParameters: { new: 'parameters' },
-        overrides: {},
-        next: function(err) {
-            t.ifError(err, 'success');
-            prompt.confirm.restore();
-            t.end();
-        },
-        abort: function() {
-            t.fail('should proceed');
-        }
-    }));
+    try {
+        const context = new CommandContext(opts, 'testing', []);
+        context.oldParameters = { old: 'parameters' },
+        context.newParameters = { new: 'parameters' },
+        context.overrides = {},
+
+        await Operations.confirmParameters(context);
+    } catch (err) {
+        t.error(err);
+    }
+
+    Prompt.confirm.restore();
+    t.end();
 });
 
-test('[commands.operations.confirmTemplate] no difference', async(t) => {
-    var context = Object.assign({}, basicContext, {
-        oldTemplate: { old: 'template' },
-        newTemplate: { old: 'template' },
-        next: function() {
-            t.pass('skipped prompting');
-            t.end();
-        }
-    });
+test('[Operations.confirmTemplate] no difference', async(t) => {
+    try {
+        const context = new CommandContext(opts, 'testing', []);
+        context.oldTemplate = { old: 'template' },
+        context.newTemplate = { old: 'template' },
 
-    await commands.operations.confirmTemplate(context);
+        await Operations.confirmTemplate(context);
+
+        t.pass('skipped prompting');
+    } catch (err) {
+        t.error(err);
+    }
+
+    t.end();
 });
 
-test('[commands.operations.confirmTemplate] undefined', async(t) => {
-    var context = Object.assign({}, basicContext, {
-        oldTemplate: { Parameters: { old: undefined } },
-        newTemplate: { Parameters: {} },
-        next: function() {
-            t.pass('skipped prompting');
-            t.end();
-        }
-    });
+test('[Operations.confirmTemplate] undefined', async(t) => {
+    try {
+        const context = new CommandContext(opts, 'testing', []);
+        context.oldTemplate = { Parameters: { old: undefined } },
+        context.newTemplate = { Parameters: {} },
 
-    await commands.operations.confirmTemplate(context);
+        await Operations.confirmTemplate(context);
+
+        t.pass('skipped prompting');
+    } catch (err) {
+        t.error(err);
+    }
+
+    t.end();
 });
 
-test('[commands.operations.confirmTemplate] force-mode', async(t) => {
-    var context = Object.assign({}, basicContext, {
-        oldTemplate: { old: 'template' },
-        newTemplate: { new: 'template' },
-        overrides: { force: true },
-        next: function(err) {
-            t.ifError(err, 'should proceed');
-            t.end();
-        },
-        abort: function(err) {
-            t.ifError(err, 'should not proceed');
-        }
-    });
+test('[Operations.confirmTemplate] force-mode', async(t) => {
+    try {
+        const context = new CommandContext(opts, 'testing', []);
+        context.oldTemplate = { old: 'template' },
+        context.newTemplate = { new: 'template' },
+        context.overrides = { force: true },
 
-    await commands.operations.confirmTemplate(context);
+        await Operations.confirmTemplate(context);
+    } catch (err) {
+        t.error(err);
+    }
+
+    t.end();
 });
 
-test('[commands.operations.confirmTemplate] preapproved', async(t) => {
+test('[Operations.confirmTemplate] preapproved', async(t) => {
     sinon.stub(console, 'log');
 
-    const context = Object.assign({}, basicContext, {
-        oldTemplate: { old: 'template' },
-        newTemplate: { new: 'template' },
-        overrides: {
+    try {
+        const context = new CommandContext(opts, 'testing', []);
+        context.oldTemplate = { old: 'template' },
+        context.newTemplate = { new: 'template' },
+        context.overrides = {
             preapproved: {
                 template: ['\u001b[90m {\n\u001b[39m\u001b[31m-\"old\": \"template\"\n\u001b[39m\u001b[32m+\"new\": \"template\"\n\u001b[39m\u001b[90m }\u001b[39m']
             }
-        },
-        next: (err) => {
-            t.ok(console.log.calledWith('Auto-confirming template changes... Changes were pre-approved in another region.'), 'Skip notice printed');
-            t.ifError(err, 'should proceed');
-            t.ok(context.overrides.skipConfirmTemplate, 'sets skipConfirmTemplate');
-            console.log.restore();
-            t.end();
-        },
-        abort: (err) => {
-            t.ifError(err, 'should not proceed');
-        }
-    });
+        };
 
-    await commands.operations.confirmTemplate(context);
+        await Operations.confirmTemplate(context);
+
+        t.ok(console.log.calledWith('Auto-confirming template changes... Changes were pre-approved in another region.'), 'Skip notice printed');
+        t.ok(context.overrides.skipConfirmTemplate, 'sets skipConfirmTemplate');
+    } catch (err) {
+        t.error(err);
+    }
+
+    console.log.restore();
+    t.end();
 });
 
-test('[commands.operations.confirmTemplate] rejected', async(t) => {
-    t.plan(2);
-
-    sinon.stub(prompt, 'confirm').callsFake((message) => {
+test('[Operations.confirmTemplate] rejected', async(t) => {
+    sinon.stub(Prompt, 'confirm').callsFake((message) => {
         t.equal(
             message,
             '\x1B[90m {\n\x1B[39m\x1B[31m-"old": "template"\n\x1B[39m\x1B[32m+"new": "template"\n\x1B[39m\x1B[90m }\x1B[39m\nAccept template changes?',
@@ -1315,58 +1259,52 @@ test('[commands.operations.confirmTemplate] rejected', async(t) => {
         return Promise.resolve(false);
     });
 
-    basicContext.overrides = {}; // some previous test has mutated this
+    try {
+        const context = new CommandContext(opts, 'testing', []);
+        context.overrides = {}; // some previous test has mutated this
+        context.oldTemplate = { old: 'template' },
+        context.newTemplate = { new: 'template' },
 
-    var context = Object.assign({}, basicContext, {
-        oldTemplate: { old: 'template' },
-        newTemplate: { new: 'template' },
-        next: function() {
-            t.fail('should not proceed');
-            t.end();
-        },
-        abort: function(err) {
-            t.ifError(err, 'aborted');
-            prompt.confirm.restore();
-        }
-    });
+        await Operations.confirmTemplate(context);
 
-    await commands.operations.confirmTemplate(context);
+        t.fail();
+    } catch (err) {
+        t.equals(err.message, 'aborted');
+    }
+
+    Prompt.confirm.restore();
+    t.end();
 });
 
-test('[commands.operations.confirmTemplate] accepted', async(t) => {
-    t.plan(2);
-
-    sinon.stub(prompt, 'confirm').callsFake((message) => {
+test('[Operations.confirmTemplate] accepted', async(t) => {
+    sinon.stub(Prompt, 'confirm').callsFake((message) => {
         t.equal(message, '\x1B[90m {\n\x1B[39m\x1B[31m-"old": "template"\n\x1B[39m\x1B[32m+"new": "template"\n\x1B[39m\x1B[90m }\x1B[39m\nAccept template changes?', 'prompted appropriate message');
         return Promise.resolve(true);
     });
 
-    var context = Object.assign({}, basicContext, {
-        oldTemplate: { old: 'template' },
-        newTemplate: { new: 'template' },
-        next: function(err) {
-            t.ifError(err, 'success');
-            prompt.confirm.restore();
-            t.end();
-        },
-        abort: function() {
-            t.fail('should not abort');
-        }
-    });
+    try {
+        const context = new CommandContext(opts, 'testing', []);
+        context.oldTemplate = { old: 'template' },
+        context.newTemplate = { new: 'template' },
 
-    await commands.operations.confirmTemplate(context);
+        await Operations.confirmTemplate(context);
+    } catch (err) {
+        t.error(err);
+    }
+
+    Prompt.confirm.restore();
+    t.end();
 });
 
-test('[commands.operations.confirmTemplate] lengthy diff, first unchanged section ignored', async(t) => {
-    t.plan(2);
-
-    sinon.stub(prompt, 'confirm').callsFake((message) => {
+test('[Operations.confirmTemplate] lengthy diff, first unchanged section ignored', async(t) => {
+    sinon.stub(Prompt, 'confirm').callsFake((message) => {
         t.equal(message, '\x1B[90m {\n "a": "lines",\n "aa": "lines",\n\x1B[39m\x1B[31m-"and": "will change too",\n\x1B[39m\x1B[32m+"and": "has changed",\n\x1B[39m\x1B[90m "b": "lines",\n "ba": "lines",\n "c": "lines",\n\x1B[39m\x1B[90m\n---------------------------------------------\n\n\x1B[39m\x1B[90m "r": "lines",\n "s": "lines",\n "t": "lines",\n\x1B[39m\x1B[31m-"this": "will change",\n\x1B[39m\x1B[32m+"this": "has changed",\n\x1B[39m\x1B[90m "u": "lines",\n "v": "lines"\n }\x1B[39m\nAccept template changes?', 'prompted appropriate message');
         return Promise.resolve(true);
     });
 
-    var context = Object.assign({}, basicContext, {
-        oldTemplate: {
+    try {
+        const context = new CommandContext(opts, 'testing', []);
+        context.oldTemplate = {
             old: 'template',
             a: 'lines',
             b: 'lines',
@@ -1403,8 +1341,8 @@ test('[commands.operations.confirmTemplate] lengthy diff, first unchanged sectio
             ia: 'lines',
             ja: 'lines',
             ka: 'lines'
-        },
-        newTemplate: {
+        };
+        context.newTemplate = {
             old: 'template',
             a: 'lines',
             b: 'lines',
@@ -1442,1216 +1380,1306 @@ test('[commands.operations.confirmTemplate] lengthy diff, first unchanged sectio
             ja: 'lines',
             ka: 'lines'
         },
-        next: function(err) {
-            t.ifError(err, 'success');
-            prompt.confirm.restore();
-            t.end();
-        },
-        abort: function() {
-            t.fail('should not abort');
-        }
-    });
 
-    await commands.operations.confirmTemplate(context);
+        await Operations.confirmTemplate(context);
+    } catch (err) {
+        t.error(err);
+    }
+
+    Prompt.confirm.restore();
+    t.end();
 });
 
-test('[commands.operations.saveTemplate] bucket not found', (t) => {
-    var url = 'https://s3.amazonaws.com/my-template-bucket/my-stack-testing.template.json';
+test('[Operations.saveTemplate] bucket not found', async(t) => {
+    const url = 'https://s3.amazonaws.com/my-template-bucket/my-stack-testing.template.json';
 
-    sinon.stub(actions, 'templateUrl').callsFake(function() {
+    sinon.stub(Actions, 'templateUrl').callsFake(() => {
         return url;
     });
 
-    sinon.stub(actions, 'saveTemplate').callsFake(function(url, template, callback) {
-        callback(new actions.BucketNotFoundError('failure'));
+    sinon.stub(Actions, 'saveTemplate').callsFake(() => {
+        throw new Actions.BucketNotFoundError('failure');
     });
 
-    var context = Object.assign({}, basicContext, {
-        abort: function(err) {
-            t.ok(err instanceof actions.BucketNotFoundError, 'expected error type');
-            t.equal(err.message, 'Could not find template bucket: failure', 'expected error message');
-            actions.templateUrl.restore();
-            actions.saveTemplate.restore();
-            t.end();
-        }
-    });
+    try {
+        const context = new CommandContext(opts, 'testing', []);
 
-    commands.operations.saveTemplate(context);
+        await Operations.saveTemplate(context);
+
+        t.fail();
+    } catch (err) {
+        t.ok(err instanceof Actions.BucketNotFoundError, 'expected error type');
+        t.equal(err.message, 'Could not find template bucket: failure', 'expected error message');
+    }
+
+    Actions.templateUrl.restore();
+    Actions.saveTemplate.restore();
+    t.end();
 });
 
-test('[commands.operations.saveTemplate] failed to save template', (t) => {
-    var url = 'https://s3.amazonaws.com/my-template-bucket/my-stack-testing.template.json';
+test('[Operations.saveTemplate] failed to save template', async(t) => {
+    const url = 'https://s3.amazonaws.com/my-template-bucket/my-stack-testing.template.json';
 
-    sinon.stub(actions, 'templateUrl').callsFake(function() {
+    sinon.stub(Actions, 'templateUrl').callsFake(() => {
         return url;
     });
 
-    sinon.stub(actions, 'saveTemplate').callsFake(function(url, template, callback) {
-        callback(new actions.S3Error('failure'));
+    sinon.stub(Actions, 'saveTemplate').callsFake(() => {
+        throw new Actions.S3Error('failure');
     });
 
-    var context = Object.assign({}, basicContext, {
-        abort: function(err) {
-            t.ok(err instanceof actions.S3Error, 'expected error type');
-            t.equal(err.message, 'Failed to save template: failure', 'expected error message');
-            actions.templateUrl.restore();
-            actions.saveTemplate.restore();
-            t.end();
-        }
-    });
+    try {
+        const context = new CommandContext(opts, 'testing', []);
 
-    commands.operations.saveTemplate(context);
+        await Operations.saveTemplate(context);
+
+        t.fail();
+    } catch (err) {
+        t.ok(err instanceof Actions.S3Error, 'expected error type');
+        t.equal(err.message, 'Failed to save template: failure', 'expected error message');
+    }
+
+    Actions.templateUrl.restore();
+    Actions.saveTemplate.restore();
+    t.end();
 });
 
-test('[commands.operations.saveTemplate] success', (t) => {
-    var templateUrl = 'https://s3.amazonaws.com/my-template-bucket/my-stack-testing.template.json';
+test('[Operations.saveTemplate] success', async(t) => {
+    const templateUrl = 'https://s3.amazonaws.com/my-template-bucket/my-stack-testing.template.json';
 
-    sinon.stub(actions, 'templateUrl').callsFake(function(bucket, region, suffix) {
+    const context = new CommandContext(opts, 'testing', []);
+
+    sinon.stub(Actions, 'templateUrl').callsFake((bucket, region, suffix) => {
         t.equal(bucket, context.templateBucket, 'template url in proper bucket');
         t.equal(region, context.stackRegion, 'template url in proper region');
         t.equal(suffix, context.suffix, 'template url for correct suffix');
         return templateUrl;
     });
 
-    sinon.stub(actions, 'saveTemplate').callsFake(function(url, template, callback) {
+    sinon.stub(Actions, 'saveTemplate').callsFake((url, template) => {
         t.equal(url, templateUrl, 'saved to correct url');
         t.equal(template, '{\n  "new": "template"\n}', 'saved correct template');
-        callback();
+
+        return Promise.resolve();
     });
 
-    var context = Object.assign({}, basicContext, {
-        newTemplate: { new: 'template' },
-        next: function(err) {
-            t.ifError(err, 'success');
-            t.equal(context.templateUrl, templateUrl, 'sets template url');
-            actions.templateUrl.restore();
-            actions.saveTemplate.restore();
-            t.end();
-        }
-    });
+    try {
+        context.newTemplate = { new: 'template' },
 
-    commands.operations.saveTemplate(context);
+        await Operations.saveTemplate(context);
+
+        t.equal(context.templateUrl, templateUrl, 'sets template url');
+    } catch (err) {
+        t.error(err);
+    }
+
+    Actions.templateUrl.restore();
+    Actions.saveTemplate.restore();
+    t.end();
 });
 
-test('[commands.operations.validateTemplate] invalid', (t) => {
-    sinon.stub(actions, 'validate').callsFake(function(region, url, callback) {
-        callback(new actions.CloudFormationError('failure'));
+test('[Operations.validateTemplate] invalid', async(t) => {
+    sinon.stub(Actions, 'validate').callsFake(() => {
+        throw new Actions.CloudFormationError('failure');
     });
 
-    var context = Object.assign({}, basicContext, {
-        templateUrl: 'https://s3.amazonaws.com/my-template-bucket/my-stack-testing.template.json',
-        abort: function(err) {
-            t.ok(err instanceof actions.CloudFormationError, 'correct error type');
-            t.equal(err.message, 'Invalid template: failure', 'expected error message');
-            actions.validate.restore();
-            t.end();
-        }
-    });
+    try {
+        const context = new CommandContext(opts, 'testing', []);
+        context.templateUrl = 'https://s3.amazonaws.com/my-template-bucket/my-stack-testing.template.json',
 
-    commands.operations.validateTemplate(context);
+        await Operations.validateTemplate(context);
+
+        t.fail();
+    } catch (err) {
+        t.ok(err instanceof Actions.CloudFormationError, 'correct error type');
+        t.equal(err.message, 'Invalid template: failure', 'expected error message');
+    }
+
+    Actions.validate.restore();
+    t.end();
 });
 
-test('[commands.operations.validateTemplate] valid', (t) => {
-    t.plan(3);
+test('[Operations.validateTemplate] valid', async(t) => {
+    const context = new CommandContext(opts, 'testing', []);
 
-    sinon.stub(actions, 'validate').callsFake(function(region, url, callback) {
+    sinon.stub(Actions, 'validate').callsFake((region, url) => {
         t.equal(region, context.stackRegion, 'validate in proper region');
         t.equal(url, context.templateUrl, 'validate proper template');
-        callback();
+        return Promise.resolve();
     });
 
-    var context = Object.assign({}, basicContext, {
-        templateUrl: 'https://s3.amazonaws.com/my-template-bucket/my-stack-testing.template.json',
-        abort: function() {
-            t.fail('failed');
-        },
-        next: function(err) {
-            t.ifError(err, 'success');
-            actions.validate.restore();
-        }
-    });
+    try {
+        context.templateUrl = 'https://s3.amazonaws.com/my-template-bucket/my-stack-testing.template.json',
 
-    commands.operations.validateTemplate(context);
+        await Operations.validateTemplate(context);
+    } catch (err) {
+        t.error(err);
+    }
+
+    Actions.validate.restore();
+    t.end();
 });
 
-test('[commands.operations.beforeUpdateHook] no hook', (t) => {
-    var context = Object.assign({}, basicContext, {
-        abort: function() {
-            t.fail('failed');
-        },
-        next: function(err) {
-            t.ifError(err, 'success');
-            t.end();
-        }
-    });
+test('[Operations.beforeUpdateHook] no hook', async(t) => {
+    try {
+        const context = new CommandContext(opts, 'testing', []);
 
-    commands.operations.beforeUpdateHook(context);
+        await Operations.beforeUpdateHook(context);
+    } catch (err) {
+        t.error(err);
+    }
+
+    t.end();
 });
 
-test('[commands.operations.validateParametersHook] no hook', (t) => {
-    var context = Object.assign({}, basicContext, {
-        abort: function() {
-            t.fail('failed');
-        },
-        next: function(err) {
-            t.ifError(err, 'success');
-            t.end();
-        }
-    });
+test('[Operations.validateParametersHook] no hook', async(t) => {
+    try {
+        const context = new CommandContext(opts, 'testing', []);
 
-    commands.operations.validateParametersHook(context);
+        await Operations.validateParametersHook(context);
+    } catch (err) {
+        t.error(err);
+    }
+
+    t.end();
 });
 
-test('[commands.operations.validateParametersHook] hook error', (t) => {
-    var context = Object.assign({}, basicContext, {
-        overrides: {
+test('[Operations.validateParametersHook] hook error', async(t) => {
+    try {
+        const context = new CommandContext(opts, 'testing', []);
+        context.overrides = {
             validateParameters: function(context, callback) {
                 callback(new Error('failure'));
             }
-        },
-        abort: function(err) {
-            t.equal(err.message, 'failure', 'passed through error on abort');
-            t.end();
-        },
-        next: function() {
-            t.fail('should not proceed');
-        }
-    });
+        };
 
-    commands.operations.validateParametersHook(context);
+        await Operations.validateParametersHook(context);
+
+        t.fail();
+    } catch (err) {
+        t.equal(err.message, 'failure', 'passed through error on abort');
+    }
+
+    t.end();
 });
 
-test('[commands.operations.validateParametersHook] hook success', (t) => {
-    t.plan(2);
-    var context = Object.assign({}, basicContext, {
-        overrides: {
+test('[Operations.validateParametersHook] hook success', async(t) => {
+    try {
+        const context = new CommandContext(opts, 'testing', []);
+        context.overrides = {
             validateParameters: function(arg, callback) {
                 t.deepEqual(arg, context, 'provided hook with runtime context');
                 callback();
             }
         },
-        abort: function(err) {
-            t.ifError(err, 'failed');
-        },
-        next: function() {
-            t.pass('should proceed');
-        }
-    });
 
-    commands.operations.validateParametersHook(context);
+        await Operations.validateParametersHook(context);
+    } catch (err) {
+        t.error(err);
+    }
+
+    t.end();
 });
 
-test('[commands.operations.beforeUpdateHook] hook error', (t) => {
-    var context = Object.assign({}, basicContext, {
-        overrides: {
+test('[Operations.beforeUpdateHook] hook error', async(t) => {
+    try {
+        const context = new CommandContext(opts, 'testing', []);
+
+        context.overrides = {
             beforeUpdate: function(context, callback) {
                 callback(new Error('failure'));
             }
-        },
-        abort: function(err) {
-            t.equal(err.message, 'failure', 'passed through error on abort');
-            t.end();
-        },
-        next: function() {
-            t.fail('should not proceed');
-        }
-    });
+        };
 
-    commands.operations.beforeUpdateHook(context);
+        await Operations.beforeUpdateHook(context);
+
+        t.fail();
+    } catch (err) {
+        t.equal(err.message, 'failure', 'passed through error on abort');
+    }
+
+    t.end();
 });
 
-test('[commands.operations.beforeUpdateHook] hook success', (t) => {
-    t.plan(2);
-
-    var context = Object.assign({}, basicContext, {
-        overrides: {
+test('[Operations.beforeUpdateHook] hook success', async(t) => {
+    try {
+        const context = new CommandContext(opts, 'testing', []);
+        context.overrides = {
             beforeUpdate: function(arg, callback) {
                 t.deepEqual(arg, context, 'provided hook with runtime context');
                 callback();
             }
-        },
-        abort: function(err) {
-            t.ifError(err, 'failed');
-        },
-        next: function() {
-            t.pass('should proceed');
-        }
-    });
+        };
 
-    commands.operations.beforeUpdateHook(context);
+        await Operations.beforeUpdateHook(context);
+    } catch (err) {
+        t.error(err);
+    }
+
+    t.end();
 });
 
-test('[commands.operations.getChangeset] failure', (t) => {
-    sinon.stub(actions, 'diff').callsFake(function(name, region, changeSetType, url, params, expand, callback) {
-        callback(new actions.CloudFormationError('failure'));
+test('[Operations.getChangeset] failure', async(t) => {
+    sinon.stub(Actions, 'diff').callsFake(() => {
+        throw new Actions.CloudFormationError('failure');
     });
 
-    var context = Object.assign({}, basicContext, {
-        abort: function(err) {
-            t.ok(err instanceof actions.CloudFormationError, 'correct error type');
-            t.equal(err.message, 'Failed to generate changeset: failure', 'expected error message');
-            actions.diff.restore();
-            t.end();
-        },
-        next: function() {
-            t.fail('should not proceed');
-        }
-    });
+    try {
+        const context = new CommandContext(opts, 'testing', []);
 
-    commands.operations.getChangeset(context);
+        await Operations.getChangeset(context);
+
+        t.fail();
+    } catch (err) {
+        t.ok(err instanceof Actions.CloudFormationError, 'correct error type');
+        t.equal(err.message, 'Failed to generate changeset: failure', 'expected error message');
+    }
+
+    Actions.diff.restore();
+    t.end();
 });
 
-test('[commands.operations.getChangeset] success', (t) => {
-    t.plan(8);
+test('[Operations.getChangeset] success', async(t) => {
+    const details = { changeset: 'details' };
 
-    var details = { changeset: 'details' };
+    const context = new CommandContext(opts, 'testing', []);
 
-    sinon.stub(actions, 'diff').callsFake(function(name, region, changeSetType, url, params, expand, callback) {
+    sinon.stub(Actions, 'diff').callsFake((name, region, changeSetType, url, params, expand) => {
         t.equal(name, context.stackName, 'changeset for correct stack');
         t.equal(region, context.stackRegion, 'changeset in the correct region');
         t.equal(changeSetType, 'UPDATE', 'changeSetType set correctly');
         t.equal(url, context.templateUrl, 'changeset for the correct template');
         t.deepEqual(params, context.changesetParameters, 'changeset using changeset parameters');
         t.equal(expand, context.overrides.expand, 'changeset using override properties');
-        callback(null, details);
+        return Promise.resolve(details);
     });
 
-    var context = Object.assign({}, basicContext, {
-        stackName: 'my-stack-testing',
-        stackRegion: 'us-east-1',
-        newParameters: { new: 'parameters' },
-        changesetParameters: { ParameterKey: 'new', ParameterValue: 'parameters' },
-        templateUrl: 'https://s3.amazonaws.com/my-template-bucket/my-stack-testing.template.json',
-        overrides: { expand: true },
-        abort: function() {
-            t.fail('should not abort');
-        },
-        next: function(err) {
-            t.ifError(err, 'success');
-            t.deepEqual(context.changeset, details, 'sets context.changeset');
-            actions.diff.restore();
-            t.end();
-        }
-    });
+    try {
+        context.stackName = 'my-stack-testing',
+        context.lstackRegion = 'us-east-1',
+        context.newParameters = { new: 'parameters' },
+        context.changesetParameters = { ParameterKey: 'new', ParameterValue: 'parameters' },
+        context.templateUrl = 'https://s3.amazonaws.com/my-template-bucket/my-stack-testing.template.json',
+        context.overrides = { expand: true },
 
-    commands.operations.getChangeset(context, 'UPDATE');
+        await Operations.getChangeset(context, 'UPDATE');
+
+        t.deepEqual(context.changeset, details, 'sets context.changeset');
+    } catch (err) {
+        t.error(err);
+    }
+
+    Actions.diff.restore();
+    t.end();
 });
 
-test('[commands.operations.getChangesetCreate] success', (t) => {
-    t.plan(1);
-
-    sinon.stub(commands.operations, 'getChangeset').callsFake(function(context, changeSetType) {
+test('[Operations.getChangesetCreate] success', async(t) => {
+    sinon.stub(Operations, 'getChangeset').callsFake((context, changeSetType) => {
         t.equals(changeSetType, 'CREATE', 'has changeSetType');
-        context.next();
+        return Promise.resolve();
     });
 
-    const context = {
-        next: function() {
-            commands.operations.getChangeset.restore();
-            t.end();
-        }
-    };
+    try {
+        const context = new CommandContext(opts, 'testing', []);
 
-    commands.operations.getChangesetCreate(context);
+        await Operations.getChangesetCreate(context);
+    } catch (err) {
+        t.error(err);
+    }
+
+    Operations.getChangeset.restore();
+    t.end();
 });
 
-test('[commands.operations.getChangesetUpdate] success', (t) => {
-    t.plan(1);
-
-    sinon.stub(commands.operations, 'getChangeset').callsFake(function(context, changeSetType) {
+test('[Operations.getChangesetUpdate] success', async(t) => {
+    sinon.stub(Operations, 'getChangeset').callsFake((context, changeSetType) => {
         t.equals(changeSetType, 'UPDATE', 'has changeSetType');
-        context.next();
+        return Promise.resolve();
     });
 
-    const context = {
-        next: function() {
-            commands.operations.getChangeset.restore();
-            t.end();
-        }
-    };
+    try {
+        const context = new CommandContext(opts, 'testing', []);
 
-    commands.operations.getChangesetUpdate(context);
+        await Operations.getChangesetUpdate(context);
+    } catch (err) {
+        t.error(err);
+    }
+
+    Operations.getChangeset.restore();
+    t.end();
 });
 
-test('[commands.operations.confirmChangeset] force-mode', (t) => {
-    var context = Object.assign({}, basicContext, {
-        overrides: { force: true },
-        next: function() {
-            t.pass('accepted with no prompt');
-            t.end();
-        },
-        abort: function(err) {
-            t.ifError(err, 'should not abort');
-        }
-    });
+test('[Operations.confirmChangeset] force-mode', async(t) => {
+    try {
+        const context = new CommandContext(opts, 'testing', []);
+        context.overrides = { force: true },
 
-    commands.operations.confirmChangeset(context);
+        await Operations.confirmChangeset(context);
+    } catch (err) {
+        t.error(err);
+    }
+
+    t.end();
 });
 
-test('[commands.operations.confirmChangeset] skipConfirmParams && skipConfirmTemplate', (t) => {
-    var context = Object.assign({}, basicContext, {
-        overrides: { skipConfirmParameters: true, skipConfirmTemplate: true },
-        next: function() {
-            t.pass('accepted with no prompt');
-            t.end();
-        },
-        abort: function(err) {
-            t.ifError(err, 'should not abort');
-        }
-    });
+test('[Operations.confirmChangeset] skipConfirmParams && skipConfirmTemplate', async(t) => {
+    try {
+        const context = new CommandContext(opts, 'testing', []);
+        context.overrides = { skipConfirmParameters: true, skipConfirmTemplate: true },
 
-    commands.operations.confirmChangeset(context);
+        await Operations.confirmChangeset(context);
+    } catch (err) {
+        t.error(err);
+    }
+
+    t.end();
 });
 
-test('[commands.operations.confirmChangeset] rejected', (t) => {
-    sinon.stub(prompt, 'confirm').callsFake((message, defaultValue) => {
+test('[Operations.confirmChangeset] rejected', async(t) => {
+    sinon.stub(Prompt, 'confirm').callsFake((message, defaultValue) => {
         t.equal(defaultValue, false);
         return Promise.resolve(false);
     });
 
-    var context = Object.assign({}, basicContext, {
-        changeset: { changes: [] },
-        abort: function(err) {
-            t.ifError(err, 'aborted');
-            prompt.confirm.restore();
-            t.end();
-        }
-    });
+    try {
+        const context = new CommandContext(opts, 'testing', []);
+        context.changeset = { changes: [] },
 
-    commands.operations.confirmChangeset(context);
+        await Operations.confirmChangeset(context);
+    } catch (err) {
+        t.equals(err.message, 'aborted');
+    }
+
+    Prompt.confirm.restore();
+    t.end();
 });
 
-test('[commands.operations.confirmChangeset] acccepted', (t) => {
-    t.plan(3);
-
-    sinon.stub(prompt, 'confirm').callsFake((message, defaultValue) => {
+test('[Operations.confirmChangeset] acccepted', async(t) => {
+    sinon.stub(Prompt, 'confirm').callsFake((message, defaultValue) => {
         t.equal(message, '\n\n\nAccept changes and update the stack?', 'expected message');
         t.equal(defaultValue, false);
         return Promise.resolve(true);
     });
 
-    var context = Object.assign({}, basicContext, {
-        changeset: { changes: [] },
-        abort: function() {
-            t.fail('should not abort');
-        },
-        next: function() {
-            t.pass('success');
-            prompt.confirm.restore();
-        }
-    });
+    try {
+        const context = new CommandContext(opts, 'testing', []);
+        context.changeset = { changes: [] },
 
-    commands.operations.confirmChangeset(context);
+        await Operations.confirmChangeset(context);
+    } catch (err) {
+        t.error(err);
+    }
+
+    Prompt.confirm.restore();
+    t.end();
 });
 
-test('[commands.operations.confirmChangeset] changeset formatting', (t) => {
-    sinon.stub(prompt, 'confirm').callsFake((message, defaultValue) => {
+test('[Operations.confirmChangeset] changeset formatting', async(t) => {
+    sinon.stub(Prompt, 'confirm').callsFake((message, defaultValue) => {
         t.equal(message, 'Action  Name  Type  Replace\n------  ----  ----  -------\n\x1b[33mModify\x1b[39m  name  type  \x1b[31mtrue\x1b[39m   \n\x1b[32mAdd\x1b[39m     name  type  \x1b[32mfalse\x1b[39m  \n\x1b[31mRemove\x1b[39m  name  type  \x1b[32mfalse\x1b[39m  \n\nAccept changes and update the stack?', 'expected message (with colors)');
         t.equal(defaultValue, false);
         return Promise.resolve(true);
     });
 
-    var context = Object.assign({}, basicContext, {
-        changeset: {
+    try {
+        const context = new CommandContext(opts, 'testing', []);
+        context.changeset = {
             changes: [
                 { id: 'id', name: 'name', type: 'type', action: 'Modify', replacement: true },
                 { id: 'id', name: 'name', type: 'type', action: 'Add', replacement: false },
                 { id: 'id', name: 'name', type: 'type', action: 'Remove', replacement: false }
             ]
-        },
-        abort: function() {
-            t.fail('should not abort');
-        },
-        next: function() {
-            t.pass('success');
-            prompt.confirm.restore();
-            t.end();
-        }
-    });
+        };
 
-    commands.operations.confirmChangeset(context);
+        await Operations.confirmChangeset(context);
+    } catch (err) {
+        t.error(err);
+    }
+
+    Prompt.confirm.restore();
+    t.end();
 });
 
-test('[commands.operations.executeChangeSet] failure', (t) => {
-    sinon.stub(actions, 'executeChangeSet').callsFake(function(name, region, id, callback) {
-        callback(new actions.CloudFormationError('failure'));
+test('[Operations.executeChangeSet] failure', async(t) => {
+    sinon.stub(Actions, 'executeChangeSet').callsFake(() => {
+        throw new Actions.CloudFormationError('failure');
     });
 
-    var context = Object.assign({}, basicContext, {
-        changeset: { id: 'changeset:arn' },
-        abort: function(err) {
-            t.ok(err instanceof actions.CloudFormationError, 'expected error type');
-            t.equal(err.message, 'Failed to execute changeset: failure');
-            actions.executeChangeSet.restore();
-            t.end();
-        }
-    });
+    try {
+        const context = new CommandContext(opts, 'testing', []);
+        context.changeset = { id: 'changeset:arn' },
 
-    commands.operations.executeChangeSet(context);
+        await Operations.executeChangeSet(context);
+
+        t.fail();
+    } catch (err) {
+        t.ok(err instanceof Actions.CloudFormationError, 'expected error type');
+        t.equal(err.message, 'Failed to execute changeset: failure');
+    }
+
+    Actions.executeChangeSet.restore();
+    t.end();
 });
 
-test('[commands.operations.executeChangeSet] not executable', (t) => {
-    sinon.stub(actions, 'executeChangeSet').callsFake(function(name, region, id, callback) {
-        var err = new actions.ChangeSetNotExecutableError('failure');
+test('[Operations.executeChangeSet] not executable', async(t) => {
+    sinon.stub(Actions, 'executeChangeSet').callsFake(() => {
+        const err = new Actions.ChangeSetNotExecutableError('failure');
         err.execution = 'OBSOLETE';
         err.reason = 'outdated';
-        callback(err);
+        throw err;
     });
 
-    var context = Object.assign({}, basicContext, {
-        changeset: { id: 'changeset:arn' },
-        abort: function(err) {
-            t.ok(err instanceof actions.ChangeSetNotExecutableError, 'expected error type');
-            t.equal(err.message, 'Status: OBSOLETE | Reason: outdated | failure', 'expected error message');
-            actions.executeChangeSet.restore();
-            t.end();
-        }
-    });
+    try {
+        const context = new CommandContext(opts, 'testing', []);
+        context.changeset = { id: 'changeset:arn' },
 
-    commands.operations.executeChangeSet(context);
+        await Operations.executeChangeSet(context);
+
+        t.fail();
+    } catch (err) {
+        t.ok(err instanceof Actions.ChangeSetNotExecutableError, 'expected error type');
+        t.equal(err.message, 'Status: OBSOLETE | Reason: outdated | failure', 'expected error message');
+    }
+
+    Actions.executeChangeSet.restore();
+    t.end();
 });
 
-test('[commands.operations.executeChangeSet] success', (t) => {
-    t.plan(4);
+test('[Operations.executeChangeSet] success', async(t) => {
+    const context = new CommandContext(opts, 'testing', []);
 
-    sinon.stub(actions, 'executeChangeSet').callsFake(function(name, region, id, callback) {
+    sinon.stub(Actions, 'executeChangeSet').callsFake((name, region, id) => {
         t.equal(name, context.stackName, 'execute on proper stack');
         t.equal(region, context.stackRegion, 'execute in proper region');
         t.equal(id, context.changeset.id, 'execute proper changeset');
-        callback();
+
+        return Promise.resolve();
     });
 
-    var context = Object.assign({}, basicContext, {
-        changeset: { id: 'changeset:arn' },
-        next: function() {
-            t.pass('success');
-            actions.executeChangeSet.restore();
-            t.end();
-        }
-    });
+    try {
+        context.changeset = { id: 'changeset:arn' },
 
-    commands.operations.executeChangeSet(context);
+        await Operations.executeChangeSet(context);
+    } catch (err) {
+        t.error(err);
+    }
+
+    Actions.executeChangeSet.restore();
+    t.end();
 });
 
-test('[commands.operations.createPreamble] no template', (t) => {
-    sinon.stub(lookup, 'configurations').callsFake(function(name, bucket, region, callback) {
-        callback();
+test('[Operations.createPreamble] no template', async(t) => {
+    sinon.stub(Lookup, 'configurations').callsFake(() => {
+        return Promise.resolve();
     });
 
-    var context = Object.assign({}, basicContext, {
-        abort: function(err) {
-            t.ok(err instanceof template.NotFoundError, 'expected error type');
-            t.equal(err.message, 'Could not load template: No template passed');
-            lookup.configurations.restore();
-            t.end();
-        }
-    });
+    try {
+        const context = new CommandContext(opts, 'testing', []);
 
-    commands.operations.createPreamble(context);
+        await Operations.createPreamble(context);
+
+        t.fail();
+    } catch (err) {
+        t.ok(err instanceof Template.NotFoundError, 'expected error type');
+        t.equal(err.message, 'Could not load template: No template passed');
+    }
+
+    Lookup.configurations.restore();
+    t.end();
 });
 
-test('[commands.operations.createPreamble] template not found', (t) => {
-    sinon.stub(lookup, 'configurations').callsFake(function(name, bucket, region, callback) {
-        callback();
+test('[Operations.createPreamble] template not found', async(t) => {
+    sinon.stub(Lookup, 'configurations').callsFake(() => {
+        return Promise.resolve();
     });
 
-    var context = Object.assign({}, basicContext, {
-        template: '/tmp/invalid/path/nonono.template.json',
-        abort: function(err) {
-            t.ok(err instanceof template.NotFoundError, 'expected error type');
-            t.equal(err.message, 'Could not load template: /tmp/invalid/path/nonono.template.json does not exist', 'expected error message');
-            lookup.configurations.restore();
-            t.end();
-        }
-    });
+    try {
+        const context = new CommandContext(opts, 'testing', []);
+        context.template = '/tmp/invalid/path/nonono.template.json',
 
-    commands.operations.createPreamble(context);
+        await Operations.createPreamble(context);
+
+        t.fail();
+    } catch (err) {
+        t.ok(err instanceof Template.NotFoundError, 'expected error type');
+        t.equal(err.message, 'Could not load template: /tmp/invalid/path/nonono.template.json does not exist', 'expected error message');
+    }
+
+    Lookup.configurations.restore();
+    t.end();
 });
 
-test('[commands.operations.createPreamble] template invalid', (t) => {
-    sinon.stub(template, 'read').callsFake(function(templatePath, options, callback) {
-        callback(new template.InvalidTemplateError('failure'));
+test('[Operations.createPreamble] template invalid', async(t) => {
+    sinon.stub(Template, 'read').callsFake(() => {
+        throw new Template.InvalidTemplateError('failure');
     });
 
-    sinon.stub(lookup, 'configurations').callsFake(function(name, bucket, region, callback) {
-        callback();
+    sinon.stub(Lookup, 'configurations').callsFake(() => {
+        return Promise.resolve();
     });
 
-    var context = Object.assign({}, basicContext, {
-        template: 'example.template.json',
-        abort: function(err) {
-            t.ok(err instanceof template.InvalidTemplateError, 'expected error type');
-            t.equal(err.message, 'Could not parse template: failure');
-            template.read.restore();
-            lookup.configurations.restore();
-            t.end();
-        }
-    });
+    try {
+        const context = new CommandContext(opts, 'testing', []);
+        context.template = 'example.template.json',
 
-    commands.operations.createPreamble(context);
+        await Operations.createPreamble(context);
+
+        t.fail();
+    } catch (err) {
+        t.ok(err instanceof Template.InvalidTemplateError, 'expected error type');
+        t.equal(err.message, 'Could not parse template: failure');
+    }
+
+    Template.read.restore();
+    Lookup.configurations.restore();
+    t.end();
 });
 
-test('[commands.operations.createPreamble] config bucket not found', (t) => {
-    sinon.stub(template, 'read').callsFake(function(templatePath, options, callback) {
-        callback();
+test('[Operations.createPreamble] config bucket not found', async(t) => {
+    sinon.stub(Template, 'read').callsFake(() => {
+        return Promise.resolve();
     });
 
-    sinon.stub(lookup, 'configurations').callsFake(function(name, bucket, region, callback) {
-        callback(new lookup.BucketNotFoundError('failure'));
+    sinon.stub(Lookup, 'configurations').callsFake(() => {
+        throw new Lookup.BucketNotFoundError('failure');
     });
 
-    var context = Object.assign({}, basicContext, {
-        template: 'example.template.json',
-        abort: function(err) {
-            t.ok(err instanceof lookup.BucketNotFoundError, 'expected error type');
-            t.equal(err.message, 'Could not find config bucket: failure');
-            template.read.restore();
-            lookup.configurations.restore();
-            t.end();
-        }
-    });
+    try {
+        const context = new CommandContext(opts, 'testing', []);
+        context.template = 'example.template.json',
 
-    commands.operations.createPreamble(context);
+        await Operations.createPreamble(context);
+
+        t.fail();
+    } catch (err) {
+        t.ok(err instanceof Lookup.BucketNotFoundError, 'expected error type');
+        t.equal(err.message, 'Could not find config bucket: failure');
+    }
+
+    Template.read.restore();
+    Lookup.configurations.restore();
+    t.end();
 });
 
-test('[commands.operations.createPreamble] failed to read configurations', (t) => {
-    sinon.stub(template, 'read').callsFake(function(templatePath, options, callback) {
-        callback();
+test('[Operations.createPreamble] failed to read configurations', async(t) => {
+    sinon.stub(Template, 'read').callsFake(() => {
+        return Promise.resolve();
     });
 
-    sinon.stub(lookup, 'configurations').callsFake(function(name, bucket, region, callback) {
-        callback(new lookup.S3Error('failure'));
+    sinon.stub(Lookup, 'configurations').callsFake(() => {
+        throw new Lookup.S3Error('failure');
     });
 
-    var context = Object.assign({}, basicContext, {
-        template: 'example.template.json',
-        abort: function(err) {
-            t.ok(err instanceof lookup.S3Error, 'expected error type');
-            t.equal(err.message, 'Could not load saved configurations: failure');
-            template.read.restore();
-            lookup.configurations.restore();
-            t.end();
-        }
-    });
+    try {
+        const context = new CommandContext(opts, 'testing', []);
+        context.template = 'example.template.json';
 
-    commands.operations.createPreamble(context);
+        await Operations.createPreamble(context);
+
+        t.fail();
+    } catch (err) {
+        t.ok(err instanceof Lookup.S3Error, 'expected error type');
+        t.equal(err.message, 'Could not load saved configurations: failure');
+    }
+
+    Template.read.restore();
+    Lookup.configurations.restore();
+    t.end();
 });
 
-test('[commands.operations.createPreamble] success', (t) => {
-    sinon.stub(template, 'read').callsFake(function(template, options, callback) {
+test('[Operations.createPreamble] success', async(t) => {
+    const context = new CommandContext(opts, 'testing', []);
+
+    sinon.stub(Template, 'read').callsFake((template, options) => {
         t.equal(template, path.resolve('example.template.json'), 'read correct template path');
         t.deepEqual(options, { template: 'options' }, 'passed overrides.templateOptions');
-        callback(null, { new: 'template' });
+        return Promise.resolve({ new: 'template' });
     });
 
-    sinon.stub(lookup, 'configurations').callsFake(function(name, bucket, region, callback) {
+    sinon.stub(Lookup, 'configurations').callsFake((name, bucket) => {
         t.equal(name, context.baseName, 'lookup correct stack configurations');
         t.equal(bucket, context.configBucket, 'lookup in correct bucket');
-        callback(null, ['config']);
+        return Promise.resolve(['config']);
     });
 
-    var context = Object.assign({}, basicContext, {
-        template: 'example.template.json',
-        overrides: { templateOptions: { template: 'options' } },
-        next: function(err) {
-            t.ifError(err, 'success');
-            t.deepEqual(context.newTemplate, { new: 'template' }, 'set context.newTemplate');
-            t.deepEqual(context.configNames, ['config'], 'set context.configNames');
-            t.ok(context.create, 'context.create is set to true');
-            template.read.restore();
-            lookup.configurations.restore();
-            t.end();
-        }
-    });
+    try {
+        context.template = 'example.template.json',
+        context.overrides = { templateOptions: { template: 'options' } },
 
-    commands.operations.createPreamble(context);
+        await Operations.createPreamble(context);
+
+        t.deepEqual(context.newTemplate, { new: 'template' }, 'set context.newTemplate');
+        t.deepEqual(context.configNames, ['config'], 'set context.configNames');
+        t.ok(context.create, 'context.create is set to true');
+    } catch (err) {
+        t.error(err);
+    }
+
+    Template.read.restore();
+    Lookup.configurations.restore();
+    t.end();
 });
 
-test('[commands.operations.createPreamble] success with template object', (t) => {
-    sinon.stub(template, 'read').callsFake(function(template, options, callback) {
+test('[Operations.createPreamble] success with template object', async(t) => {
+    const context = new CommandContext(opts, 'testing', []);
+
+    sinon.stub(Template, 'read').callsFake((template, options) => {
         t.equal(template, path.resolve(context.template), 'read correct template path');
         t.deepEqual(options, { template: 'options' }, 'passed overrides.templateOptions');
-        callback(null, context.template);
+        return Promise.resolve(context.template);
     });
 
-    sinon.stub(lookup, 'configurations').callsFake(function(name, bucket, region, callback) {
+    sinon.stub(Lookup, 'configurations').callsFake((name, bucket) => {
         t.equal(name, context.baseName, 'lookup correct stack configurations');
         t.equal(bucket, context.configBucket, 'lookup in correct bucket');
-        callback(null, ['config']);
+        return Promise.resolve(['config']);
     });
 
-    var context = Object.assign({}, basicContext, {
-        template: { arbitrary: 'template' },
-        overrides: { templateOptions: { template: 'options' } },
-        next: function(err) {
-            t.ifError(err, 'success');
-            t.deepEqual(context.newTemplate, context.template, 'set context.newTemplate');
-            t.deepEqual(context.configNames, ['config'], 'set context.configNames');
-            t.ok(context.create, 'context.create is set to true');
-            template.read.restore();
-            lookup.configurations.restore();
-            t.end();
-        }
-    });
+    try {
+        context.template = { arbitrary: 'template' },
+        context.overrides = { templateOptions: { template: 'options' } },
 
-    commands.operations.createPreamble(context);
+        await Operations.createPreamble(context);
+
+        t.deepEqual(context.newTemplate, context.template, 'set context.newTemplate');
+        t.deepEqual(context.configNames, ['config'], 'set context.configNames');
+        t.ok(context.create, 'context.create is set to true');
+    } catch (err) {
+        t.error(err);
+    }
+
+    Template.read.restore();
+    Lookup.configurations.restore();
+    t.end();
 });
 
-test('[commands.operations.selectConfig] force-mode', (t) => {
-    sinon.stub(prompt, 'configuration').callsFake(function(configs, callback) {
+test('[Operations.selectConfig] force-mode', async(t) => {
+    sinon.stub(Prompt, 'configuration').callsFake(() => {
         t.fail('should not prompt');
-        callback(new Error('failure'));
+        throw new Error('failure');
     });
 
-    var context = Object.assign({}, basicContext, {
-        overrides: { force: true },
-        next: function(err) {
-            t.ifError(err, 'success');
-            t.notOk(context.configName, 'does not set context.configName');
-            prompt.configuration.restore();
-            t.end();
-        }
-    });
+    try {
+        const context = new CommandContext(opts, 'testing', []);
+        context.overrides = { force: true },
 
-    commands.operations.selectConfig(context);
+        await Operations.selectConfig(context);
+
+        t.notOk(context.configName, 'does not set context.configName');
+    } catch (err) {
+        t.error(err);
+    }
+
+    Prompt.configuration.restore();
+    t.end();
 });
 
-test('[commands.operations.selectConfig] new config', (t) => {
-    sinon.stub(prompt, 'configuration').callsFake((configs) => {
+test('[Operations.selectConfig] new config', async(t) => {
+    const context = new CommandContext(opts, 'testing', []);
+
+    sinon.stub(Prompt, 'configuration').callsFake((configs) => {
         t.deepEqual(configs, context.configNames, 'prompted with correct config names');
         return Promise.resolve('New configuration');
     });
 
-    var context = Object.assign({}, basicContext, {
-        configNames: ['config'],
-        next: function(err) {
-            t.ifError(err, 'success');
-            t.notOk(context.configName, 'does not set context.configName');
-            prompt.configuration.restore();
-            t.end();
-        }
-    });
+    try {
+        context.configNames = ['config'],
 
-    commands.operations.selectConfig(context);
+        await Operations.selectConfig(context);
+
+        t.notOk(context.configName, 'does not set context.configName');
+    } catch (err) {
+        t.error(err);
+    }
+
+    Prompt.configuration.restore();
+    t.end();
 });
 
-test('[commands.operations.selectConfig] saved config', (t) => {
-    sinon.stub(prompt, 'configuration').callsFake((configs) => {
+test('[Operations.selectConfig] saved config', async(t) => {
+    const context = new CommandContext(opts, 'testing', []);
+
+    sinon.stub(Prompt, 'configuration').callsFake((configs) => {
         t.deepEqual(configs, context.configNames, 'prompted with correct config names');
         return Promise.resolve('config');
     });
 
-    var context = Object.assign({}, basicContext, {
-        configNames: ['config'],
-        next: function(err) {
-            t.ifError(err, 'success');
-            t.equal(context.configName, 'config', 'does set context.configName');
-            prompt.configuration.restore();
-            t.end();
-        }
-    });
+    try {
+        context.configNames = ['config'],
 
-    commands.operations.selectConfig(context);
+        await Operations.selectConfig(context);
+
+        t.equal(context.configName, 'config', 'does set context.configName');
+    } catch (err) {
+        t.error(err);
+    }
+    Prompt.configuration.restore();
+    t.end();
 });
 
-test('[commands.operations.loadConfig] no saved config, no default', (t) => {
-    var context = Object.assign({}, basicContext, {
-        next: function(err) {
-            t.ifError(err, 'success');
-            t.deepEqual(context.oldParameters, {}, 'does not set context.oldParameters');
-            t.end();
-        }
-    });
+test('[Operations.loadConfig] no saved config, no default', async(t) => {
+    try {
+        const context = new CommandContext(opts, 'testing', []);
 
-    commands.operations.loadConfig(context);
+        await Operations.loadConfig(context);
+
+        t.deepEqual(context.oldParameters, {}, 'does not set context.oldParameters');
+    } catch (err) {
+        t.error(err);
+    }
+
+    t.end();
 });
 
-test('[commands.operations.loadConfig] no saved config, has default', (t) => {
-    sinon.stub(lookup, 'defaultConfiguration').callsFake(function(s3url, callback) {
+test('[Operations.loadConfig] no saved config, has default', async(t) => {
+    sinon.stub(Lookup, 'defaultConfiguration').callsFake((s3url) => {
         t.equal(s3url, 's3://my-bucket/my-default.cfn.json', 'requested correct configuration');
-        callback(null, { default: 'configuration' });
+        return Promise.resolve({ default: 'configuration' });
     });
 
-    var context = Object.assign({}, basicContext, {
-        overrides: { defaultConfig: 's3://my-bucket/my-default.cfn.json' },
-        next: function(err) {
-            t.ifError(err, 'success');
-            t.deepEqual(context.oldParameters, { default: 'configuration' }, 'sets context.oldParameters');
-            lookup.defaultConfiguration.restore();
-            t.end();
-        }
-    });
+    try {
+        const context = new CommandContext(opts, 'testing', []);
+        context.overrides = { defaultConfig: 's3://my-bucket/my-default.cfn.json' },
 
-    commands.operations.loadConfig(context);
+        await Operations.loadConfig(context);
+
+        t.deepEqual(context.oldParameters, { default: 'configuration' }, 'sets context.oldParameters');
+    } catch (err) {
+        t.error(err);
+    }
+
+    Lookup.defaultConfiguration.restore();
+    t.end();
 });
 
-test('[commands.operations.loadConfig] bucket not found', (t) => {
-    sinon.stub(lookup, 'configuration').callsFake(function(name, bucket, config, callback) {
-        callback(new lookup.BucketNotFoundError('failure'));
+test('[Operations.loadConfig] bucket not found', async(t) => {
+    sinon.stub(Lookup, 'configuration').callsFake(() => {
+        throw new Lookup.BucketNotFoundError('failure');
     });
 
-    var context = Object.assign({}, basicContext, {
-        configName: 'config',
-        abort: function(err) {
-            t.ok(err instanceof lookup.BucketNotFoundError, 'expected error type');
-            t.equal(err.message, 'Could not find config bucket: failure', 'expected error message');
-            lookup.configuration.restore();
-            t.end();
-        }
-    });
+    try {
+        const context = new CommandContext(opts, 'testing', []);
+        context.configName = 'config',
 
-    commands.operations.loadConfig(context);
+        await Operations.loadConfig(context);
+
+        t.fail();
+    } catch (err) {
+        t.ok(err instanceof Lookup.BucketNotFoundError, 'expected error type');
+        t.equal(err.message, 'Could not find config bucket: failure', 'expected error message');
+    }
+
+    Lookup.configuration.restore();
+    t.end();
 });
 
-test('[commands.operations.loadConfig] config not found', (t) => {
-    sinon.stub(lookup, 'configuration').callsFake(function(name, bucket, config, callback) {
-        callback(new lookup.ConfigurationNotFoundError('failure'));
+test('[Operations.loadConfig] config not found', async(t) => {
+    sinon.stub(Lookup, 'configuration').callsFake(() => {
+        throw new Lookup.ConfigurationNotFoundError('failure');
     });
 
-    var context = Object.assign({}, basicContext, {
-        configName: 'config',
-        abort: function(err) {
-            t.ok(err instanceof lookup.ConfigurationNotFoundError, 'expected error type');
-            t.equal(err.message, 'Could not find saved configuration: failure', 'expected error message');
-            lookup.configuration.restore();
-            t.end();
-        }
-    });
+    try {
+        const context = new CommandContext(opts, 'testing', []);
+        context.configName = 'config',
 
-    commands.operations.loadConfig(context);
+        await Operations.loadConfig(context);
+
+        t.fail();
+    } catch (err) {
+        t.ok(err instanceof Lookup.ConfigurationNotFoundError, 'expected error type');
+        t.equal(err.message, 'Could not find saved configuration: failure', 'expected error message');
+    }
+
+    Lookup.configuration.restore();
+    t.end();
 });
 
-test('[commands.operations.loadConfig] invalid config', (t) => {
-    sinon.stub(lookup, 'configuration').callsFake(function(name, bucket, config, callback) {
-        callback(new lookup.InvalidConfigurationError('failure'));
+test('[Operations.loadConfig] invalid config', async(t) => {
+    sinon.stub(Lookup, 'configuration').callsFake(() => {
+        throw new Lookup.InvalidConfigurationError('failure');
     });
 
-    var context = Object.assign({}, basicContext, {
-        configName: 'config',
-        abort: function(err) {
-            t.ok(err instanceof lookup.InvalidConfigurationError, 'expected error type');
-            t.equal(err.message, 'Saved configuration error: failure', 'expected error message');
-            lookup.configuration.restore();
-            t.end();
-        }
-    });
+    try {
+        const context = new CommandContext(opts, 'testing', []);
+        context.configName = 'config',
 
-    commands.operations.loadConfig(context);
+        await Operations.loadConfig(context);
+
+        t.fail();
+    } catch (err) {
+        t.ok(err instanceof Lookup.InvalidConfigurationError, 'expected error type');
+        t.equal(err.message, 'Saved configuration error: failure', 'expected error message');
+    }
+
+    Lookup.configuration.restore();
+    t.end();
 });
 
-test('[commands.operations.loadConfig] failed to load config', (t) => {
-    sinon.stub(lookup, 'configuration').callsFake(function(name, bucket, config, callback) {
-        callback(new lookup.S3Error('failure'));
+test('[Operations.loadConfig] failed to load config', async(t) => {
+    sinon.stub(Lookup, 'configuration').callsFake(() => {
+        throw new Lookup.S3Error('failure');
     });
 
-    var context = Object.assign({}, basicContext, {
-        configName: 'config',
-        abort: function(err) {
-            t.ok(err instanceof lookup.S3Error, 'expected error type');
-            t.equal(err.message, 'Failed to read saved configuration: failure', 'expected error message');
-            lookup.configuration.restore();
-            t.end();
-        }
-    });
+    try {
+        const context = new CommandContext(opts, 'testing', []);
+        context.configName = 'config',
 
-    commands.operations.loadConfig(context);
+        await Operations.loadConfig(context);
+
+        t.fail();
+    } catch (err) {
+        t.ok(err instanceof Lookup.S3Error, 'expected error type');
+        t.equal(err.message, 'Failed to read saved configuration: failure', 'expected error message');
+    }
+
+    Lookup.configuration.restore();
+    t.end();
 });
 
-test('[commands.operations.loadConfig] success', (t) => {
-    sinon.stub(lookup, 'configuration').callsFake(function(name, bucket, config, callback) {
+test('[Operations.loadConfig] success', async(t) => {
+    const context = new CommandContext(opts, 'testing', []);
+
+    sinon.stub(Lookup, 'configuration').callsFake((name, bucket, config) => {
         t.equal(name, context.baseName, 'expected stack name');
         t.equal(bucket, context.configBucket, 'expected config bucket');
         t.equal(config, context.configName, 'expected config name');
-        callback(null, { saved: 'configuration' });
+        return Promise.resolve({ saved: 'configuration' });
     });
 
-    var context = Object.assign({}, basicContext, {
-        configName: 'config',
-        next: function(err) {
-            t.ifError(err, 'success');
-            t.deepEqual(context.oldParameters, { saved: 'configuration' }, 'set context.oldParameters');
-            lookup.configuration.restore();
-            t.end();
-        }
-    });
+    try {
+        context.configName = 'config',
 
-    commands.operations.loadConfig(context);
+        await Operations.loadConfig(context);
+
+        t.deepEqual(context.oldParameters, { saved: 'configuration' }, 'set context.oldParameters');
+    } catch (err) {
+        t.error(err);
+    }
+
+    Lookup.configuration.restore();
+    t.end();
 });
 
-test('[commands.operations.confirmCreate] force-mode', (t) => {
-    sinon.stub(prompt, 'confirm').callsFake(function(message, callback) {
+test('[Operations.confirmCreate] force-mode', async(t) => {
+    sinon.stub(Prompt, 'confirm').callsFake(() => {
         t.fail('should not prompt');
-        callback(new Error('failure'));
+        throw new Error('failure');
     });
 
-    var context = Object.assign({}, basicContext, {
-        overrides: { force: true },
-        next: function(err) {
-            t.ifError(err, 'success');
-            prompt.confirm.restore();
-            t.end();
-        }
-    });
+    try {
+        const context = new CommandContext(opts, 'testing', []);
+        context.overrides = { force: true },
 
-    commands.operations.confirmCreate(context);
+        await Operations.confirmCreate(context);
+    } catch (err) {
+        t.error(err);
+    }
+
+    Prompt.confirm.restore();
+    t.end();
 });
 
-test('[commands.operations.confirmCreate] reject', (t) => {
-    sinon.stub(prompt, 'confirm').callsFake(() => {
+test('[Operations.confirmCreate] reject', async(t) => {
+    sinon.stub(Prompt, 'confirm').callsFake(() => {
         return Promise.resolve(false);
     });
 
-    var context = Object.assign({}, basicContext, {
-        configName: 'config',
-        abort: function(err) {
-            t.ifError(err, 'aborted');
-            prompt.confirm.restore();
-            t.end();
-        }
-    });
+    try {
+        const context = new CommandContext(opts, 'testing', []);
+        context.configName = 'config',
 
-    commands.operations.confirmCreate(context);
+        await Operations.confirmCreate(context);
+
+        t.fail();
+    } catch (err) {
+        t.equals(err.message, 'aborted');
+    }
+
+    Prompt.confirm.restore();
+    t.end();
 });
 
-test('[commands.operations.confirmCreate] accept', (t) => {
-    sinon.stub(prompt, 'confirm').callsFake((message) => {
+test('[Operations.confirmCreate] accept', async(t) => {
+    sinon.stub(Prompt, 'confirm').callsFake((message) => {
         t.equal(message, 'Ready to create the stack?', 'expected message');
         return Promise.resolve(true);
     });
 
-    var context = Object.assign({}, basicContext, {
-        configName: 'config',
-        next: function(err) {
-            t.ifError(err, 'success');
-            prompt.confirm.restore();
-            t.end();
-        }
-    });
+    try {
+        const context = new CommandContext(opts, 'testing', []);
+        context.configName = 'config',
 
-    commands.operations.confirmCreate(context);
+        await Operations.confirmCreate(context);
+    } catch (err) {
+        t.error(err);
+    }
+
+    Prompt.confirm.restore();
+    t.end();
 });
 
-test('[commands.operations.confirmDelete] force-mode', (t) => {
-    var context = Object.assign({}, basicContext, {
-        overrides: { force: true },
-        next: function(err) {
-            t.ifError(err, 'no prompt');
-            t.end();
-        }
-    });
+test('[Operations.confirmDelete] force-mode', async(t) => {
+    try {
+        const context = new CommandContext(opts, 'testing', []);
+        context.overrides = { force: true },
 
-    commands.operations.confirmDelete(context);
+        await Operations.confirmDelete(context);
+    } catch (err) {
+        t.error(err);
+    }
+
+    t.end();
 });
 
-test('[commands.operations.confirmDelete] reject', (t) => {
-    sinon.stub(prompt, 'confirm').callsFake((message, defaultValue) => {
+test('[Operations.confirmDelete] reject', async(t) => {
+    sinon.stub(Prompt, 'confirm').callsFake((message, defaultValue) => {
         t.equal(message, 'Are you sure you want to delete my-stack-testing in region us-east-1?');
         t.equal(defaultValue, false);
         return Promise.resolve(false);
     });
 
-    var context = Object.assign({}, basicContext, {
-        abort: function(err) {
-            t.ifError(err, 'aborted');
-            prompt.confirm.restore();
-            t.end();
-        }
-    });
+    try {
+        const context = new CommandContext(opts, 'testing', []);
 
-    commands.operations.confirmDelete(context);
+        await Operations.confirmDelete(context);
+    } catch (err) {
+        t.equals(err.message, 'aborted');
+    }
+
+    Prompt.confirm.restore();
+    t.end();
 });
 
-test('[commands.operations.confirmDelete] accept', (t) => {
-    sinon.stub(prompt, 'confirm').callsFake((message, defaultValue) => {
+test('[Operations.confirmDelete] accept', async(t) => {
+    sinon.stub(Prompt, 'confirm').callsFake((message, defaultValue) => {
         t.equal(message, 'Are you sure you want to delete my-stack-testing in region us-east-1?', 'expected message');
         t.equal(defaultValue, false);
         return Promise.resolve(true);
     });
 
-    var context = Object.assign({}, basicContext, {
-        next: function(err) {
-            t.ifError(err, 'success');
-            prompt.confirm.restore();
-            t.end();
-        }
-    });
+    try {
+        const context = new CommandContext(opts, 'testing', []);
 
-    commands.operations.confirmDelete(context);
+        await Operations.confirmDelete(context);
+    } catch (err) {
+        t.error(err);
+    }
+
+    Prompt.confirm.restore();
+    t.end();
 });
 
-test('[commands.operations.deleteStack] failure', (t) => {
-    sinon.stub(actions, 'delete').callsFake(function(name, region, callback) {
-        callback(new actions.CloudFormationError('failure'));
+test('[Operations.deleteStack] failure', async(t) => {
+    sinon.stub(Actions, 'delete').callsFake(() => {
+        throw new Actions.CloudFormationError('failure');
     });
 
-    var context = Object.assign({}, basicContext, {
-        abort: function(err) {
-            t.ok(err instanceof actions.CloudFormationError, 'expected error type');
-            t.equal(err.message, 'Failed to delete stack: failure', 'expected error message');
-            actions.delete.restore();
-            t.end();
-        }
-    });
+    try {
+        const context = new CommandContext(opts, 'testing', []);
 
-    commands.operations.deleteStack(context);
+        await Operations.deleteStack(context);
+
+        t.fail();
+    } catch (err) {
+        t.ok(err instanceof Actions.CloudFormationError, 'expected error type');
+        t.equal(err.message, 'Failed to delete stack: failure', 'expected error message');
+    }
+
+    Actions.delete.restore();
+    t.end();
 });
 
-test('[commands.operations.deleteStack] success', (t) => {
-    sinon.stub(actions, 'delete').callsFake(function(name, region, callback) {
+test('[Operations.deleteStack] success', async(t) => {
+    const context = new CommandContext(opts, 'testing', []);
+
+    sinon.stub(Actions, 'delete').callsFake((name, region) => {
         t.equal(name, context.stackName, 'deleted expected stack');
         t.equal(region, context.stackRegion, 'deleted in expected region');
-        callback();
+        return Promise.resolve();
     });
 
-    var context = Object.assign({}, basicContext, {
-        next: function(err) {
-            t.ifError(err, 'success');
-            actions.delete.restore();
-            t.end();
-        }
-    });
+    try {
+        await Operations.deleteStack(context);
+    } catch (err) {
+        t.error(err);
+    }
 
-    commands.operations.deleteStack(context);
+    Actions.delete.restore();
+    t.end();
 });
 
-test('[commands.operations.monitorStack] failure', (t) => {
-    sinon.stub(actions, 'monitor').callsFake(function(name, region, callback) {
-        callback(new actions.CloudFormationError('failure'));
+test('[Operations.monitorStack] failure', async(t) => {
+    const context = new CommandContext(opts, 'testing', []);
+
+    sinon.stub(Actions, 'monitor').callsFake(() => {
+        throw new Actions.CloudFormationError('failure');
     });
 
-    var context = Object.assign({}, basicContext, {
-        abort: function(err) {
-            t.equal(err.message, `Monitoring your deploy failed, but the deploy in region ${context.stackRegion} will continue. Check on your stack's status in the CloudFormation console.`);
-            actions.monitor.restore();
-            t.end();
-        }
-    });
+    try {
+        await Operations.monitorStack(context);
 
-    commands.operations.monitorStack(context);
+        t.fail();
+    } catch (err) {
+        t.equal(err.message, `Monitoring your deploy failed, but the deploy in region ${context.stackRegion} will continue. Check on your stack's status in the CloudFormation console.`);
+    }
+
+    Actions.monitor.restore();
+    t.end();
 });
 
-test('[commands.operations.monitorStack] success', (t) => {
-    sinon.stub(actions, 'monitor').callsFake(function(name, region, callback) {
+test('[Operations.monitorStack] success', async(t) => {
+    const context = new CommandContext(opts, 'testing', []);
+
+    sinon.stub(Actions, 'monitor').callsFake((name, region) => {
         t.equal(name, context.stackName, 'monitor expected stack');
         t.equal(region, context.stackRegion, 'monitor in expected region');
-        callback();
+        return Promise.resolve();
     });
 
-    var context = Object.assign({}, basicContext, {
-        next: function(err) {
-            t.ifError(err, 'success');
-            actions.monitor.restore();
-            t.end();
-        }
-    });
+    try {
+        await Operations.monitorStack(context);
+    } catch (err) {
+        t.error(err);
+    }
 
-    commands.operations.monitorStack(context);
+    Actions.monitor.restore();
+    t.end();
 });
 
-test('[commands.operations.getOldParameters] missing stack', (t) => {
-    sinon.stub(lookup, 'parameters').callsFake(function(name, region, callback) {
-        callback(new lookup.StackNotFoundError('failure'));
+test('[Operations.getOldParameters] missing stack', async(t) => {
+    const context = new CommandContext(opts, 'testing', []);
+
+    sinon.stub(Lookup, 'parameters').callsFake(() => {
+        throw new Lookup.StackNotFoundError('failure');
     });
 
-    var context = Object.assign({}, basicContext, {
-        abort: function(err) {
-            t.ok(err instanceof lookup.StackNotFoundError, 'expected error type');
-            t.equal(err.message, 'Missing stack: failure', 'expected error message');
-            lookup.parameters.restore();
-            t.end();
-        }
-    });
+    try {
+        await Operations.getOldParameters(context);
 
-    commands.operations.getOldParameters(context);
+        t.fail();
+    } catch (err) {
+        t.ok(err instanceof Lookup.StackNotFoundError, 'expected error type');
+        t.equal(err.message, 'Missing stack: failure', 'expected error message');
+    }
+
+    Lookup.parameters.restore();
+    t.end();
 });
 
-test('[commands.operations.getOldParameters] failed to lookup stack', (t) => {
-    sinon.stub(lookup, 'parameters').callsFake(function(name, region, callback) {
-        callback(new lookup.CloudFormationError('failure'));
+test('[Operations.getOldParameters] failed to lookup stack', async(t) => {
+    sinon.stub(Lookup, 'parameters').callsFake(() => {
+        throw new Lookup.CloudFormationError('failure');
     });
 
-    var context = Object.assign({}, basicContext, {
-        abort: function(err) {
-            t.ok(err instanceof lookup.CloudFormationError, 'expected error type');
-            t.equal(err.message, 'Failed to find existing stack: failure', 'expected error message');
-            lookup.parameters.restore();
-            t.end();
-        }
-    });
+    try {
+        const context = new CommandContext(opts, 'testing', []);
 
-    commands.operations.getOldParameters(context);
+        await Operations.getOldParameters(context);
+
+        t.fail();
+    } catch (err) {
+        t.ok(err instanceof Lookup.CloudFormationError, 'expected error type');
+        t.equal(err.message, 'Failed to find existing stack: failure', 'expected error message');
+    }
+
+    Lookup.parameters.restore();
+    t.end();
 });
 
-test('[commands.operations.getOldParameters] success', (t) => {
-    sinon.stub(lookup, 'parameters').callsFake(function(name, region, callback) {
+test('[Operations.getOldParameters] success', async(t) => {
+    const context = new CommandContext(opts, 'testing', []);
+
+    sinon.stub(Lookup, 'parameters').callsFake((name, region) => {
         t.equal(name, context.stackName, 'lookup expected stack');
         t.equal(region, context.stackRegion, 'lookup in expected region');
-        callback(null, { old: 'parameters' });
+        return Promise.resolve({ old: 'parameters' });
     });
 
-    var context = Object.assign({}, basicContext, {
-        next: function(err) {
-            t.ifError(err, 'success');
-            t.deepEqual(context.oldParameters, { old: 'parameters' }, 'set context.oldParameters');
-            lookup.parameters.restore();
-            t.end();
-        }
-    });
+    try {
+        await Operations.getOldParameters(context);
 
-    commands.operations.getOldParameters(context);
+        t.deepEqual(context.oldParameters, { old: 'parameters' }, 'set context.oldParameters');
+    } catch (err) {
+        t.error(err);
+    }
+
+    Lookup.parameters.restore();
+    t.end();
 });
 
-test('[commands.operations.promptSaveConfig]', (t) => {
-    sinon.stub(prompt, 'input').callsFake((message, def) => {
+test('[Operations.promptSaveConfig]', async(t) => {
+    const context = new CommandContext(opts, 'testing', []);
+
+    sinon.stub(Prompt, 'input').callsFake((message, def) => {
         t.equal(message, 'Name for saved configuration:', 'expected prompt');
         t.equal(def, context.suffix, 'expected default value');
         return Promise.resolve('chuck');
     });
 
-    var context = Object.assign({}, basicContext, {
-        oldParameters: { old: 'parameters' },
-        next: function(err) {
-            t.ifError(err, 'success');
-            t.equal(context.saveName, 'chuck', 'sets context.saveName');
-            prompt.input.restore();
-            t.end();
-        }
-    });
+    try {
+        context.oldParameters = { old: 'parameters' },
 
-    commands.operations.promptSaveConfig(context);
+        await Operations.promptSaveConfig(context);
+
+        t.equal(context.saveName, 'chuck', 'sets context.saveName');
+    } catch (err) {
+        t.error(err);
+    }
+
+    Prompt.input.restore();
+    t.end();
 });
 
-test('[commands.operations.confirmSaveConfig] reject', (t) => {
-    sinon.stub(prompt, 'confirm').callsFake(() => {
+test('[Operations.confirmSaveConfig] reject', async(t) => {
+    sinon.stub(Prompt, 'confirm').callsFake(() => {
         return Promise.resolve(false);
     });
 
-    var context = Object.assign({}, basicContext, {
-        oldParameters: { old: 'parameters' },
-        abort: function(err) {
-            t.ifError(err, 'aborted');
-            prompt.confirm.restore();
-            t.end();
-        }
-    });
+    try {
+        const context = new CommandContext(opts, 'testing', []);
+        context.oldParameters = { old: 'parameters' },
 
-    commands.operations.confirmSaveConfig(context);
+        await Operations.confirmSaveConfig(context);
+
+        t.fail();
+    } catch (err) {
+        t.equals(err.message, 'aborted');
+    }
+
+    Prompt.confirm.restore();
+    t.end();
 });
 
-test('[commands.operations.confirmSaveConfig] accept', (t) => {
-    sinon.stub(prompt, 'confirm').callsFake((message) => {
+test('[Operations.confirmSaveConfig] accept', async(t) => {
+    sinon.stub(Prompt, 'confirm').callsFake((message) => {
         t.equal(message, 'Ready to save this configuration as "hello"?', 'expected message');
         return Promise.resolve(true);
     });
 
-    var context = Object.assign({}, basicContext, {
-        saveName: 'hello',
-        oldParameters: { old: 'parameters' },
-        next: function(err) {
-            t.ifError(err, 'success');
-            prompt.confirm.restore();
-            t.end();
-        }
-    });
+    try {
+        const context = new CommandContext(opts, 'testing', []);
+        context.saveName = 'hello',
+        context.oldParameters = { old: 'parameters' },
 
-    commands.operations.confirmSaveConfig(context);
+        await Operations.confirmSaveConfig(context);
+    } catch (err) {
+        t.error(err);
+    }
+
+    Prompt.confirm.restore();
+    t.end();
 });
 
-test('[commands.operations.saveConfig] bucket not found', (t) => {
-    sinon.stub(actions, 'saveConfiguration').callsFake(function(baseName, stackName, stackRegion, bucket, parameters, kms, callback) {
-        callback(new actions.BucketNotFoundError('failure'));
+test('[Operations.saveConfig] bucket not found', async(t) => {
+    sinon.stub(Actions, 'saveConfiguration').callsFake(() => {
+        throw new Actions.BucketNotFoundError('failure');
     });
 
-    var context = Object.assign({}, basicContext, {
-        oldParameters: { old: 'parameters' },
-        kms: true,
-        abort: function(err) {
-            t.ok(err instanceof actions.BucketNotFoundError, 'expected error type');
-            t.equal(err.message, 'Could not find template bucket: failure');
-            actions.saveConfiguration.restore();
-            t.end();
-        }
-    });
+    try {
+        const context = new CommandContext(opts, 'testing', []);
+        context.oldParameters = { old: 'parameters' },
+        context.kms = true,
 
-    commands.operations.saveConfig(context);
+        await Operations.saveConfig(context);
+
+        t.fail();
+    } catch (err) {
+        t.ok(err instanceof Actions.BucketNotFoundError, 'expected error type');
+        t.equal(err.message, 'Could not find template bucket: failure');
+    }
+
+    Actions.saveConfiguration.restore();
+    t.end();
 });
 
-test('[commands.operations.saveConfig] failure', (t) => {
-    sinon.stub(actions, 'saveConfiguration').callsFake(function(baseName, stackName, stackRegion, bucket, parameters, kms, callback) {
-        callback(new actions.S3Error('failure'));
+test('[Operations.saveConfig] failure', async(t) => {
+    sinon.stub(Actions, 'saveConfiguration').callsFake(() => {
+        throw new Actions.S3Error('failure');
     });
 
-    var context = Object.assign({}, basicContext, {
-        oldParameters: { old: 'parameters' },
-        kms: true,
-        abort: function(err) {
-            t.ok(err instanceof actions.S3Error, 'expected error type');
-            t.equal(err.message, 'Failed to save template: failure');
-            actions.saveConfiguration.restore();
-            t.end();
-        }
-    });
+    try {
+        const context = new CommandContext(opts, 'testing', []);
+        context.oldParameters = { old: 'parameters' },
+        context.kms = true,
 
-    commands.operations.saveConfig(context);
+        await Operations.saveConfig(context);
+
+        t.fail();
+    } catch (err) {
+        t.ok(err instanceof Actions.S3Error, 'expected error type');
+        t.equal(err.message, 'Failed to save template: failure');
+    }
+
+    Actions.saveConfiguration.restore();
+    t.end();
 });
 
-test('[commands.operations.saveConfig] success', (t) => {
-    sinon.stub(actions, 'saveConfiguration').callsFake(function(baseName, stackName, stackRegion, bucket, parameters, kms, callback) {
+test('[Operations.saveConfig] success', async(t) => {
+    const context = new CommandContext(opts, 'testing', []);
+
+    sinon.stub(Actions, 'saveConfiguration').callsFake((baseName, stackName, stackRegion, bucket, parameters, kms) => {
         t.equal(baseName, context.baseName, 'save under correct stack name');
         t.equal(stackName, context.stackName, 'save under correct stack name');
         t.equal(stackRegion, context.stackRegion, 'save under correct stack region');
         t.equal(bucket, context.configBucket, 'save in correct bucket');
         t.deepEqual(parameters, { new: 'parameters' }, 'save correct config');
         t.equal(kms, 'alias/cloudformation', 'use appropriate kms setting');
-        callback();
+        return Promise.resolve();
     });
 
-    var context = Object.assign({}, basicContext, {
-        newParameters: { new: 'parameters' },
-        overrides: { kms: true },
-        next: function(err) {
-            t.ifError(err, 'success');
-            actions.saveConfiguration.restore();
-            t.end();
-        }
-    });
+    try {
+        context.newParameters = { new: 'parameters' };
+        context.overrides = { kms: true };
 
-    commands.operations.saveConfig(context);
+        await Operations.saveConfig(context);
+    } catch (err) {
+        t.error(err);
+    }
+
+    Actions.saveConfiguration.restore();
+    t.end();
 });
 
-test('[commands.operations.mergeMetadata]', (t) => {
-    var context = Object.assign({}, basicContext, {
-        stackRegion: 'us-west-2',
-        newTemplate: { new: 'template' },
-        oldParameters: { old: 'parameters' },
-        overrides: {
+test('[Operations.mergeMetadata]', async(t) => {
+    try {
+        const context = new CommandContext(opts, 'testing', []);
+        context.stackRegion = 'us-west-2',
+        context.newTemplate = { new: 'template' },
+        context.oldParameters = { old: 'parameters' },
+        context.overrides = {
             metadata: {
                 LastDeploy: 'cooper'
             }
         },
-        next: function(err) {
-            t.ifError(err, 'success');
-            t.deepEqual(context.newTemplate.Metadata, { LastDeploy: 'cooper' });
-            t.end();
-        }
-    });
-    commands.operations.mergeMetadata(context);
+
+        await Operations.mergeMetadata(context);
+
+        t.deepEqual(context.newTemplate.Metadata, { LastDeploy: 'cooper' });
+    } catch (err) {
+        t.error(err);
+    }
+
+    t.end();
 });
 
-test('[commands.operations.mergeMetadata] error', (t) => {
-    var context = Object.assign({}, basicContext, {
-        stackRegion: 'us-west-2',
-        newTemplate: { new: 'template', Metadata: { LastDeploy: 'jane' } },
-        oldParameters: { old: 'parameters' },
-        overrides: {
+test('[Operations.mergeMetadata] error', async(t) => {
+    try {
+        const context = new CommandContext(opts, 'testing', []);
+        context.stackRegion = 'us-west-2',
+        context.newTemplate = { new: 'template', Metadata: { LastDeploy: 'jane' } },
+        context.oldParameters = { old: 'parameters' },
+        context.overrides = {
             metadata: {
                 LastDeploy: 'cooper'
             }
         },
-        next: function(err) {
-            t.equal(err && err.toString(), 'Error: Metadata.LastDeploy already exists in template');
-            t.end();
-        }
-    });
-    commands.operations.mergeMetadata(context);
+
+        await Operations.mergeMetadata(context);
+
+        t.fail();
+    } catch (err) {
+        t.equal(err && err.toString(), 'Error: Metadata.LastDeploy already exists in template');
+    }
+
+    t.end();
 });

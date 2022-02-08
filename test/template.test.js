@@ -1,6 +1,6 @@
 const test = require('tape');
 const queue = require('d3-queue').queue;
-const template = require('../lib/template');
+const Template = require('../lib/template');
 const path = require('path');
 const fs = require('fs');
 const AWS = require('@mapbox/mock-aws-sdk-js');
@@ -10,164 +10,207 @@ const expected = require('./fixtures/template.json');
 process.env.AWS_ACCESS_KEY_ID = '-';
 process.env.AWS_SECRET_ACCESS_KEY = '-';
 
-test('[template.read] local file does not exist', (t) => {
-    template.read('./fake', function(err) {
-        t.ok(err instanceof template.NotFoundError, 'returned expected error');
-        t.end();
-    });
+test('[template.read] local file does not exist', async(t) => {
+    try {
+        await Template.read('./fake');
+        t.fail();
+    } catch (err) {
+        t.ok(err instanceof Template.NotFoundError, 'returned expected error');
+    }
+
+    t.end();
 });
 
-test('[template.read] local file cannot be parsed', (t) => {
-    template.read(path.resolve(__dirname, 'fixtures', 'malformed-template.json'), function(err) {
-        t.ok(err instanceof template.InvalidTemplateError, 'returned expected error');
+test('[template.read] local file cannot be parsed', async(t) => {
+    try {
+        await Template.read(path.resolve(__dirname, 'fixtures', 'malformed-template.json'));
+        t.fail();
+    } catch (err) {
+        t.ok(err instanceof Template.InvalidTemplateError, 'returned expected error');
         t.ok(/Failed to parse .*: Unexpected end/.test(err.message), 'passthrough parse error');
-        t.end();
-    });
+    }
+
+    t.end();
 });
 
-test('[template.read] local js file cannot be parsed', (t) => {
-    template.read(path.resolve(__dirname, 'fixtures', 'malformed-template.js'), function(err) {
-        t.ok(err instanceof template.InvalidTemplateError, 'returned expected error');
+test('[template.read] local js file cannot be parsed', async(t) => {
+    try {
+        await Template.read(path.resolve(__dirname, 'fixtures', 'malformed-template.js'));
+        t.fail();
+    } catch (err) {
+        t.ok(err instanceof Template.InvalidTemplateError, 'returned expected error');
         t.ok(/Failed to parse .*/.test(err.message), 'passthrough parse error');
-        t.end();
-    });
+    }
+
+    t.end();
 });
 
-test('[template.read] S3 no access', (t) => {
-    template.read('s3://mapbox/fake', function(err) {
-        t.ok(err instanceof template.NotFoundError, 'returned expected error');
-        t.end();
-    });
+test('[template.read] S3 no access', async(t) => {
+    try {
+        await Template.read('s3://mapbox/fake');
+        t.fail();
+    } catch (err) {
+        t.ok(err instanceof Template.NotFoundError, 'returned expected error');
+    }
+
+    t.end();
 });
 
-test('[template.read] S3 bucket does not exist', (t) => {
-    t.plan(2);
-
-    AWS.stub('S3', 'getBucketLocation', function(params, callback) {
+test('[template.read] S3 bucket does not exist', async(t) => {
+    AWS.stub('S3', 'getBucketLocation', (params) => {
         t.deepEqual(params, { Bucket: 'my' }, 'requested bucket location');
-        var error = new Error('Bucket does not exist');
-        error.code = 'NotFoundError';
-        callback(error);
+        const err = new Error('Bucket does not exist');
+        err.code = 'NotFoundError';
+        throw err;
     });
 
-    template.read('s3://my/template', function(err) {
-        t.ok(err instanceof template.NotFoundError, 'returned expected error');
-        AWS.S3.restore();
-    });
+    try {
+        await Template.read('s3://my/template');
+        t.fail();
+    } catch (err) {
+        t.ok(err instanceof Template.NotFoundError, 'returned expected error');
+    }
+
+    AWS.S3.restore();
+    t.end();
 });
 
-test('[template.read] S3 file does not exist', (t) => {
-    t.plan(3);
-
-    AWS.stub('S3', 'getObject', function(params, callback) {
+test('[template.read] S3 file does not exist', async(t) => {
+    AWS.stub('S3', 'getObject', (params) => {
         t.deepEqual(params, { Bucket: 'my', Key: 'template' }, 'requested correct S3 object');
-        var error = new Error('Object does not exist');
-        error.code = 'NotFoundError';
-        callback(error);
+        const err = new Error('Object does not exist');
+        err.code = 'NotFoundError';
+        throw err;
     });
 
-    AWS.stub('S3', 'getBucketLocation', function(params, callback) {
+    AWS.stub('S3', 'getBucketLocation', function(params) {
         t.deepEqual(params, { Bucket: 'my' }, 'requested bucket location');
-        callback(null, { LocationConstraint: 'eu-central-1' });
+        return this.request.promise.returns(Promise.resolve({ LocationConstraint: 'eu-central-1' }));
     });
 
-    template.read('s3://my/template', function(err) {
-        t.ok(err instanceof template.NotFoundError, 'returned expected error');
-        AWS.S3.restore();
-    });
+    try {
+        await Template.read('s3://my/template');
+        t.fail();
+    } catch (err) {
+        t.ok(err instanceof Template.NotFoundError, 'returned expected error');
+    }
+
+    AWS.S3.restore();
+    t.end();
 });
 
-test('[template.read] S3 file cannot be parsed', (t) => {
-    t.plan(3);
-
-    AWS.stub('S3', 'getObject', function(params, callback) {
+test('[template.read] S3 file cannot be parsed', async(t) => {
+    AWS.stub('S3', 'getObject', function(params) {
         t.deepEqual(params, { Bucket: 'my', Key: 'template' }, 'requested correct S3 object');
-        var malformed = fs.readFileSync(path.resolve(__dirname, 'fixtures', 'malformed-template.json'));
-        callback(null, { Body: malformed });
+        const malformed = fs.readFileSync(path.resolve(__dirname, 'fixtures', 'malformed-template.json'));
+        return this.request.promise.returns(Promise.resolve({ Body: malformed }));
     });
 
-    AWS.stub('S3', 'getBucketLocation', function(params, callback) {
+    AWS.stub('S3', 'getBucketLocation', function(params) {
         t.deepEqual(params, { Bucket: 'my' }, 'requested bucket location');
-        callback(null, { LocationConstraint: 'eu-central-1' });
+        return this.request.promise.returns(Promise.resolve({ LocationConstraint: 'eu-central-1' }));
     });
 
-    template.read('s3://my/template', function(err) {
-        t.ok(err instanceof template.InvalidTemplateError, 'returned expected error');
-        AWS.S3.restore();
-    });
+    try {
+        await Template.read('s3://my/template');
+        t.fail();
+    } catch (err) {
+        t.ok(err instanceof Template.InvalidTemplateError, 'returned expected error');
+    }
+
+    AWS.S3.restore();
+    t.end();
 });
 
-test('[template.read] local JSON', (t) => {
-    template.read(path.resolve(__dirname, 'fixtures', 'template.json'), function(err, found) {
-        t.ifError(err, 'success');
+test('[template.read] local JSON', async(t) => {
+    try {
+        const found = await Template.read(path.resolve(__dirname, 'fixtures', 'template.json'));
         t.deepEqual(found, expected, 'got template JSON');
-        t.end();
-    });
+    } catch (err) {
+        t.error(err);
+    }
+
+    t.end();
 });
 
-test('[template.read] local sync JS', (t) => {
-    template.read(path.resolve(__dirname, 'fixtures', 'template-sync.js'), function(err, found) {
-        t.ifError(err, 'success');
+test('[template.read] local sync JS', async(t) => {
+    try {
+        const found = await Template.read(path.resolve(__dirname, 'fixtures', 'template-sync.js'));
         t.deepEqual(found, expected, 'got template JSON');
-        t.end();
-    });
+    } catch (err) {
+        t.error(err);
+    }
+
+    t.end();
 });
 
-test('[template.read] local sync JS (relative path)', (t) => {
-    var relativePath = path.resolve(__dirname, 'fixtures', 'template-sync.js').replace(process.cwd(), '').substr(1);
+test('[template.read] local sync JS (relative path)', async(t) => {
+    const relativePath = path.resolve(__dirname, 'fixtures', 'template-sync.js').replace(process.cwd(), '').substr(1);
     t.equal(relativePath[0] !== '/', true, 'relative path: ' + relativePath);
-    template.read(relativePath, function(err, found) {
-        t.ifError(err, 'success');
+
+    try {
+        const found = await Template.read(relativePath);
         t.deepEqual(found, expected, 'got template JSON');
-        t.end();
-    });
+    } catch (err) {
+        t.error(err);
+    }
+
+    t.end();
 });
 
-test('[template.read] local async JS with options', (t) => {
-    template.read(path.resolve(__dirname, 'fixtures', 'template-async.js'), { some: 'options' }, function(err, found) {
-        t.ifError(err, 'success');
+test('[template.read] local async JS with options', async(t) => {
+    try {
+        const found = await Template.read(path.resolve(__dirname, 'fixtures', 'template-async.js'), { some: 'options' });
         t.deepEqual(found, { some: 'options' }, 'got template JSON');
-        t.end();
-    });
+    } catch (err) {
+        t.error(err);
+    }
+
+    t.end();
 });
 
-test('[template.read] local async JS without options', (t) => {
-    template.read(path.resolve(__dirname, 'fixtures', 'template-async.js'), function(err, found) {
-        t.ifError(err, 'success');
+test('[template.read] local async JS without options', async(t) => {
+    try {
+        const found = await Template.read(path.resolve(__dirname, 'fixtures', 'template-async.js'));
         t.deepEqual(found, {}, 'got template JSON');
-        t.end();
-    });
+    } catch (err) {
+        t.error(err);
+    }
+
+    t.end();
 });
 
-test('[template.read] S3 JSON', (t) => {
-    t.plan(4);
-
-    AWS.stub('S3', 'getObject', function(params, callback) {
+test('[template.read] S3 JSON', async(t) => {
+    AWS.stub('S3', 'getObject', function(params) {
         t.deepEqual(params, { Bucket: 'my', Key: 'template' }, 'requested correct S3 object');
-        callback(null, { Body: new Buffer(JSON.stringify(expected)) });
+        return this.request.promise.returns(Promise.resolve({ Body: new Buffer(JSON.stringify(expected)) }));
     });
 
-    AWS.stub('S3', 'getBucketLocation', function(params, callback) {
+    AWS.stub('S3', 'getBucketLocation', function(params) {
         t.deepEqual(params, { Bucket: 'my' }, 'requested bucket location');
-        callback(null, { LocationConstraint: '' });
+        return this.request.promise.returns(Promise.resolve({ LocationConstraint: '' }));
     });
 
-    template.read('s3://my/template', function(err, found) {
-        t.ifError(err, 'success');
+    try {
+        const found = await Template.read('s3://my/template');
         t.deepEqual(found, expected, 'got template JSON');
-        AWS.S3.restore();
-    });
+    } catch (err) {
+        t.error(err);
+    }
+
+    AWS.S3.restore();
+    t.end();
 });
 
 test('[template.questions] provides expected questions without encryption', (t) => {
-    var questions = template.questions(expected);
+    const questions = Template.questions(expected);
 
     t.equal(questions.length, 6, 'all questions provided');
 
-    var q = queue(1);
+    const q = queue(1);
 
     q.defer(function(next) {
-        var name = questions[0];
+        const name = questions[0];
         t.equal(name.type, 'input', 'correct type for Name');
         t.equal(name.name, 'Name', 'correct name for Name');
         t.equal(name.message, 'Name. Someone\'s first name:', 'correct message for Name');
@@ -178,7 +221,7 @@ test('[template.questions] provides expected questions without encryption', (t) 
     });
 
     q.defer(function(next) {
-        var age = questions[1];
+        const age = questions[1];
         t.equal(age.type, 'input', 'correct type for Age');
         t.equal(age.name, 'Age', 'correct name for Age');
         t.equal(age.message, 'Age:', 'correct message for Age');
@@ -190,7 +233,7 @@ test('[template.questions] provides expected questions without encryption', (t) 
     });
 
     q.defer(function(next) {
-        var handedness = questions[2];
+        const handedness = questions[2];
         t.equal(handedness.type, 'list', 'correct type for Handedness');
         t.equal(handedness.name, 'Handedness', 'correct name for Handedness');
         t.equal(handedness.message, 'Handedness. Their dominant hand:', 'correct message for Handedness');
@@ -200,7 +243,7 @@ test('[template.questions] provides expected questions without encryption', (t) 
     });
 
     q.defer(function(next) {
-        var pets = questions[3];
+        const pets = questions[3];
         t.equal(pets.type, 'input', 'correct type for Pets');
         t.equal(pets.name, 'Pets', 'correct name for Pets');
         t.equal(pets.message, 'Pets. The names of their pets:', 'correct message for Pets');
@@ -208,7 +251,7 @@ test('[template.questions] provides expected questions without encryption', (t) 
     });
 
     q.defer(function(next) {
-        var numbers = questions[4];
+        const numbers = questions[4];
         t.equal(numbers.type, 'input', 'correct type for LuckyNumbers');
         t.equal(numbers.name, 'LuckyNumbers', 'correct name for LuckyNumbers');
         t.equal(numbers.message, 'LuckyNumbers. Their lucky numbers:', 'correct message for LuckyNumbers');
@@ -218,7 +261,7 @@ test('[template.questions] provides expected questions without encryption', (t) 
     });
 
     q.defer(function(next) {
-        var password = questions[5];
+        const password = questions[5];
         t.equal(password.type, 'password', 'correct type for SecretPassword');
         t.equal(password.name, 'SecretPassword', 'correct name for SecretPassword');
         t.equal(password.message, 'SecretPassword. [secure] Their secret password:', 'correct message for SecretPassword');
@@ -246,19 +289,19 @@ test('[template.questions] respects overrides', (t) => {
         return callback(null, { CiphertextBlob: new Buffer(params.Plaintext) });
     });
 
-    var overrides = {
+    const overrides = {
         defaults: { Name: 'Chuck' },
         messages: { Name: 'Somebody' },
         choices: { Handedness: ['top', 'bottom'] },
         kmsKeyId: 'this is a bomb key'
     };
 
-    var questions = template.questions(expected, overrides);
+    const questions = Template.questions(expected, overrides);
 
-    var q = queue(1);
+    const q = queue(1);
 
     q.defer(function(next) {
-        var name = questions[0];
+        const name = questions[0];
         t.equal(name.default, 'Chuck', 'overriden default for Name');
         t.equal(name.message, 'Somebody', 'overriden message for Name');
         name.async = function() {
@@ -272,14 +315,14 @@ test('[template.questions] respects overrides', (t) => {
     });
 
     q.defer(function(next) {
-        var handedness = questions[2];
+        const handedness = questions[2];
         t.deepEqual(handedness.choices, ['top', 'bottom'], 'overriden choices for Handedness');
         next();
     });
 
 
     q.defer(function(next) {
-        var password = questions[5];
+        const password = questions[5];
         password.async = function() {
             return function(err, encrypted) {
                 t.ifError(err, 'encryption doesn\'t cause errors');
@@ -292,7 +335,7 @@ test('[template.questions] respects overrides', (t) => {
     });
 
     q.defer(function(next) {
-        var password = questions[5];
+        const password = questions[5];
         password.async = function() {
             return function(err, encrypted) {
                 t.ifError(err, 'encryption doesn\'t cause errors');
@@ -316,9 +359,9 @@ test('[template.questions] defaults kms key to correct default', (t) => {
         return callback(null, { CiphertextBlob: new Buffer(params.Plaintext) });
     });
 
-    var questions = template.questions(expected, { kmsKeyId: true });
+    const questions = Template.questions(expected, { kmsKeyId: true });
 
-    var password = questions[5];
+    const password = questions[5];
     password.async = function() {
         return function(err, encrypted) {
             t.ifError(err, 'encryption doesn\'t cause errors');
@@ -332,13 +375,13 @@ test('[template.questions] defaults kms key to correct default', (t) => {
 });
 
 test('[template.questions] no parameters', (t) => {
-    var questions = template.questions({});
+    const questions = Template.questions({});
     t.deepEqual(questions, [], 'no further questions');
     t.end();
 });
 
 test('[template.questions] no description = no encryption', (t) => {
-    var questions = template.questions({ Parameters: { Undefined: {} } }, { kmsKeyId: 'my-key' });
+    const questions = Template.questions({ Parameters: { Undefined: {} } }, { kmsKeyId: 'my-key' });
     questions[0].async = function() {
         return function(err, input) {
             t.ifError(err, 'success');
@@ -351,17 +394,17 @@ test('[template.questions] no description = no encryption', (t) => {
 
 test('[template.questions] handles failure during kms encryption', (t) => {
     AWS.stub('KMS', 'encrypt', function(params, callback) {
-        var err = new Error('Bad encryption error');
+        const err = new Error('Bad encryption error');
         err.code = 'Whoops';
         return callback(err);
     });
 
-    var questions = template.questions(expected, { kmsKeyId: true });
+    const questions = Template.questions(expected, { kmsKeyId: true });
 
-    var password = questions[5];
+    const password = questions[5];
     password.async = function() {
         return function(err, encrypted) {
-            t.ok(err instanceof template.KmsError, 'expected error type');
+            t.ok(err instanceof Template.KmsError, 'expected error type');
             t.equal(err.toString(), 'KmsError: Whoops: Bad encryption error', 'correct error');
             t.equal(encrypted, undefined, 'no encrypted return value');
             AWS.KMS.restore();
@@ -373,17 +416,17 @@ test('[template.questions] handles failure during kms encryption', (t) => {
 
 test('[template.questions] handles kms key lookup failure during kms encryption with special message', (t) => {
     AWS.stub('KMS', 'encrypt', function(params, callback) {
-        var error = new Error('Invalid key');
+        const error = new Error('Invalid key');
         error.code = 'NotFoundException';
         return callback(error);
     });
 
-    var questions = template.questions(expected, { kmsKeyId: 'garbage' });
+    const questions = Template.questions(expected, { kmsKeyId: 'garbage' });
 
-    var password = questions[5];
+    const password = questions[5];
     password.async = function() {
         return function(err, encrypted) {
-            t.ok(err instanceof template.NotFoundError, 'expected error type');
+            t.ok(err instanceof Template.NotFoundError, 'expected error type');
             t.equal(err.toString(), 'NotFoundError: Unable to find KMS encryption key "garbage"', 'correct error');
             t.equal(encrypted, undefined, 'no encrypted return value');
             AWS.KMS.restore();
@@ -394,10 +437,10 @@ test('[template.questions] handles kms key lookup failure during kms encryption 
 });
 
 test('[template.questions] reject defaults that are not in a list of allowed values', (t) => {
-    var parameters = { List: { Type: 'String', AllowedValues: ['one', 'two'] } };
-    var overrides = { defaults: { List: 'three' } };
+    const parameters = { List: { Type: 'String', AllowedValues: ['one', 'two'] } };
+    const overrides = { defaults: { List: 'three' } };
 
-    var questions = template.questions({ Parameters: parameters }, overrides);
+    const questions = Template.questions({ Parameters: parameters }, overrides);
     t.notEqual(questions[0].default, 'three', 'rejected disallowed default value');
     t.end();
 });

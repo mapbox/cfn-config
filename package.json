@@ -1,6 +1,6 @@
 {
     "name": "@openaddresses/cfn-config",
-    "version": "3.2.1",
+    "version": "4.0.0",
     "author": "Mapbox",
     "description": "Quickly configure and start AWS CloudFormation stacks",
     "license": "BSD-2-Clause",
@@ -9,7 +9,7 @@
         "node": ">= 16"
     },
     "repository": {
-        "url": "https://github.com/mapbox/cfn-config.git",
+        "url": "https://github.com/openaddresses/cfn-config.git",
         "type": "git"
     },
     "bin": {
@@ -26,7 +26,6 @@
         "cfn-stack-event-stream": "^1.0.1",
         "colors": "1.4.0",
         "cuid": "^2.1.1",
-        "d3-queue": "^3.0.2",
         "diff": "^5.0.0",
         "easy-table": "^1.0.0",
         "fasterror": "^1.0.0",
@@ -38,6 +37,7 @@
     },
     "devDependencies": {
         "@mapbox/mock-aws-sdk-js": "^1.0.0",
+        "d3-queue": "^3.0.2",
         "eslint": "^8.1.0",
         "nyc": "^15.0.0",
         "opener": "^1.4.1",
