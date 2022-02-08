@@ -1,6 +1,9 @@
 # Change Log
 All notable changes to this project will be documented in this file. For change log formatting, see http://keepachangelog.com/
 
+## 5.0.0 - 2022-02-08
+- Update all internal & external APIs to use Promises
+
 ## 4.0.0 - 2022-01-25
 - Refactor internals to use classes & ES6 syntax
 - Drop support for nodejs < 16
