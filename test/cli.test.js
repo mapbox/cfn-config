@@ -121,7 +121,7 @@ const base = {
     }
 };
 
-test('[cli.main] no command', async (t) => {
+test('[cli.main] no command', async(t) => {
     const parsed = Object.assign({}, base, { command: undefined });
 
     try {
@@ -133,7 +133,7 @@ test('[cli.main] no command', async (t) => {
     t.end();
 });
 
-test('[cli.main] bad command', async (t) => {
+test('[cli.main] bad command', async(t) => {
     const parsed = Object.assign({}, base, { command: 'hibbity' });
 
     try {
@@ -146,7 +146,7 @@ test('[cli.main] bad command', async (t) => {
     t.end();
 });
 
-test('[cli.main] no environment', async (t) => {
+test('[cli.main] no environment', async(t) => {
     const parsed = Object.assign({}, base, { environment: undefined });
 
     try {
@@ -159,7 +159,7 @@ test('[cli.main] no environment', async (t) => {
     t.end();
 });
 
-test('[cli.main] no template path (create)', async (t) => {
+test('[cli.main] no template path (create)', async(t) => {
     const parsed = Object.assign({}, base, { templatePath: undefined });
 
     try {
@@ -172,7 +172,15 @@ test('[cli.main] no template path (create)', async (t) => {
     t.end();
 });
 
-test('[cli.main] no template path (info)', async (t) => {
+test('[cli.main] no template path (info)', async(t) => {
+    sinon.stub(cfnConfig, 'Commands').callsFake(() => {
+        return {
+            info: () => {
+                return Promise.resolve({});
+            }
+        };
+    });
+
     const parsed = Object.assign({}, base, { command: 'info', templatePath: undefined });
 
     try {
@@ -181,20 +189,20 @@ test('[cli.main] no template path (info)', async (t) => {
         t.error(err);
     }
 
-    cfnConfig.commands.restore();
+    cfnConfig.Commands.restore();
     t.end();
 });
 
-test('[cli.main] create', async (t) => {
-    sinon.stub(cfnConfig, 'commands').callsFake((options) => {
+test('[cli.main] create', async(t) => {
+    sinon.stub(cfnConfig, 'Commands').callsFake((options) => {
         t.deepEqual(options, base.options, 'provided commands constructor with correct options');
 
         return {
-            create: function(suffix, templatePath, overrides, callback) {
+            create: (suffix, templatePath, overrides) => {
                 t.equal(suffix, base.environment, 'provides correct suffix');
                 t.equal(templatePath, base.templatePath, 'provides correct templatePath');
                 t.deepEqual(overrides, base.overrides, 'provides correct overrides');
-                callback();
+                return Promise.resolve();
             }
         };
     });
@@ -205,83 +213,93 @@ test('[cli.main] create', async (t) => {
         t.error(err);
     }
 
-    cfnConfig.commands.restore();
+    cfnConfig.Commands.restore();
     t.end();
 });
 
-test('[cli.main] update', (t) => {
-    sinon.stub(cfnConfig, 'commands').callsFake(function(options) {
+test('[cli.main] update', async(t) => {
+    sinon.stub(cfnConfig, 'Commands').callsFake((options) => {
         t.deepEqual(options, base.options, 'provided commands constructor with correct options');
         return {
-            update: function(suffix, templatePath, overrides, callback) {
+            update: (suffix, templatePath, overrides) => {
                 t.equal(suffix, base.environment, 'provides correct suffix');
                 t.equal(templatePath, base.templatePath, 'provides correct templatePath');
                 t.deepEqual(overrides, base.overrides, 'provides correct overrides');
-                callback();
+                return Promise.resolve();
             }
         };
     });
 
     const parsed = Object.assign({}, base, { command: 'update' });
 
-    cli.main(parsed, function(err) {
-        t.ifError(err, 'success');
-        cfnConfig.commands.restore();
-        t.end();
-    });
+    try {
+        await cli.main(parsed);
+    } catch (err) {
+        t.error(err);
+    }
+
+    cfnConfig.Commands.restore();
+    t.end();
 });
 
-test('[cli.main] delete', (t) => {
-    sinon.stub(cfnConfig, 'commands').callsFake(function(options) {
+test('[cli.main] delete', async(t) => {
+    sinon.stub(cfnConfig, 'Commands').callsFake((options) => {
         t.deepEqual(options, base.options, 'provided commands constructor with correct options');
         return {
-            delete: function(suffix, overrides, callback) {
+            delete: (suffix, overrides) => {
                 t.equal(suffix, base.environment, 'provides correct suffix');
                 t.deepEqual(overrides, base.overrides, 'provides correct overrides');
-                callback();
+                return Promise.resolve();
             }
         };
     });
 
     const parsed = Object.assign({}, base, { command: 'delete' });
 
-    cli.main(parsed, function(err) {
-        t.ifError(err, 'success');
-        cfnConfig.commands.restore();
-        t.end();
-    });
+    try {
+        await cli.main(parsed);
+    } catch (err) {
+        t.error(err);
+    }
+
+    cfnConfig.Commands.restore();
+    t.end();
 });
 
-test('[cli.main] info', (t) => {
-    sinon.stub(cfnConfig, 'commands').callsFake(function(options) {
+test('[cli.main] info', async(t) => {
+    sinon.stub(cfnConfig, 'Commands').callsFake((options) => {
         t.deepEqual(options, base.options, 'provided commands constructor with correct options');
+
         return {
-            info: function(suffix, resources, decrypt, callback) {
+            info: (suffix, resources, decrypt) => {
                 t.equal(suffix, base.environment, 'provides correct suffix');
                 t.deepEqual(resources, base.options.extended, 'provides correct resources boolean');
                 t.deepEqual(decrypt, base.options.decrypt, 'provides correct resources boolean');
-                callback();
+                return Promise.resolve();
             }
         };
     });
 
     const parsed = Object.assign({}, base, { command: 'info' });
 
-    cli.main(parsed, function(err) {
-        t.ifError(err, 'success');
-        cfnConfig.commands.restore();
-        t.end();
-    });
+    try {
+        await cli.main(parsed);
+    } catch (err) {
+        t.error(err);
+    }
+
+    cfnConfig.Commands.restore();
+    t.end();
 });
 
-test('[cli.main] save (with kms)', (t) => {
-    sinon.stub(cfnConfig, 'commands').callsFake(function(options) {
+test('[cli.main] save (with kms)', async(t) => {
+    sinon.stub(cfnConfig, 'Commands').callsFake((options) => {
         t.deepEqual(options, base.options, 'provided commands constructor with correct options');
         return {
-            save: function(suffix, kms, callback) {
+            save: (suffix, kms) => {
                 t.equal(suffix, base.environment, 'provides correct suffix');
                 t.deepEqual(kms, base.overrides.kms, 'provides correct kms boolean');
-                callback();
+                return Promise.resolve();
             }
         };
     });
@@ -289,29 +307,36 @@ test('[cli.main] save (with kms)', (t) => {
     const parsed = Object.assign({}, base, { command: 'save' });
     parsed.overrides.kms = true;
 
-    cli.main(parsed, function(err) {
-        t.ifError(err, 'success');
-        cfnConfig.commands.restore();
-        t.end();
-    });
+    try {
+        await cli.main(parsed);
+    } catch (err) {
+        t.error(err);
+    }
+
+    cfnConfig.Commands.restore();
+    t.end();
 });
 
-test('[cli.main] save (without kms)', (t) => {
-    sinon.stub(cfnConfig, 'commands').callsFake(function(options) {
+test('[cli.main] save (without kms)', async(t) => {
+    sinon.stub(cfnConfig, 'Commands').callsFake((options) => {
         t.deepEqual(options, base.options, 'provided commands constructor with correct options');
         return {
-            save: function(suffix, kms, callback) {
+            save: (suffix, kms) => {
                 t.equal(suffix, base.environment, 'provides correct suffix');
-                callback();
+                t.equal(kms, true, 'provides correct kms');
+                return Promise.resolve();
             }
         };
     });
 
     const parsed = Object.assign({}, base, { command: 'save' });
 
-    cli.main(parsed, function(err) {
-        t.ifError(err, 'success');
-        cfnConfig.commands.restore();
-        t.end();
-    });
+    try {
+        await cli.main(parsed);
+    } catch (err) {
+        t.error(err);
+    }
+
+    cfnConfig.Commands.restore();
+    t.end();
 });
