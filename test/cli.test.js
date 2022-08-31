@@ -1,8 +1,8 @@
-const path = require('path');
-const test = require('tape');
-const sinon = require('sinon');
-const cli = require('../lib/cli');
-const cfnConfig = require('..');
+import path from 'path';
+import test from 'tape';
+import sinon from 'sinon';
+import cli from '../lib/cli.js';
+import cfnConfig from '../index.js';
 
 test('[cli.parse] aliases and defaults', (t) => {
     const args = ['create', 'testing', 'relative/path', '-c', 'config', '-t', 'template'];

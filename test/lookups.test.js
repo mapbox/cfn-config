@@ -1,8 +1,9 @@
-const test = require('tape');
-const Lookup = require('../lib/lookup');
-const AWS = require('@mapbox/mock-aws-sdk-js');
+import fs from 'fs';
+import test from 'tape';
+import Lookup from '../lib/lookup.js';
+import AWS from '@mapbox/mock-aws-sdk-js';
 
-const template = require('./fixtures/template.json');
+const template = JSON.parse(fs.readFileSync(new URL('./fixtures/template.json', import.meta.url)));
 
 test('[lookup.info] describeStacks error', async(t) => {
     AWS.stub('CloudFormation', 'describeStacks').yields(new Error('cloudformation failed'));

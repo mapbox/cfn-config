@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 
-const cli = require('../lib/cli');
+import cli from '../lib/cli.js';
 
 let parsed;
 try {
     parsed = cli.parse(process.argv.slice(2), process.env);
 } catch (err) {
-    return finished(err);
+    finished(err);
 }
 
 cli.main(parsed, finished);

@@ -1,17 +1,17 @@
 /* eslint-disable no-console */
 /* eslint-disable no-useless-escape */
-const path = require('path');
-const test = require('tape');
-const sinon = require('sinon');
-const {
+import path from 'path';
+import test from 'tape';
+import sinon from 'sinon';
+import {
     Commands,
     CommandContext,
     Operations
-} = require('../lib/commands');
-const Prompt = require('../lib/prompt');
-const Actions = require('../lib/actions');
-const Lookup = require('../lib/lookup');
-const Template = require('../lib/template');
+} from '../lib/commands.js';
+import Prompt from '../lib/prompt.js';
+import Actions from '../lib/actions.js';
+import Lookup from '../lib/lookup.js';
+import Template from '../lib/template.js';
 
 const opts = {
     name: 'my-stack',

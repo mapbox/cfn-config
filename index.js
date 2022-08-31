@@ -1,18 +1,25 @@
-const AWS = require('aws-sdk');
+import Actions from './lib/actions.js';
+import { Commands } from './lib/commands.js';
+import Lookup from './lib/lookup.js';
+import Prompt from './lib/prompt.js';
+import Template from './lib/template.js';
 
-module.exports.Actions = require('./lib/actions'),
-module.exports.Commands = require('./lib/commands').Commands,
-module.exports.Lookup = require('./lib/lookup'),
-module.exports.Prompt = require('./lib/prompt'),
-module.exports.Template = require('./lib/template');
-
-module.exports.preauth = (credentials) => {
+function preauth(credentials) {
     AWS.config.credentials = credentials;
+
     return {
-        Actions: require('./lib/actions'),
-        Commands: require('./lib/commands').Commands,
-        Lookup: require('./lib/lookup'),
-        Prompt: require('./lib/prompt'),
-        Template: require('./lib/template')
+        Actions,
+        Commands,
+        Lookup,
+        Prompt,
+        Template
     };
 };
+
+export {
+    Actions,
+    Commands,
+    Lookup,
+    Prompt,
+    Template
+}

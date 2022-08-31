@@ -1,11 +1,10 @@
-const test = require('tape');
-const queue = require('d3-queue').queue;
-const Template = require('../lib/template');
-const path = require('path');
-const fs = require('fs');
-const AWS = require('@mapbox/mock-aws-sdk-js');
+import test from 'tape';
+import Template from '../lib/template.js';
+import path from 'path';
+import fs from 'fs';
+import AWS from '@mapbox/mock-aws-sdk-js';
 
-const expected = require('./fixtures/template.json');
+const expected = JSON.parse(fs.readFileSync(new URL('./fixtures/template.json', import.meta.url)));
 
 process.env.AWS_ACCESS_KEY_ID = '-';
 process.env.AWS_SECRET_ACCESS_KEY = '-';
@@ -23,7 +22,7 @@ test('[template.read] local file does not exist', async(t) => {
 
 test('[template.read] local file cannot be parsed', async(t) => {
     try {
-        await Template.read(path.resolve(__dirname, 'fixtures', 'malformed-template.json'));
+        await Template.read(new URL('./fixtures/malformed-template.json', import.meta.url));
         t.fail();
     } catch (err) {
         t.ok(err instanceof Template.InvalidTemplateError, 'returned expected error');
@@ -35,7 +34,7 @@ test('[template.read] local file cannot be parsed', async(t) => {
 
 test('[template.read] local js file cannot be parsed', async(t) => {
     try {
-        await Template.read(path.resolve(__dirname, 'fixtures', 'malformed-template.js'));
+        await Template.read(new URL('./fixtures/malformed-template.js'));
         t.fail();
     } catch (err) {
         t.ok(err instanceof Template.InvalidTemplateError, 'returned expected error');
@@ -102,7 +101,7 @@ test('[template.read] S3 file does not exist', async(t) => {
 test('[template.read] S3 file cannot be parsed', async(t) => {
     AWS.stub('S3', 'getObject', function(params) {
         t.deepEqual(params, { Bucket: 'my', Key: 'template' }, 'requested correct S3 object');
-        const malformed = fs.readFileSync(path.resolve(__dirname, 'fixtures', 'malformed-template.json'));
+        const malformed = fs.readFileSync(new URL('./fixtures/malformed-template.json'));
         return this.request.promise.returns(Promise.resolve({ Body: malformed }));
     });
 
@@ -124,7 +123,7 @@ test('[template.read] S3 file cannot be parsed', async(t) => {
 
 test('[template.read] local JSON', async(t) => {
     try {
-        const found = await Template.read(path.resolve(__dirname, 'fixtures', 'template.json'));
+        const found = await Template.read(new URL('./fixtures/template.json', import.meta.url));
         t.deepEqual(found, expected, 'got template JSON');
     } catch (err) {
         t.error(err);
@@ -135,7 +134,7 @@ test('[template.read] local JSON', async(t) => {
 
 test('[template.read] local sync JS', async(t) => {
     try {
-        const found = await Template.read(path.resolve(__dirname, 'fixtures', 'template-sync.js'));
+        const found = await Template.read(new URL('./fixtures/template-sync.js', import.meta.url));
         t.deepEqual(found, expected, 'got template JSON');
     } catch (err) {
         t.error(err);
@@ -145,7 +144,7 @@ test('[template.read] local sync JS', async(t) => {
 });
 
 test('[template.read] local sync JS (relative path)', async(t) => {
-    const relativePath = path.resolve(__dirname, 'fixtures', 'template-sync.js').replace(process.cwd(), '').substr(1);
+    const relativePath = new URL('./fixtures/template-sync.js', import.meta.url).pathname.replace(process.cwd(), '').substr(1);
     t.equal(relativePath[0] !== '/', true, 'relative path: ' + relativePath);
 
     try {
@@ -160,7 +159,7 @@ test('[template.read] local sync JS (relative path)', async(t) => {
 
 test('[template.read] local async JS with options', async(t) => {
     try {
-        const found = await Template.read(path.resolve(__dirname, 'fixtures', 'template-async.js'), { some: 'options' });
+        const found = await Template.read(new URL('./fixtures/template-async.js', import.meta.url), { some: 'options' });
         t.deepEqual(found, { some: 'options' }, 'got template JSON');
     } catch (err) {
         t.error(err);
@@ -171,7 +170,7 @@ test('[template.read] local async JS with options', async(t) => {
 
 test('[template.read] local async JS without options', async(t) => {
     try {
-        const found = await Template.read(path.resolve(__dirname, 'fixtures', 'template-async.js'));
+        const found = await Template.read(new URL('./fixtures/template-async.js', import.meta.url));
         t.deepEqual(found, {}, 'got template JSON');
     } catch (err) {
         t.error(err);
