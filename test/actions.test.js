@@ -732,7 +732,7 @@ test('[actions.templateUrl] eu-central-1', (t) => {
 test('[actions.saveTemplate] bucket does not exist', async(t) => {
     const url = 'https://s3.amazonaws.com/my-bucket/cirjpj94c0000s5nzc1j452o7-my-stack.template.json';
     const template = fs.readFileSync(new URL('./fixtures/template.json', import.meta.url));
-    const AWS = require('aws-sdk');
+    const AWS = await import('aws-sdk');
     const S3 = AWS.S3;
 
     AWS.S3 = function(params) {
@@ -802,7 +802,7 @@ test('[actions.saveTemplate] us-east-1', async(t) => {
 
 test('[actions.saveTemplate] needs whitespace removal', async(t) => {
     const url = 'https://s3.amazonaws.com/my-bucket/cirjpj94c0000s5nzc1j452o7-my-stack.template.json';
-    const template = require('./fixtures/huge-template');
+    const template = JSON.parse(fs.readFileSync(new URL('./fixtures/huge-template', import.meta.url)));
 
     AWS.stub('S3', 'putObject', function(params) {
         t.deepEqual(params, {
@@ -827,7 +827,7 @@ test('[actions.saveTemplate] needs whitespace removal', async(t) => {
 test('[actions.saveTemplate] cn-north-1', async(t) => {
     const url = 'https://s3-cn-north-1.amazonaws.com.cn/my-bucket/cirjpj94c0000s5nzc1j452o7-my-stack.template.json';
     const template = fs.readFileSync(new URL('./fixtures/template.json', import.meta.url));
-    const AWS = require('aws-sdk');
+    const AWS = await import('aws-sdk');
     const S3 = AWS.S3;
 
     AWS.S3 = function(params) {
@@ -859,7 +859,7 @@ test('[actions.saveTemplate] cn-north-1', async(t) => {
 test('[actions.saveTemplate] eu-central-1', async(t) => {
     const url = 'https://s3-eu-central-1.amazonaws.com/my-bucket/cirjpj94c0000s5nzc1j452o7-my-stack.template.json';
     const template = fs.readFileSync(new URL('./fixtures/template.json', import.meta.url));
-    const AWS = require('aws-sdk');
+    const AWS = await import('aws-sdk');
     const S3 = AWS.S3;
 
     AWS.S3 = function(params) {
