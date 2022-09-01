@@ -34,7 +34,7 @@ test('[template.read] local file cannot be parsed', async(t) => {
 
 test('[template.read] local js file cannot be parsed', async(t) => {
     try {
-        await Template.read(new URL('./fixtures/malformed-template.js'));
+        await Template.read(new URL('./fixtures/malformed-template.js', import.meta.url));
         t.fail();
     } catch (err) {
         t.ok(err instanceof Template.InvalidTemplateError, 'returned expected error');
@@ -88,7 +88,7 @@ test('[template.read] S3 file does not exist', async(t) => {
     });
 
     try {
-        await Template.read('s3://my/template');
+        await Template.read(new URL('s3://my/template'));
         t.fail();
     } catch (err) {
         t.ok(err instanceof Template.NotFoundError, 'returned expected error');
@@ -101,7 +101,7 @@ test('[template.read] S3 file does not exist', async(t) => {
 test('[template.read] S3 file cannot be parsed', async(t) => {
     AWS.stub('S3', 'getObject', function(params) {
         t.deepEqual(params, { Bucket: 'my', Key: 'template' }, 'requested correct S3 object');
-        const malformed = fs.readFileSync(new URL('./fixtures/malformed-template.json'));
+        const malformed = fs.readFileSync(new URL('./fixtures/malformed-template.json', import.meta.url));
         return this.request.promise.returns(Promise.resolve({ Body: malformed }));
     });
 

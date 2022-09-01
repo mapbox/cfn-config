@@ -3,7 +3,6 @@ import events from 'events';
 import test from 'tape';
 import AWS from '@mapbox/mock-aws-sdk-js';
 import Actions from '../lib/actions.js';
-import sinon from 'sinon';
 
 test('[actions.diff] stack does not exist', async(t) => {
     AWS.stub('CloudFormation', 'createChangeSet', () => {
@@ -802,7 +801,7 @@ test('[actions.saveTemplate] us-east-1', async(t) => {
 
 test('[actions.saveTemplate] needs whitespace removal', async(t) => {
     const url = 'https://s3.amazonaws.com/my-bucket/cirjpj94c0000s5nzc1j452o7-my-stack.template.json';
-    const template = (await import('./fixtures/huge-template.js')).default
+    const template = (await import('./fixtures/huge-template.js')).default;
 
     AWS.stub('S3', 'putObject', function(params) {
         t.deepEqual(params, {
