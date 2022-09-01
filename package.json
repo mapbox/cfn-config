@@ -1,5 +1,6 @@
 {
     "name": "@openaddresses/cfn-config",
+    "type": "module",
     "version": "5.0.0",
     "author": "Mapbox",
     "description": "Quickly configure and start AWS CloudFormation stacks",
@@ -29,10 +30,10 @@
         "diff": "^5.0.0",
         "easy-table": "^1.0.0",
         "fasterror": "^1.0.0",
-        "inquirer": "^8.2.0",
+        "inquirer": "^9.0.0",
         "json-diff": "^0.7.1",
         "json-stable-stringify": "1.0.1",
-        "meow": "^5.0.0",
+        "meow": "^10.0.0",
         "s3urls": "^1.5.2"
     },
     "devDependencies": {
@@ -41,7 +42,7 @@
         "eslint": "^8.1.0",
         "nyc": "^15.0.0",
         "opener": "^1.4.1",
-        "sinon": "^12.0.1",
+        "sinon": "^14.0.0",
         "tape": "^5.4.0"
     }
 }

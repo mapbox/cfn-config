@@ -1,9 +1,9 @@
-const test = require('tape');
-const AWS = require('aws-sdk');
-const cfnConfig = require('..');
+import test from 'tape';
+import AWS from 'aws-sdk';
+import { preauth } from '../index.js';
 
 test('[preauth]', (t) => {
-    cfnConfig.preauth({
+    preauth({
         accessKeyId: 'a',
         secretAccessKey: 'b'
     });

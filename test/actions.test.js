@@ -1,9 +1,8 @@
-const path = require('path');
-const fs = require('fs');
-const events = require('events');
-const test = require('tape');
-const AWS = require('@mapbox/mock-aws-sdk-js');
-const Actions = require('../lib/actions');
+import fs from 'fs';
+import events from 'events';
+import test from 'tape';
+import AWS from '@mapbox/mock-aws-sdk-js';
+import Actions from '../lib/actions.js';
 
 test('[actions.diff] stack does not exist', async(t) => {
     AWS.stub('CloudFormation', 'createChangeSet', () => {
@@ -731,8 +730,8 @@ test('[actions.templateUrl] eu-central-1', (t) => {
 
 test('[actions.saveTemplate] bucket does not exist', async(t) => {
     const url = 'https://s3.amazonaws.com/my-bucket/cirjpj94c0000s5nzc1j452o7-my-stack.template.json';
-    const template = fs.readFileSync(path.resolve(__dirname, 'fixtures', 'template.json'));
-    const AWS = require('aws-sdk');
+    const template = fs.readFileSync(new URL('./fixtures/template.json', import.meta.url));
+    const AWS = (await import('aws-sdk')).default;
     const S3 = AWS.S3;
 
     AWS.S3 = function(params) {
@@ -758,7 +757,7 @@ test('[actions.saveTemplate] bucket does not exist', async(t) => {
 
 test('[actions.saveTemplate] s3 error', async(t) => {
     const url = 'https://s3.amazonaws.com/my-bucket/cirjpj94c0000s5nzc1j452o7-my-stack.template.json';
-    const template = fs.readFileSync(path.resolve(__dirname, 'fixtures', 'template.json'));
+    const template = fs.readFileSync(new URL('./fixtures/template.json', import.meta.url));
     AWS.stub('S3', 'putObject', () => {
         throw new Error('unexpected');
     });
@@ -776,7 +775,7 @@ test('[actions.saveTemplate] s3 error', async(t) => {
 
 test('[actions.saveTemplate] us-east-1', async(t) => {
     const url = 'https://s3.amazonaws.com/my-bucket/cirjpj94c0000s5nzc1j452o7-my-stack.template.json';
-    const template = fs.readFileSync(path.resolve(__dirname, 'fixtures', 'template.json'));
+    const template = fs.readFileSync(new URL('./fixtures/template.json', import.meta.url));
 
     // really need a way to stub the client constructor
 
@@ -802,7 +801,7 @@ test('[actions.saveTemplate] us-east-1', async(t) => {
 
 test('[actions.saveTemplate] needs whitespace removal', async(t) => {
     const url = 'https://s3.amazonaws.com/my-bucket/cirjpj94c0000s5nzc1j452o7-my-stack.template.json';
-    const template = require('./fixtures/huge-template');
+    const template = (await import('./fixtures/huge-template.js')).default;
 
     AWS.stub('S3', 'putObject', function(params) {
         t.deepEqual(params, {
@@ -826,8 +825,8 @@ test('[actions.saveTemplate] needs whitespace removal', async(t) => {
 
 test('[actions.saveTemplate] cn-north-1', async(t) => {
     const url = 'https://s3-cn-north-1.amazonaws.com.cn/my-bucket/cirjpj94c0000s5nzc1j452o7-my-stack.template.json';
-    const template = fs.readFileSync(path.resolve(__dirname, 'fixtures', 'template.json'));
-    const AWS = require('aws-sdk');
+    const template = fs.readFileSync(new URL('./fixtures/template.json', import.meta.url));
+    const AWS = (await import('aws-sdk')).default;
     const S3 = AWS.S3;
 
     AWS.S3 = function(params) {
@@ -858,8 +857,9 @@ test('[actions.saveTemplate] cn-north-1', async(t) => {
 
 test('[actions.saveTemplate] eu-central-1', async(t) => {
     const url = 'https://s3-eu-central-1.amazonaws.com/my-bucket/cirjpj94c0000s5nzc1j452o7-my-stack.template.json';
-    const template = fs.readFileSync(path.resolve(__dirname, 'fixtures', 'template.json'));
-    const AWS = require('aws-sdk');
+    const template = fs.readFileSync(new URL('./fixtures/template.json', import.meta.url));
+    const AWS = (await import('aws-sdk')).default;
+
     const S3 = AWS.S3;
 
     AWS.S3 = function(params) {

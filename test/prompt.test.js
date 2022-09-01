@@ -1,7 +1,7 @@
-const test = require('tape');
-const sinon = require('sinon');
-const inquirer = require('inquirer');
-const prompt = require('../lib/prompt');
+import test from 'tape';
+import sinon from 'sinon';
+import inquirer from 'inquirer';
+import prompt from '../lib/prompt.js';
 
 test('[prompt.confirm] single-line, confirm', async(t) => {
     sinon.stub(inquirer, 'prompt').callsFake((questions) => {

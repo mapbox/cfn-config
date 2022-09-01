@@ -1,6 +1,12 @@
 # Change Log
 All notable changes to this project will be documented in this file. For change log formatting, see http://keepachangelog.com/
 
+## 6.0.0 - 2022-09-01
+- `--config-bucket` is now `--config_bucket`
+- `--template-bucket` is now `--template_bucket`
+- CloudFormation templates must now either be JSON or CommonJS Modules with `export default` (No require/module.exports)
+
+
 ## 5.0.0 - 2022-02-08
 - Update all internal & external APIs to use Promises
 
