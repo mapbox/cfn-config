@@ -519,7 +519,7 @@ test('[Operations.updatePreamble] templatePath not found', async(t) => {
 
     } catch (err) {
         t.ok(err instanceof Template.NotFoundError, 'expected error type');
-        t.equal(err.message, 'Could not load template: /tmp/invalid/path/nonono.template.json does not exist', 'expected error message');
+        t.equal(err.message, 'Could not load template: file:///tmp/invalid/path/nonono.template.json does not exist', 'expected error message');
     }
 
     Lookup.parameters.restore();
@@ -684,7 +684,7 @@ test('[Operations.updatePreamble] failure getting stack template', async(t) => {
 
 test('[Operations.updatePreamble] success', async(t) => {
     sinon.stub(Template, 'read').callsFake((template, options) => {
-        t.equal(template, path.resolve('example.template.json'), 'read correct template path');
+        t.equal(template.pathname, path.resolve('example.template.json'), 'read correct template path');
         t.deepEqual(options, { template: 'options' }, 'passed overrides.templateOptions');
         return Promise.resolve({ new: 'template' });
     });
@@ -1902,7 +1902,7 @@ test('[Operations.createPreamble] template not found', async(t) => {
         t.fail();
     } catch (err) {
         t.ok(err instanceof Template.NotFoundError, 'expected error type');
-        t.equal(err.message, 'Could not load template: /tmp/invalid/path/nonono.template.json does not exist', 'expected error message');
+        t.equal(err.message, 'Could not load template: file:///tmp/invalid/path/nonono.template.json does not exist', 'expected error message');
     }
 
     Lookup.configurations.restore();
@@ -1991,7 +1991,7 @@ test('[Operations.createPreamble] success', async(t) => {
     const context = new CommandContext(opts, 'testing', []);
 
     sinon.stub(Template, 'read').callsFake((template, options) => {
-        t.equal(template, path.resolve('example.template.json'), 'read correct template path');
+        t.equal(template.pathname, path.resolve('example.template.json'), 'read correct template path');
         t.deepEqual(options, { template: 'options' }, 'passed overrides.templateOptions');
         return Promise.resolve({ new: 'template' });
     });
