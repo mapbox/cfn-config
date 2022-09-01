@@ -802,7 +802,7 @@ test('[actions.saveTemplate] us-east-1', async(t) => {
 
 test('[actions.saveTemplate] needs whitespace removal', async(t) => {
     const url = 'https://s3.amazonaws.com/my-bucket/cirjpj94c0000s5nzc1j452o7-my-stack.template.json';
-    const template = JSON.parse(fs.readFileSync(new URL('./fixtures/huge-template', import.meta.url)));
+    const template = JSON.parse(fs.readFileSync(new URL('./fixtures/huge-template.js', import.meta.url)));
 
     AWS.stub('S3', 'putObject', function(params) {
         t.deepEqual(params, {

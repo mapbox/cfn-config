@@ -14,7 +14,7 @@ function preauth(credentials) {
         Prompt,
         Template
     };
-};
+}
 
 export {
     Actions,
@@ -22,4 +22,4 @@ export {
     Lookup,
     Prompt,
     Template
-}
+};

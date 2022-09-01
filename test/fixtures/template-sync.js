@@ -1,4 +1,4 @@
-module.exports = {
+export default {
     Parameters: {
         Name: {
             Type: 'String',
@@ -41,4 +41,4 @@ module.exports = {
     Outputs: {
         Blah: { Value: 'blah', Description: 'nothing' }
     }
-};
+}

@@ -1,3 +1,3 @@
-module.exports = function(options, callback) {
+export default function(options, callback) {
     setTimeout(callback, 10, null, options);
 };

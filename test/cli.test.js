@@ -1,12 +1,15 @@
 import path from 'path';
 import test from 'tape';
 import sinon from 'sinon';
-import cli from '../lib/cli.js';
-import cfnConfig from '../index.js';
+import {
+    parse,
+    main
+} from '../lib/cli.js';
+import { Commands } from '../index.js';
 
 test('[cli.parse] aliases and defaults', (t) => {
     const args = ['create', 'testing', 'relative/path', '-c', 'config', '-t', 'template'];
-    const parsed = cli.parse(args, {});
+    const parsed = parse(args, {});
 
     t.equal(parsed.command, 'create', 'contains command');
     t.equal(parsed.environment, 'testing', 'contains environment');
@@ -50,7 +53,7 @@ test('[cli.parse] sets options', (t) => {
         '-p', '{}'
     ];
 
-    const parsed = cli.parse(args, {});
+    const parsed = parse(args, {});
 
     t.deepEqual(parsed.options, {
         d: true,
@@ -80,23 +83,23 @@ test('[cli.parse] sets options', (t) => {
 });
 
 test('[cli.parse] handles default template bucket on create & update', (t) => {
-    let parsed = cli.parse(['info', 'testing'], {});
+    let parsed = parse(['info', 'testing'], {});
     t.notOk(parsed.options.templateBucket, 'not set when not needed');
 
-    parsed = cli.parse(['create', 'testing'], { AWS_ACCOUNT_ID: '123456789012' });
+    parsed = parse(['create', 'testing'], { AWS_ACCOUNT_ID: '123456789012' });
     t.equal(parsed.options.templateBucket, 'cfn-config-templates-123456789012-us-east-1', 'uses default for create');
 
-    parsed = cli.parse(['update', 'testing'], { AWS_ACCOUNT_ID: '123456789012' });
+    parsed = parse(['update', 'testing'], { AWS_ACCOUNT_ID: '123456789012' });
     t.equal(parsed.options.templateBucket, 'cfn-config-templates-123456789012-us-east-1', 'uses default for create');
 
     t.throws(
-        function() { cli.parse(['create', 'testing'], {}); },
+        function() { parse(['create', 'testing'], {}); },
         /Provide \$AWS_ACCOUNT_ID as an environment variable to use the default template bucket, or set --template-bucket/,
         'throws error on create without $AWS_ACCOUNT_ID'
     );
 
     t.throws(
-        function() { cli.parse(['update', 'testing'], {}); },
+        function() { parse(['update', 'testing'], {}); },
         /Provide \$AWS_ACCOUNT_ID as an environment variable to use the default template bucket, or set --template-bucket/,
         'throws error on update without $AWS_ACCOUNT_ID'
     );
@@ -125,7 +128,7 @@ test('[cli.main] no command', async(t) => {
     const parsed = Object.assign({}, base, { command: undefined });
 
     try {
-        await cli.main(parsed);
+        await main(parsed);
         t.fail();
     } catch (err) {
         t.equal(err.message, 'Error: invalid command\n\n' + parsed.help, 'expected error message');
@@ -137,7 +140,7 @@ test('[cli.main] bad command', async(t) => {
     const parsed = Object.assign({}, base, { command: 'hibbity' });
 
     try {
-        await cli.main(parsed);
+        await main(parsed);
         t.fail();
     } catch (err) {
         t.equal(err.message, 'Error: invalid command\n\n' + parsed.help, 'expected error message');
@@ -150,7 +153,7 @@ test('[cli.main] no environment', async(t) => {
     const parsed = Object.assign({}, base, { environment: undefined });
 
     try {
-        await cli.main(parsed);
+        await main(parsed);
         t.fail();
     } catch (err) {
         t.equal(err.message, 'Error: missing environment\n\n' + parsed.help, 'expected error message');
@@ -163,7 +166,7 @@ test('[cli.main] no template path (create)', async(t) => {
     const parsed = Object.assign({}, base, { templatePath: undefined });
 
     try {
-        await cli.main(parsed);
+        await main(parsed);
         t.fail();
     } catch (err) {
         t.equal(err.message, 'Error: missing templatePath\n\n' + parsed.help, 'expected error message');
@@ -173,7 +176,7 @@ test('[cli.main] no template path (create)', async(t) => {
 });
 
 test('[cli.main] no template path (info)', async(t) => {
-    sinon.stub(cfnConfig, 'Commands').callsFake(() => {
+    sinon.stub(Commands).callsFake(() => {
         return {
             info: () => {
                 return Promise.resolve({});
@@ -184,7 +187,7 @@ test('[cli.main] no template path (info)', async(t) => {
     const parsed = Object.assign({}, base, { command: 'info', templatePath: undefined });
 
     try {
-        await cli.main(parsed);
+        await main(parsed);
     } catch (err) {
         t.error(err);
     }
@@ -194,7 +197,7 @@ test('[cli.main] no template path (info)', async(t) => {
 });
 
 test('[cli.main] create', async(t) => {
-    sinon.stub(cfnConfig, 'Commands').callsFake((options) => {
+    sinon.stub(Commands).callsFake((options) => {
         t.deepEqual(options, base.options, 'provided commands constructor with correct options');
 
         return {
@@ -208,7 +211,7 @@ test('[cli.main] create', async(t) => {
     });
 
     try {
-        await cli.main(base);
+        await main(base);
     } catch (err) {
         t.error(err);
     }
@@ -233,7 +236,7 @@ test('[cli.main] update', async(t) => {
     const parsed = Object.assign({}, base, { command: 'update' });
 
     try {
-        await cli.main(parsed);
+        await main(parsed);
     } catch (err) {
         t.error(err);
     }
@@ -257,7 +260,7 @@ test('[cli.main] delete', async(t) => {
     const parsed = Object.assign({}, base, { command: 'delete' });
 
     try {
-        await cli.main(parsed);
+        await main(parsed);
     } catch (err) {
         t.error(err);
     }
@@ -283,7 +286,7 @@ test('[cli.main] info', async(t) => {
     const parsed = Object.assign({}, base, { command: 'info' });
 
     try {
-        await cli.main(parsed);
+        await main(parsed);
     } catch (err) {
         t.error(err);
     }
@@ -308,7 +311,7 @@ test('[cli.main] save (with kms)', async(t) => {
     parsed.overrides.kms = true;
 
     try {
-        await cli.main(parsed);
+        await main(parsed);
     } catch (err) {
         t.error(err);
     }
@@ -332,7 +335,7 @@ test('[cli.main] save (without kms)', async(t) => {
     const parsed = Object.assign({}, base, { command: 'save' });
 
     try {
-        await cli.main(parsed);
+        await main(parsed);
     } catch (err) {
         t.error(err);
     }

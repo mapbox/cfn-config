@@ -1,8 +1,8 @@
 import test from 'tape';
 import Template from '../lib/template.js';
-import path from 'path';
 import fs from 'fs';
 import AWS from '@mapbox/mock-aws-sdk-js';
+import { queue } from 'd3-queue';
 
 const expected = JSON.parse(fs.readFileSync(new URL('./fixtures/template.json', import.meta.url)));
 
@@ -11,7 +11,7 @@ process.env.AWS_SECRET_ACCESS_KEY = '-';
 
 test('[template.read] local file does not exist', async(t) => {
     try {
-        await Template.read('./fake');
+        await Template.read(new URL('./fake', import.meta.url));
         t.fail();
     } catch (err) {
         t.ok(err instanceof Template.NotFoundError, 'returned expected error');
@@ -46,7 +46,7 @@ test('[template.read] local js file cannot be parsed', async(t) => {
 
 test('[template.read] S3 no access', async(t) => {
     try {
-        await Template.read('s3://mapbox/fake');
+        await Template.read(new URL('s3://mapbox/fake'));
         t.fail();
     } catch (err) {
         t.ok(err instanceof Template.NotFoundError, 'returned expected error');
@@ -64,7 +64,7 @@ test('[template.read] S3 bucket does not exist', async(t) => {
     });
 
     try {
-        await Template.read('s3://my/template');
+        await Template.read(new URL('s3://my/template'));
         t.fail();
     } catch (err) {
         t.ok(err instanceof Template.NotFoundError, 'returned expected error');
@@ -111,7 +111,7 @@ test('[template.read] S3 file cannot be parsed', async(t) => {
     });
 
     try {
-        await Template.read('s3://my/template');
+        await Template.read(new URL('s3://my/template'));
         t.fail();
     } catch (err) {
         t.ok(err instanceof Template.InvalidTemplateError, 'returned expected error');
@@ -143,15 +143,12 @@ test('[template.read] local sync JS', async(t) => {
     t.end();
 });
 
-test('[template.read] local sync JS (relative path)', async(t) => {
-    const relativePath = new URL('./fixtures/template-sync.js', import.meta.url).pathname.replace(process.cwd(), '').substr(1);
-    t.equal(relativePath[0] !== '/', true, 'relative path: ' + relativePath);
-
+test('[template.read] non-url', async(t) => {
     try {
-        const found = await Template.read(relativePath);
-        t.deepEqual(found, expected, 'got template JSON');
+        await Template.read('./fixtures/template-async.js');
+        t.fail();
     } catch (err) {
-        t.error(err);
+        t.equals(err.message, 'templatePath must be of type URL');
     }
 
     t.end();
@@ -191,7 +188,7 @@ test('[template.read] S3 JSON', async(t) => {
     });
 
     try {
-        const found = await Template.read('s3://my/template');
+        const found = await Template.read(new URL('s3://my/template'));
         t.deepEqual(found, expected, 'got template JSON');
     } catch (err) {
         t.error(err);
