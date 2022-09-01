@@ -12,28 +12,18 @@ test('[cli.parse] aliases and defaults', function(assert) {
   assert.equal(parsed.environment, 'testing', 'contains environment');
   assert.equal(parsed.templatePath, path.resolve('relative/path'), 'contains absolute template path');
   assert.deepEqual(parsed.options, {
-    d: false,
     decrypt: false,
-    e: false,
     extended: false,
-    f: false,
     force: false,
-    k: false,
     kms: false,
-    n: path.basename(process.cwd()),
     name: path.basename(process.cwd()),
-    r: 'us-east-1',
     region: 'us-east-1',
-    t: 'template',
     templateBucket: 'template',
-    c: 'config',
     configBucket: 'config',
-    p: undefined,
-    parameters: undefined,
-    x: false,
+    parameters: '',
     expand: false
   }, 'provided expected options');
-  assert.deepEqual(parsed.overrides, { force: false, kms: false, parameters: undefined, expand: false }, 'provided expected overrides');
+  assert.deepEqual(parsed.overrides, { force: false, kms: false, parameters: '', expand: false }, 'provided expected overrides');
   assert.ok(parsed.help, 'provides help text');
   assert.end();
 });
@@ -53,25 +43,16 @@ test('[cli.parse] sets options', function(assert) {
   var parsed = cli.parse(args, {});
 
   assert.deepEqual(parsed.options, {
-    d: true,
     decrypt: true,
-    e: true,
     extended: true,
-    f: true,
     force: true,
-    k: 'kms-id',
     kms: 'kms-id',
-    n: 'my-stack',
     name: 'my-stack',
-    r: 'eu-west-1',
     region: 'eu-west-1',
-    t: 'template',
     templateBucket: 'template',
-    c: 'config',
     configBucket: 'config',
     p: {},
     parameters: {},
-    x: true,
     expand: true
   }, 'provided expected options');
   assert.deepEqual(parsed.overrides, { force: true, kms: 'kms-id', parameters: {}, expand: true }, 'provided expected overrides');
