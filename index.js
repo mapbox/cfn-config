@@ -17,6 +17,15 @@ function preauth(credentials) {
     };
 }
 
+export default {
+    Actions,
+    Commands,
+    Lookup,
+    Prompt,
+    Template,
+    preauth
+};
+
 export {
     Actions,
     Commands,

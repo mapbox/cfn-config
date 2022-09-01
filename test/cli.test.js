@@ -5,7 +5,7 @@ import {
     parse,
     main
 } from '../lib/cli.js';
-import { Commands } from '../index.js';
+import cfnConfig from '../index.js';
 
 test('[cli.parse] aliases and defaults', (t) => {
     const args = ['create', 'testing', 'relative/path', '-c', 'config', '-t', 'template'];
@@ -15,25 +15,14 @@ test('[cli.parse] aliases and defaults', (t) => {
     t.equal(parsed.environment, 'testing', 'contains environment');
     t.equal(parsed.templatePath, path.resolve('relative/path'), 'contains absolute template path');
     t.deepEqual(parsed.options, {
-        d: false,
         decrypt: false,
-        e: false,
         extended: false,
-        f: false,
         force: false,
-        k: false,
         kms: false,
-        n: path.basename(process.cwd()),
         name: path.basename(process.cwd()),
-        r: 'us-east-1',
         region: 'us-east-1',
-        t: 'template',
         templateBucket: 'template',
-        c: 'config',
         configBucket: 'config',
-        p: undefined,
-        parameters: undefined,
-        x: false,
         expand: false
     }, 'provided expected options');
     t.deepEqual(parsed.overrides, { force: false, kms: false, parameters: undefined, expand: false }, 'provided expected overrides');
@@ -56,25 +45,16 @@ test('[cli.parse] sets options', (t) => {
     const parsed = parse(args, {});
 
     t.deepEqual(parsed.options, {
-        d: true,
         decrypt: true,
-        e: true,
         extended: true,
-        f: true,
         force: true,
-        k: 'kms-id',
         kms: 'kms-id',
-        n: 'my-stack',
         name: 'my-stack',
-        r: 'eu-west-1',
         region: 'eu-west-1',
-        t: 'template',
         templateBucket: 'template',
-        c: 'config',
         configBucket: 'config',
-        p: {},
         parameters: {},
-        x: true,
+        p: {},
         expand: true
     }, 'provided expected options');
     t.deepEqual(parsed.overrides, { force: true, kms: 'kms-id', parameters: {}, expand: true }, 'provided expected overrides');
@@ -176,7 +156,7 @@ test('[cli.main] no template path (create)', async(t) => {
 });
 
 test('[cli.main] no template path (info)', async(t) => {
-    sinon.stub(Commands).callsFake(() => {
+    sinon.stub(cfnConfig, 'Commands').callsFake(() => {
         return {
             info: () => {
                 return Promise.resolve({});
@@ -197,7 +177,7 @@ test('[cli.main] no template path (info)', async(t) => {
 });
 
 test('[cli.main] create', async(t) => {
-    sinon.stub(Commands).callsFake((options) => {
+    sinon.stub(cfnConfig, 'Commands').callsFake((options) => {
         t.deepEqual(options, base.options, 'provided commands constructor with correct options');
 
         return {
