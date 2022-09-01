@@ -3,6 +3,7 @@ import { Commands } from './lib/commands.js';
 import Lookup from './lib/lookup.js';
 import Prompt from './lib/prompt.js';
 import Template from './lib/template.js';
+import AWS from 'aws-sdk';
 
 function preauth(credentials) {
     AWS.config.credentials = credentials;
@@ -21,5 +22,6 @@ export {
     Commands,
     Lookup,
     Prompt,
-    Template
+    Template,
+    preauth
 };

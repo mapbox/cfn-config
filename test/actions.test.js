@@ -1,4 +1,3 @@
-import path from 'path';
 import fs from 'fs';
 import events from 'events';
 import test from 'tape';
