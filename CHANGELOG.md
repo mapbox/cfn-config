@@ -6,7 +6,6 @@ All notable changes to this project will be documented in this file. For change 
 - `--template-bucket` is now `--template_bucket`
 - CloudFormation templates must now either be JSON or CommonJS Modules with `export default` (No require/module.exports)
 
-
 ## 5.0.0 - 2022-02-08
 - Update all internal & external APIs to use Promises
 
