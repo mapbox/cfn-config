@@ -210,7 +210,8 @@ test('[actions.diff] success', async(t) => {
                 { ParameterKey: 'LuckyNumbers', ParameterValue: '3,7,42' },
                 { ParameterKey: 'SecretPassword', ParameterValue: 'secret' }
             ],
-            TemplateURL: url
+            TemplateURL: url,
+            Tags: []
         }, 'createChangeSet expected parameters');
 
         changesetId = params.ChangeSetName;

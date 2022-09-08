@@ -74,13 +74,13 @@ test('[cli.parse] handles default template bucket on create & update', (t) => {
 
     t.throws(
         function() { parse(['create', 'testing'], {}); },
-        /Provide \$AWS_ACCOUNT_ID as an environment variable to use the default template bucket, or set --template-bucket/,
+        /Provide \$AWS_ACCOUNT_ID as an environment variable to use the default template bucket, or set --template_bucket/,
         'throws error on create without $AWS_ACCOUNT_ID'
     );
 
     t.throws(
         function() { parse(['update', 'testing'], {}); },
-        /Provide \$AWS_ACCOUNT_ID as an environment variable to use the default template bucket, or set --template-bucket/,
+        /Provide \$AWS_ACCOUNT_ID as an environment variable to use the default template bucket, or set --template_bucket/,
         'throws error on update without $AWS_ACCOUNT_ID'
     );
 
