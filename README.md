@@ -80,13 +80,13 @@ Quickly configure and start AWS CloudFormation stacks
 Include cfn-config into your project to incorporate/extend its functionality. Add to your project's package.json by running the following from your project's directory:
 
 ```
-$ npm install --save @mapbox/cfn-config
+$ npm install --save @openaddresses/cfn-config
 ```
 
 Then, in your scripts:
 
 ```js
-const cfnConfig = require('@mapbox/cfn-config');
+import cfnConfig from '@openaddresses/cfn-config';
 ```
 
 ## JavaScript Usage
@@ -96,12 +96,18 @@ High-level prompting routines to create, update, and delete stacks are provided,
 First, create a commands object:
 
 ```js
+import { Commands } from '@openaddresses/cfn-config';
+
 const options = {
     name: 'my-stack', // the base name of the stack
     region: 'us-east-1', // the region where the stack resides
     templatePath: '~/my-stack/cfn.template.json', // the template file
     configBucket: 'my-cfn-configurations', // bucket for configuration files
     templateBucket: 'cfn-config-templates-123456789012-us-east-1' // bucket for templates
+    tags: [{ // Tags applied to all sub-resources within a stack
+        Key: 'developer',
+        Value: 'ingalls'
+    }]
 };
 
 const commands = new cfnConfig.Commands(options);
