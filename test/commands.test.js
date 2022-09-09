@@ -34,7 +34,7 @@ test('[commands.create] no overrides', async(t) => {
         t.deepEqual(context.config, opts, 'instantiate context with expected config');
         t.deepEqual(context.suffix, 'testing', 'instantiate context with expected suffix');
         t.equal(context.template, 'templatePath', 'set context.template');
-        t.deepEqual(context.tags, [ { Key: 'developer', Value: 'ingalls' } ], 'set context.tags')
+        t.deepEqual(context.tags, [{ Key: 'developer', Value: 'ingalls' }], 'set context.tags');
     } catch (err) {
         t.error(err);
     }
@@ -53,7 +53,7 @@ test('[commands.create] with overrides', async(t) => {
         t.deepEqual(context.suffix, 'testing', 'instantiate context with expected suffix');
         t.equal(context.template, 'templatePath', 'set context.template');
         t.deepEqual(context.overrides, { some: 'overrides' }, 'sets context.overrides');
-        t.deepEqual(context.tags, [ { Key: 'developer', Value: 'ingalls' } ], 'set context.tags')
+        t.deepEqual(context.tags, [{ Key: 'developer', Value: 'ingalls' }], 'set context.tags');
     } catch (err) {
         t.error(err);
     }
@@ -71,7 +71,7 @@ test('[commands.create] with template object', async(t) => {
         t.deepEqual(context.config, opts, 'instantiate context with expected config');
         t.deepEqual(context.suffix, 'testing', 'instantiate context with expected suffix');
         t.deepEqual(context.template, { arbitrary: 'template' }, 'set context.template');
-        t.deepEqual(context.tags, [ { Key: 'developer', Value: 'ingalls' } ], 'set context.tags')
+        t.deepEqual(context.tags, [{ Key: 'developer', Value: 'ingalls' }], 'set context.tags');
     } catch (err) {
         t.error(err);
     }
@@ -90,7 +90,7 @@ test('[commands.update] no overrides', async(t) => {
         t.deepEqual(context.suffix, 'testing', 'instantiate context with expected suffix');
         t.equal(context.template, 'templatePath', 'set context.template');
         t.deepEqual(context.overrides, {}, 'sets empty context.overrides');
-        t.deepEqual(context.tags, [ { Key: 'developer', Value: 'ingalls' } ], 'set context.tags')
+        t.deepEqual(context.tags, [{ Key: 'developer', Value: 'ingalls' }], 'set context.tags');
     } catch (err) {
         t.error(err);
     }
@@ -108,7 +108,7 @@ test('[commands.update] with overrides', async(t) => {
         t.deepEqual(context.suffix, 'testing', 'instantiate context with expected suffix');
         t.equal(context.template, 'templatePath', 'set context.template');
         t.deepEqual(context.overrides, { force: true }, 'sets context.overrides');
-        t.deepEqual(context.tags, [ { Key: 'developer', Value: 'ingalls' } ], 'set context.tags')
+        t.deepEqual(context.tags, [{ Key: 'developer', Value: 'ingalls' }], 'set context.tags');
     } catch (err) {
         t.error(err);
     }
@@ -126,7 +126,7 @@ test('[commands.update] with multiple overrides', async(t) => {
         t.deepEqual(context.suffix, 'testing', 'instantiate context with expected suffix');
         t.equal(context.template, 'templatePath', 'set context.template');
         t.deepEqual(context.overrides, { force: true, masterConfig: 's3://chill' }, 'sets context.overrides');
-        t.deepEqual(context.tags, [ { Key: 'developer', Value: 'ingalls' } ], 'set context.tags')
+        t.deepEqual(context.tags, [{ Key: 'developer', Value: 'ingalls' }], 'set context.tags');
     } catch (err) {
         t.error(err);
     }
@@ -144,7 +144,7 @@ test('[commands.update] with overrides.skipConfirmParameters', async(t) => {
         t.deepEqual(context.suffix, 'testing', 'instantiate context with expected suffix');
         t.equal(context.template, 'templatePath', 'set context.template');
         t.deepEqual(context.overrides, { force: true, masterConfig: 's3://chill', skipConfirmParameters: true }, 'sets context.overrides');
-        t.deepEqual(context.tags, [ { Key: 'developer', Value: 'ingalls' } ], 'set context.tags')
+        t.deepEqual(context.tags, [{ Key: 'developer', Value: 'ingalls' }], 'set context.tags');
     } catch (err) {
         t.error(err);
     }
@@ -162,7 +162,7 @@ test('[commands.update] with overrides.skipConfirmTemplate', async(t) => {
         t.deepEqual(context.suffix, 'testing', 'instantiate context with expected suffix');
         t.equal(context.template, 'templatePath', 'set context.template');
         t.deepEqual(context.overrides, { force: true, masterConfig: 's3://chill', skipConfirmTemplate: true }, 'sets context.overrides');
-        t.deepEqual(context.tags, [ { Key: 'developer', Value: 'ingalls' } ], 'set context.tags')
+        t.deepEqual(context.tags, [{ Key: 'developer', Value: 'ingalls' }], 'set context.tags');
     } catch (err) {
         t.error(err);
     }
@@ -180,7 +180,7 @@ test('[commands.update] with overrides.skipConfirmParameters and overrides.skipC
         t.deepEqual(context.suffix, 'testing', 'instantiate context with expected suffix');
         t.equal(context.template, 'templatePath', 'set context.template');
         t.deepEqual(context.overrides, { force: true, masterConfig: 's3://chill', skipConfirmTemplate: true, skipConfirmParameters: true }, 'sets context.overrides');
-        t.deepEqual(context.tags, [ { Key: 'developer', Value: 'ingalls' } ], 'set context.tags')
+        t.deepEqual(context.tags, [{ Key: 'developer', Value: 'ingalls' }], 'set context.tags');
     } catch (err) {
         t.error(err);
     }
@@ -199,7 +199,7 @@ test('[commands.update] with template object', async(t) => {
         t.deepEqual(context.suffix, 'testing', 'instantiate context with expected suffix');
         t.deepEqual(context.template, { arbitrary: 'template' }, 'set context.template');
         t.deepEqual(context.overrides, {}, 'sets empty context.overrides');
-        t.deepEqual(context.tags, [ { Key: 'developer', Value: 'ingalls' } ], 'set context.tags')
+        t.deepEqual(context.tags, [{ Key: 'developer', Value: 'ingalls' }], 'set context.tags');
     } catch (err) {
         t.error(err);
     }
@@ -217,7 +217,7 @@ test('[commands.delete] no overrides', async(t) => {
         t.deepEqual(context.config, opts, 'instantiate context with expected config');
         t.deepEqual(context.suffix, 'testing', 'instantiate context with expected suffix');
         t.deepEqual(context.overrides, {}, 'sets empty overrides');
-        t.deepEqual(context.tags, [ { Key: 'developer', Value: 'ingalls' } ], 'set context.tags')
+        t.deepEqual(context.tags, [{ Key: 'developer', Value: 'ingalls' }], 'set context.tags');
     } catch (err) {
         t.error(err);
     }
@@ -235,7 +235,7 @@ test('[commands.delete] with overrides', async(t) => {
         t.deepEqual(context.config, opts, 'instantiate context with expected config');
         t.deepEqual(context.suffix, 'testing', 'instantiate context with expected suffix');
         t.deepEqual(context.overrides, { force: true }, 'sets empty overrides');
-        t.deepEqual(context.tags, [ { Key: 'developer', Value: 'ingalls' } ], 'set context.tags')
+        t.deepEqual(context.tags, [{ Key: 'developer', Value: 'ingalls' }], 'set context.tags');
     } catch (err) {
         t.error(err);
     }

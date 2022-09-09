@@ -19,7 +19,7 @@ test('[cli.parse] aliases and defaults', (t) => {
         extended: false,
         force: false,
         kms: false,
-        tag: [],
+        tags: [],
         name: path.basename(process.cwd()),
         region: 'us-east-1',
         templateBucket: 'template',
@@ -55,7 +55,7 @@ test('[cli.parse] sets options', (t) => {
         templateBucket: 'template',
         configBucket: 'config',
         parameters: {},
-        tag: [],
+        tags: [],
         p: {},
         expand: true
     }, 'provided expected options');
@@ -99,7 +99,7 @@ const base = {
         extended: false,
         force: false,
         kms: false,
-        tag: [],
+        tags: [],
         name: 'my-stack',
         region: 'us-east-1',
         templateBucket: 'template',
