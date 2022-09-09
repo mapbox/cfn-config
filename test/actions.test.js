@@ -211,7 +211,10 @@ test('[actions.diff] success', async(t) => {
                 { ParameterKey: 'SecretPassword', ParameterValue: 'secret' }
             ],
             TemplateURL: url,
-            Tags: []
+            Tags: [{
+                Key: 'developer',
+                Value: 'ingalls'
+            }]
         }, 'createChangeSet expected parameters');
 
         changesetId = params.ChangeSetName;
@@ -308,7 +311,10 @@ test('[actions.diff] success', async(t) => {
     ];
 
     try {
-        const data = await Actions.diff('my-stack', 'us-east-1', 'UPDATE', url, parameters, true);
+        const data = await Actions.diff('my-stack', 'us-east-1', 'UPDATE', url, parameters, true, [{
+            Key: 'developer',
+            Value: 'ingalls'
+        }]);
 
         t.deepEqual(data, {
             id: 'aa507e2bdfc55947035a07271e75384efe',
