@@ -1,6 +1,10 @@
 # Change Log
 All notable changes to this project will be documented in this file. For change log formatting, see http://keepachangelog.com/
 
+## 6.1.0 - 2022-09-09
+- Add support for cli `--tags` arg for specifying CF stack tags
+- Add support for specifying stack level tags
+
 ## 6.0.0 - 2022-09-01
 - `--config-bucket` is now `--config_bucket`
 - `--template-bucket` is now `--template_bucket`
