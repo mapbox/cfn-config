@@ -19,6 +19,7 @@ test('[cli.parse] aliases and defaults', (t) => {
         extended: false,
         force: false,
         kms: false,
+        tags: [],
         name: path.basename(process.cwd()),
         region: 'us-east-1',
         templateBucket: 'template',
@@ -54,6 +55,7 @@ test('[cli.parse] sets options', (t) => {
         templateBucket: 'template',
         configBucket: 'config',
         parameters: {},
+        tags: [],
         p: {},
         expand: true
     }, 'provided expected options');
@@ -74,13 +76,13 @@ test('[cli.parse] handles default template bucket on create & update', (t) => {
 
     t.throws(
         function() { parse(['create', 'testing'], {}); },
-        /Provide \$AWS_ACCOUNT_ID as an environment variable to use the default template bucket, or set --template-bucket/,
+        /Provide \$AWS_ACCOUNT_ID as an environment variable to use the default template bucket, or set --template_bucket/,
         'throws error on create without $AWS_ACCOUNT_ID'
     );
 
     t.throws(
         function() { parse(['update', 'testing'], {}); },
-        /Provide \$AWS_ACCOUNT_ID as an environment variable to use the default template bucket, or set --template-bucket/,
+        /Provide \$AWS_ACCOUNT_ID as an environment variable to use the default template bucket, or set --template_bucket/,
         'throws error on update without $AWS_ACCOUNT_ID'
     );
 
@@ -97,6 +99,7 @@ const base = {
         extended: false,
         force: false,
         kms: false,
+        tags: [],
         name: 'my-stack',
         region: 'us-east-1',
         templateBucket: 'template',

@@ -31,7 +31,7 @@
         "easy-table": "^1.0.0",
         "fasterror": "^1.0.0",
         "inquirer": "^9.0.0",
-        "json-diff": "^0.7.1",
+        "json-diff": "^0.9.0",
         "json-stable-stringify": "1.0.1",
         "meow": "^10.0.0",
         "s3urls": "^1.5.2"

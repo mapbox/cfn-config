@@ -1,15 +1,15 @@
 #!/usr/bin/env node
 
-import cli from '../lib/cli.js';
+import { main, parse } from '../lib/cli.js';
 
 let parsed;
 try {
-    parsed = cli.parse(process.argv.slice(2), process.env);
+    parsed = parse(process.argv.slice(2), process.env);
 } catch (err) {
     finished(err);
 }
 
-cli.main(parsed, finished);
+main(parsed, finished);
 
 function finished(err, data) {
     if (err) process.stderr.write(err.message + '\n');
