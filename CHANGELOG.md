@@ -1,6 +1,9 @@
 # Change Log
 All notable changes to this project will be documented in this file. For change log formatting, see http://keepachangelog.com/
 
+## 6.1.1 - 2022-10-05
+- General base dep update
+
 ## 6.1.0 - 2022-09-09
 - Add support for cli `--tags` arg for specifying CF stack tags
 - Add support for specifying stack level tags
