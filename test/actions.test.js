@@ -4,6 +4,24 @@ import test from 'tape';
 import AWS from '@mapbox/mock-aws-sdk-js';
 import Actions from '../lib/actions.js';
 
+test('[actions.cancel] stack does not exist', async(t) => {
+    AWS.stub('CloudFormation', 'cancelUpdateStack', () => {
+        const err = new Error('Stack [my-stack] does not exist');
+        err.code = 'ValidationError';
+        throw err;
+    });
+
+    try {
+        await Actions.cancel('my-stack', 'us-east-1');
+        t.fail();
+    } catch (err) {
+        t.ok(err instanceof Actions.CloudFormationError, 'expected error returned');
+    }
+
+    AWS.CloudFormation.restore();
+    t.end();
+});
+
 test('[actions.diff] stack does not exist', async(t) => {
     AWS.stub('CloudFormation', 'createChangeSet', () => {
         const err = new Error('Stack [my-stack] does not exist');
