@@ -243,6 +243,23 @@ test('[commands.delete] with overrides', async(t) => {
     t.end();
 });
 
+test('[commands.cancel] no overrides', async(t) => {
+    const cmd = new Commands(opts, true);
+
+    try {
+        const context = await cmd.cancel('testing');
+
+        t.equal(context.operations.length, 2, '2 operations are run');
+        t.deepEqual(context.config, opts, 'instantiate context with expected config');
+        t.deepEqual(context.suffix, 'testing', 'instantiate context with expected suffix');
+        t.deepEqual(context.tags, [{ Key: 'developer', Value: 'ingalls' }], 'set context.tags');
+    } catch (err) {
+        t.error(err);
+    }
+
+    t.end();
+});
+
 test('[commands.info] success w/o resources', async(t) => {
     sinon.stub(Lookup, 'info').callsFake((name, region, resources, decrypt) => {
         t.equal(name, 'my-stack-testing', 'lookup.info expected stack name');
