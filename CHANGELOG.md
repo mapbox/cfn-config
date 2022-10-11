@@ -1,6 +1,9 @@
 # Change Log
 All notable changes to this project will be documented in this file. For change log formatting, see http://keepachangelog.com/
 
+## 6.2.1 - 2022-10-11
+- General base dep update
+
 ## 6.2.0 - 2022-10-11
 - Add the `cancel` subcommand to rollback an actively updating deploy
 
