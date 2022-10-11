@@ -243,7 +243,7 @@ test('[commands.delete] with overrides', async(t) => {
     t.end();
 });
 
-test.only('[commands.cancel] no overrides', async(t) => {
+test('[commands.cancel] no overrides', async(t) => {
     const cmd = new Commands(opts, true);
 
     try {
