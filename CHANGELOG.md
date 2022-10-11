@@ -21,6 +21,9 @@ All notable changes to this project will be documented in this file. For change 
 - Drop support for nodejs < 16
 - Update `prompt` module to use promises internally
 
+## 3.2.2 - 2022-09-07
+- Update Meow to v7.1.1
+
 ## 3.2.1 - 2022-01-10
 - Pins `colors` dependency to version 1.4.0.
 
