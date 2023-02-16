@@ -46,7 +46,6 @@ test('streams events until stack is complete', { timeout: 120000 }, (t) => {
 
     let it = 0;
     Sinon.stub(CloudFormationClient.prototype, 'send').callsFake((command) => {
-        console.error('IT', it,  command instanceof DescribeStacksCommand)
         if (it <= 4 && command instanceof DescribeStacksCommand) {
             return Promise.resolve({
                 Stacks: [{
