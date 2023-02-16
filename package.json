@@ -23,9 +23,9 @@
         "coverage": "nyc --reporter html tape test/*.test.js && opener coverage/index.html"
     },
     "dependencies": {
+        "@aws-sdk/client-cloudformation": "^3.272.0",
         "@openaddresses/s3urls": "^3.3.0",
         "aws-sdk": "^2.720.0",
-        "cfn-stack-event-stream": "^1.0.1",
         "colors": "1.4.0",
         "cuid": "^2.1.1",
         "diff": "^5.0.0",
@@ -42,7 +42,7 @@
         "eslint": "^8.1.0",
         "nyc": "^15.0.0",
         "opener": "^1.4.1",
-        "sinon": "^14.0.0",
+        "sinon": "^15.0.0",
         "tape": "^5.4.0"
     }
 }
