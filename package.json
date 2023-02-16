@@ -1,7 +1,7 @@
 {
     "name": "@openaddresses/cfn-config",
     "type": "module",
-    "version": "6.3.0",
+    "version": "7.4.0",
     "author": "Mapbox",
     "description": "Quickly configure and start AWS CloudFormation stacks",
     "license": "BSD-2-Clause",
@@ -23,6 +23,7 @@
         "coverage": "nyc --reporter html tape test/*.test.js && opener coverage/index.html"
     },
     "dependencies": {
+        "@openaddresses/s3urls": "^3.3.0",
         "aws-sdk": "^2.720.0",
         "cfn-stack-event-stream": "^1.0.1",
         "colors": "1.4.0",
@@ -33,8 +34,7 @@
         "inquirer": "^9.0.0",
         "json-diff": "^0.9.0",
         "json-stable-stringify": "1.0.1",
-        "meow": "^11.0.0",
-        "@openaddresses/s3urls": "^3.3.0"
+        "meow": "^11.0.0"
     },
     "devDependencies": {
         "@mapbox/mock-aws-sdk-js": "^1.0.0",
