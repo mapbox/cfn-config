@@ -1,7 +1,7 @@
 {
     "name": "@openaddresses/cfn-config",
     "type": "module",
-    "version": "6.4.0",
+    "version": "6.5.0",
     "author": "Mapbox",
     "description": "Quickly configure and start AWS CloudFormation stacks",
     "license": "BSD-2-Clause",
