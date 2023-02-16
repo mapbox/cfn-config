@@ -433,10 +433,10 @@ class Operations {
     }
 
     static async saveTemplate(context) {
-        context.templateUrl = Actions.templateUrl(context.templateBucket, context.stackRegion, context.suffix);
+        context.templateUrl = this.cfnconfig.actions.templateUrl(context.templateBucket, context.stackRegion, context.suffix);
 
         try {
-            await Actions.saveTemplate(context.templateUrl, stableStringify(context.newTemplate, { space: 2 }));
+            await this.cfnconfig.actions.saveTemplate(context.templateUrl, stableStringify(context.newTemplate, { space: 2 }));
         } catch (err) {
             let msg = '';
             if (err instanceof Actions.BucketNotFoundError) msg += 'Could not find template bucket: ';
@@ -451,7 +451,7 @@ class Operations {
 
     static async cancelStackDeploy(context) {
         try {
-            await Actions.cancel(context.stackName);
+            await this.cfnconfig.actions.cancel(context.stackName);
         } catch (err) {
             let msg = '';
             msg += err.message;
@@ -464,7 +464,7 @@ class Operations {
 
     static async validateTemplate(context) {
         try {
-            await Actions.validate(context.stackRegion, context.templateUrl);
+            await this.cfnconfig.actions.validate(context.stackRegion, context.templateUrl);
         } catch (err) {
             let msg = 'Invalid template: '; // err instanceof Actions.CloudFormationError
             msg += err.message;
@@ -503,7 +503,7 @@ class Operations {
 
     static async getChangeset(context, changeSetType) {
         try {
-            const details = await Actions.diff(
+            const details = await this.cfnconfig.actions.diff(
                 context.stackName,
                 context.stackRegion,
                 changeSetType,
@@ -538,7 +538,7 @@ class Operations {
 
     static async executeChangeSet(context) {
         try {
-            await Actions.executeChangeSet(context.stackName, context.stackRegion, context.changeset.id);
+            await this.cfnconfig.actions.executeChangeSet(context.stackName, context.stackRegion, context.changeset.id);
         } catch (err) {
             let msg = '';
             if (err instanceof Actions.CloudFormationError) msg += 'Failed to execute changeset: ';
@@ -643,7 +643,7 @@ class Operations {
 
     static async deleteStack(context) {
         try {
-            await Actions.delete(context.stackName);
+            await this.cfnconfig.actions.delete(context.stackName);
         } catch (err) {
             let msg = 'Failed to delete stack: '; // err instanceof Actions.CloudFormationError
             msg += err.message;
@@ -655,7 +655,7 @@ class Operations {
 
     static async monitorStack(context) {
         try {
-            await Actions.monitor(context.stackName, context.stackRegion);
+            await this.cfnconfig.actions.monitor(context.stackName, context.stackRegion);
         } catch (err) {
             err.failure = err.message;
             err.message = `Monitoring your deploy failed, but the deploy in region ${context.stackRegion} will continue. Check on your stack's status in the CloudFormation console.`;
@@ -702,7 +702,7 @@ class Operations {
 
 
         try {
-            await Actions.saveConfiguration(
+            await this.cfnconfig.actions.saveConfiguration(
                 context.baseName,
                 context.stackName,
                 context.stackRegion,

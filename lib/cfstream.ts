@@ -10,19 +10,16 @@ import type {
     Provider,
 } from '@aws-sdk/types';
 
-
 export interface CFStreamInput {
-    region: string;
-    credentials: AwsCredentialIdentity | Provider<AwsCredentialIdentity>;
-    pollInterval: number | undefined;
-    lastEventId: string | undefined;
+    region?: string;
+    credentials?: AwsCredentialIdentity | Provider<AwsCredentialIdentity>;
+    pollInterval?: number;
+    lastEventId?: string;
 }
 
-export default function(stackName: string, options: CFStreamInput) {
-    const cfn = new CloudFormationClient({
-        credentials: options.credentials,
-        region: options.region
-    });
+export default function(stackName: string, options?: CFStreamInput) {
+    if (!options) options = {};
+    const cfn = new CloudFormationClient(options);
 
     const stream = new Readable({ objectMode: true }),
         pollInterval = options.pollInterval || 10000,

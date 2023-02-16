@@ -1,4 +1,6 @@
 import fs from 'fs/promises';
+import CFNConfig from '../index.js';
+// @ts-ignore
 import error from 'fasterror';
 import s3urls from '@openaddresses/s3urls';
 import {
@@ -9,14 +11,16 @@ import {
     S3Client,
     GetObjectCommand,
     GetBucketLocationCommand
-} from '@aws-sdk/client-kms';
+} from '@aws-sdk/client-s3';
 
 /**
  * @class
  * Cloudformation Template
  */
 export default class Template {
-    constructor(cfnconfig) {
+    cfnconfig: CFNConfig;
+
+    constructor(cfnconfig: CFNConfig) {
         this.cfnconfig = cfnconfig;
     }
 
@@ -26,7 +30,7 @@ export default class Template {
      * @param {URL} templatePath - the absolute path to a local file or an S3 url
      * @param {object} [options] - an object to pass as the first argument to async templates
      */
-    async read(templatePath, options={}) {
+    async read(templatePath: string, options?={}) {
         if (!(templatePath instanceof URL)) throw new Error('templatePath must be of type URL');
 
         const params = s3urls.fromUrl(String(templatePath));
@@ -41,7 +45,7 @@ export default class Template {
             let templateBody;
 
             if (!/\.js$/.test(String(templatePath))) {
-                templateBody = await fs.readFile(templatePath);
+                templateBody = String(await fs.readFile(templatePath));
 
                 try {
                     templateBody = JSON.parse(templateBody);
@@ -100,7 +104,7 @@ export default class Template {
      * @param {object} templateBody - a parsed CloudFormation template
      * @returns {array} a set of questions for user prompting
      */
-    questions(templateBody, overrides) {
+    questions(templateBody: object, overrides?: object) {
         overrides = overrides || {};
         overrides.defaults = overrides.defaults || {};
         overrides.messages = overrides.messages || {};
@@ -155,7 +159,7 @@ export default class Template {
                         if (err) return done(new Template.KmsError('%s: %s', err.code, err.message));
 
                         return done(null, 'secure:' + encrypted.CiphertextBlob.toString('base64'));
-                    });
+                    }));
                 } else {
                     return done(null, input);
                 }
@@ -186,13 +190,4 @@ export default class Template {
      * Error representing an unrecognized KMS failure
      */
     static KmsError = error('KmsError');
-}
-
-function async(fn, config) {
-    return new Promise((resolve, reject) => {
-        fn(config, (err, res) => {
-            if (err) return reject(err);
-            return resolve(res);
-        });
-    });
 }

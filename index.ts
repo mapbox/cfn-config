@@ -9,17 +9,18 @@ import type {
     Provider,
 } from '@aws-sdk/types';
 
-export default class CFNConfig {
-    Actions: Actions;
-    Commands: Commands;
-    Lookup: Lookup;
-    Prompt: Prompt;
-    Template: Template;
+export interface CFNConfigClient {
+    region: string;
+    credentials: AwsCredentialIdentity | Provider<AwsCredentialIdentity>;
+};
 
-    client: {
-        region: string;
-        credentials: AwsCredentialIdentity | Provider<AwsCredentialIdentity>;
-    }
+export default class CFNConfig {
+    actions: Actions;
+    commands: Commands;
+    lookup: Lookup;
+    prompt: Prompt;
+    template: Template;
+    client: CFNConfigClient;
 
     constructor(credentials: AwsCredentialIdentity | Provider<AwsCredentialIdentity>, region: string) {
         this.client = {
@@ -27,10 +28,10 @@ export default class CFNConfig {
             region
         };
 
-        this.Actions = new Actions(this);
-        this.Commands = new Commands(this);
-        this.Lookup = new Lookup(this);
-        this.Prompt = Prompt;
-        this.Template = new Template(this);
+        this.actions = new Actions(this);
+        this.commands = new Commands(this);
+        this.lookup = new Lookup(this);
+        this.prompt = Prompt;
+        this.template = new Template(this);
     }
 }

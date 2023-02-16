@@ -14,7 +14,7 @@ test('emits an error for a non-existent stack', (t) => {
 
     Stream('cfn-stack-event-stream-test', {
         region: 'us-east-1',
-        credential: {
+        credentials: {
             accessKeyId: '123',
             secretAccessKey: '321'
         }
@@ -24,6 +24,7 @@ test('emits an error for a non-existent stack', (t) => {
         })
         .on('error', (err) => {
             t.ok(err.message.includes('No Stack Found'));
+            // @ts-ignore
             CloudFormationClient.prototype.send.restore();
             t.end();
         });
@@ -38,7 +39,7 @@ test('streams events until stack is complete', { timeout: 120000 }, (t) => {
         'CREATE_COMPLETE AWS::CloudFormation::Stack'
     ];
     const StackEvents = [{
-        EventId: '1',
+        EventId: 1,
         ResourceStatus: 'CREATE_IN_PROGRESS',
         ResourceType: 'AWS::CloudFormation::Stack',
         ResourceStatusReason: 'User Initiated'

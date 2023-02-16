@@ -85,7 +85,8 @@ export default class Actions {
             const details = {
                 id: data.ChangeSetName,
                 status: data.Status,
-                execution: data.ExecutionStatus
+                execution: data.ExecutionStatus,
+                changes: []
             };
 
             if (data.Changes) details.changes = data.Changes.map((change) => {
@@ -166,7 +167,7 @@ export default class Actions {
      */
     monitor(name: string) {
         return new Promise((resolve, reject) => {
-            const events = eventStream(name, this.cfnconfig.client)
+            const events = eventStream(name, { ...this.cfnconfig.client })
                 .on('error', (err) => {
                     return reject(new Actions.CloudFormationError('%s: %s', err.code, err.message));
                 });
@@ -244,7 +245,7 @@ export default class Actions {
         }
 
         try {
-            await s3.send(PutObjectCommand(params));
+            await s3.send(new PutObjectCommand(params));
         } catch (err) {
             if (err.code === 'NoSuchBucket') {
                 throw new Actions.BucketNotFoundError('S3 bucket %s not found in %s', bucket, region);
@@ -279,7 +280,7 @@ export default class Actions {
         }, s3urls.fromUrl(templateUrl));
 
         try {
-            await s3.send(PutObjectCommand(params));
+            await s3.send(new PutObjectCommand(params));
         } catch (err) {
             if (err.code === 'NoSuchBucket') {
                 throw new Actions.BucketNotFoundError('S3 bucket %s not found in %s', params.Bucket, region);
@@ -368,7 +369,7 @@ async function describeChangeset(cfn: CloudFormationClient, name: string, change
     return changesetDescriptions;
 }
 
-function sleep(ms: number): Promise {
+function sleep(ms: number): Promise<undefined> {
     return new Promise((resolve) => {
         setTimeout(resolve, ms);
     });
