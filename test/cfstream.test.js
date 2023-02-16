@@ -8,7 +8,7 @@ import {
 import Sinon from 'sinon';
 
 test('emits an error for a non-existent stack', (t) => {
-    Sinon.stub(CloudFormationClient.prototype, 'send').callsFake((command) => {
+    Sinon.stub(CloudFormationClient.prototype, 'send').callsFake(() => {
         return Promise.reject(new Error('No Stack Found'));
     });
 
@@ -42,7 +42,7 @@ test('streams events until stack is complete', { timeout: 120000 }, (t) => {
         ResourceStatus: 'CREATE_IN_PROGRESS',
         ResourceType: 'AWS::CloudFormation::Stack',
         ResourceStatusReason: 'User Initiated'
-    }]
+    }];
 
     let it = 0;
     Sinon.stub(CloudFormationClient.prototype, 'send').callsFake((command) => {
@@ -52,42 +52,42 @@ test('streams events until stack is complete', { timeout: 120000 }, (t) => {
                     StackId: 'Stack-123',
                     StackStatus: 'CREATE_IN_PROGRESS'
                 }]
-            })
+            });
         } else if (it > 4 && command instanceof DescribeStacksCommand) {
             return Promise.resolve({
                 Stacks: [{
                     StackId: 'Stack-123',
                     StackStatus: 'CREATE_COMPLETE'
                 }]
-            })
+            });
         } else if (it === 1 && command instanceof DescribeStackEventsCommand) {
             StackEvents.push({
                 EventId: it,
                 ResourceStatus: 'CREATE_IN_PROGRESS',
                 ResourceType: 'AWS::SNS::Topic',
                 ResourceStatusReason: 'Something'
-            })
+            });
         } else if (it === 2 && command instanceof DescribeStackEventsCommand) {
             StackEvents.push({
                 EventId: it,
                 ResourceStatus: 'CREATE_IN_PROGRESS',
                 ResourceType: 'AWS::SNS::Topic',
                 ResourceStatusReason: 'Something'
-            })
+            });
         } else if (it === 3 && command instanceof DescribeStackEventsCommand) {
             StackEvents.push({
                 EventId: it,
                 ResourceStatus: 'CREATE_COMPLETE',
                 ResourceType: 'AWS::SNS::Topic',
                 ResourceStatusReason: 'Something'
-            })
+            });
         } else if (it === 4 && command instanceof DescribeStackEventsCommand) {
             StackEvents.push({
                 EventId: it,
                 ResourceStatus: 'CREATE_COMPLETE',
                 ResourceType: 'AWS::CloudFormation::Stack',
                 ResourceStatusReason: 'Something'
-            })
+            });
         }
 
         it++;
