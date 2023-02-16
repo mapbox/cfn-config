@@ -1,6 +1,10 @@
 # Change Log
 All notable changes to this project will be documented in this file. For change log formatting, see http://keepachangelog.com/
 
+## 6.5.0 - 2023-02-16
+- Include CFN Streams in this repo and migrate it to the AWS-SDK@3
+- Remove CUID in favour of node:crypto.randomUUID
+
 ## 6.4.0 - 2023-02-15
 - Update to @openaddresses/s3urls to support GovCloud regions
 
