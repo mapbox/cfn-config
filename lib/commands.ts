@@ -665,7 +665,7 @@ class Operations {
 
     static async getOldParameters(context) {
         try {
-            let info = await Lookup.parameters(context.stackName, context.stackRegion);
+            const info = await Lookup.parameters(context.stackName, context.stackRegion);
             context.oldParameters = info;
         } catch (err) {
             let msg = '';
@@ -783,7 +783,7 @@ function compareTemplate(existing, desired) {
                 }
             }
 
-            let toPrint = part.value
+            const toPrint = part.value
                 .split('\n')
                 .map((line) => `${!line.length ? '' : part.added ? '+' : part.removed ? '-' : ' '}${line}`)
                 .join('\n')[color];

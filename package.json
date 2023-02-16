@@ -5,7 +5,8 @@
     "author": "Mapbox",
     "description": "Quickly configure and start AWS CloudFormation stacks",
     "license": "BSD-2-Clause",
-    "main": "index.js",
+    "main": "dist/index.js",
+    "types": "index.ts",
     "engines": {
         "node": ">= 18"
     },
@@ -18,7 +19,7 @@
     },
     "scripts": {
         "test": "nyc tape test/*.test.js",
-        "lint": "eslint index.js bin lib test/*.js",
+        "lint": "eslint index.ts bin/*.ts lib/*.ts test/*.ts",
         "pretest": "npm run lint",
         "coverage": "nyc --reporter html tape test/*.test.js && opener coverage/index.html"
     },

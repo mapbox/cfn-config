@@ -12,7 +12,7 @@ import type {
 export interface CFNConfigClient {
     region: string;
     credentials: AwsCredentialIdentity | Provider<AwsCredentialIdentity>;
-};
+}
 
 export default class CFNConfig {
     actions: Actions;
@@ -28,10 +28,10 @@ export default class CFNConfig {
             region
         };
 
-        this.actions = new Actions(this);
-        this.commands = new Commands(this);
-        this.lookup = new Lookup(this);
+        this.actions = new Actions(this.client);
+        this.commands = new Commands(this.client);
+        this.lookup = new Lookup(this.client);
         this.prompt = Prompt;
-        this.template = new Template(this);
+        this.template = new Template(this.client);
     }
 }

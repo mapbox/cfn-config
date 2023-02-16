@@ -1,17 +1,20 @@
 import url from 'url';
-import CFNConfig from '../index.js';
+import type { CFNConfigClient } from '../index.js';
 import crypto from 'crypto';
 import stream from 'stream';
 import { randomUUID } from 'crypto';
-// @ts-ignore
-import error from 'fasterror';
 import s3urls from '@openaddresses/s3urls';
 import eventStream from './cfstream.js';
 import Lookup from './lookup.js';
 import {
+    Tag,
+    Change,
+    Parameter,
     CloudFormationClient,
     CreateChangeSetCommand,
+    CreateChangeSetCommandInput,
     DescribeChangeSetCommand,
+    DescribeChangeSetCommandOutput,
     ValidateTemplateCommand,
     DeleteStackCommand,
     ExecuteChangeSetCommand,
@@ -20,41 +23,85 @@ import {
 
 import {
     S3Client,
-    PutObjectCommand
+    PutObjectCommand,
+    PutObjectCommandInput
 } from '@aws-sdk/client-s3';
 
 import 'colors';
 
-const colors = {
-    CREATE_IN_PROGRESS: 'yellow',
-    CREATE_FAILED: 'red',
-    CREATE_COMPLETE: 'green',
-    DELETE_IN_PROGRESS: 'yellow',
-    DELETE_FAILED: 'red',
-    DELETE_COMPLETE: 'grey',
-    DELETE_SKIPPED: 'red',
-    UPDATE_IN_PROGRESS: 'yellow',
-    UPDATE_COMPLETE_CLEANUP_IN_PROGRESS: 'yellow',
-    UPDATE_FAILED: 'red',
-    UPDATE_COMPLETE: 'green',
-    ROLLBACK_IN_PROGRESS: 'red',
-    ROLLBACK_COMPLETE: 'red',
-    ROLLBACK_FAILED: 'red',
-    UPDATE_ROLLBACK_COMPLETE: 'gray',
-    UPDATE_ROLLBACK_FAILED: 'red',
-    UPDATE_ROLLBACK_COMPLETE_CLEANUP_IN_PROGRESS: 'yellow',
-    UPDATE_ROLLBACK_IN_PROGRESS: 'yellow'
+const colors = new Map();
+colors.set('CREATE_IN_PROGRESS', 'yellow');
+colors.set('CREATE_FAILED', 'red');
+colors.set('CREATE_COMPLETE', 'green');
+colors.set('DELETE_IN_PROGRESS', 'yellow');
+colors.set('DELETE_FAILED', 'red');
+colors.set('DELETE_COMPLETE', 'grey');
+colors.set('DELETE_SKIPPED', 'red');
+colors.set('UPDATE_IN_PROGRESS', 'yellow');
+colors.set('UPDATE_COMPLETE_CLEANUP_IN_PROGRESS', 'yellow');
+colors.set('UPDATE_FAILED', 'red');
+colors.set('UPDATE_COMPLETE', 'green');
+colors.set('ROLLBACK_IN_PROGRESS', 'red');
+colors.set('ROLLBACK_COMPLETE', 'red');
+colors.set('ROLLBACK_FAILED', 'red');
+colors.set('UPDATE_ROLLBACK_COMPLETE', 'gray');
+colors.set('UPDATE_ROLLBACK_FAILED', 'red');
+colors.set('UPDATE_ROLLBACK_COMPLETE_CLEANUP_IN_PROGRESS', 'yellow');
+colors.set('UPDATE_ROLLBACK_IN_PROGRESS', 'yellow');
+
+export interface ChangeSetDetail {
+    id: string;
+    status: string;
+    execution: string;
+    changes: ChangeSetDetailChange[];
+};
+
+export interface ChangeSetDetailChange {
+    id: string;
+    name: string;
+    type: string;
+    action: string;
+    replacement: boolean;
+};
+
+/**
+ * Error representing an unexpected failure in a CloudFormation request
+ */
+class CloudFormationError extends Error {};
+
+/**
+ * Error representing a bucket that does not exist
+ */
+class BucketNotFoundError extends Error {};
+
+/**
+ * Error representing an unexpected failure in an S3 request
+ */
+class S3Error extends Error {};
+
+/**
+ * Error representing an attempt to execute a changeset that is not executable
+ */
+class ChangeSetNotExecutableError extends Error {
+    status?: string;
+    execution?: string;
+    reason?: string;
 };
 
 /**
  * @class
  */
 export default class Actions {
-    cfnconfig: CFNConfig;
+    client: CFNConfigClient;
 
-    constructor(cfnconfig: CFNConfig) {
-        this.cfnconfig = cfnconfig;
+    constructor(client: CFNConfigClient) {
+        this.client = client;
     }
+
+    static CloudFormationError = CloudFormationError;
+    static BucketNotFoundError = BucketNotFoundError;
+    static S3Error = S3Error;
+    static ChangeSetNotExecutableError = ChangeSetNotExecutableError;
 
     /**
      * Determine what will change about an existing CloudFormation stack by
@@ -67,41 +114,41 @@ export default class Actions {
      * @param expand - Set CAPABILITY_AUTO_EXPAND
      * @param Tags - Tags to be applied to all resources in the stack
      */
-    async diff(name: string, changeSetType: string, templateUrl: string, parameters: object, expand: boolean, tags: object[]) {
-        const cfn = new CloudFormationClient(this.cfnconfig.client);
-        const changesetId = 'a' + crypto.randomBytes(16).toString('hex');
+    async diff(name: string, changeSetType: string, templateUrl: string, parameters: Parameter[], expand: boolean, tags: Tag[]) {
+        const cfn = new CloudFormationClient(this.client);
         const changeSetParameters = changeSet(name, changeSetType, templateUrl, parameters, expand, tags);
-        changeSetParameters.ChangeSetName = changesetId;
 
         try {
             await cfn.send(new CreateChangeSetCommand(changeSetParameters));
         } catch (err) {
-            throw new Actions.CloudFormationError('%s: %s', err.code, err.message);
+            throw new Actions.CloudFormationError(err.message);
         }
 
         try {
-            const data = await describeChangeset(cfn, name, changesetId);
+            const data = await describeChangeset(cfn, name, changeSetParameters.ChangeSetName);
 
-            const details = {
+            const details: ChangeSetDetail = {
                 id: data.ChangeSetName,
                 status: data.Status,
                 execution: data.ExecutionStatus,
                 changes: []
             };
 
-            if (data.Changes) details.changes = data.Changes.map((change) => {
-                return {
-                    id: change.ResourceChange.PhysicalResourceId,
-                    name: change.ResourceChange.LogicalResourceId,
-                    type: change.ResourceChange.ResourceType,
-                    action: change.ResourceChange.Action,
-                    replacement: change.ResourceChange.Replacement === 'True'
-                };
-            });
+            if (data.Changes) {
+                details.changes = data.Changes.map((change: Change) => {
+                    return {
+                        id: change.ResourceChange.PhysicalResourceId,
+                        name: change.ResourceChange.LogicalResourceId,
+                        type: change.ResourceChange.ResourceType,
+                        action: change.ResourceChange.Action,
+                        replacement: change.ResourceChange.Replacement === 'True'
+                    };
+                });
+            }
 
             return details;
         } catch (err) {
-            throw new Actions.CloudFormationError('%s: %s', err.code, err.message);
+            throw new Actions.CloudFormationError(err.message);
         }
     }
 
@@ -112,13 +159,13 @@ export default class Actions {
      * @param changesetId - the name or ARN of an existing changeset
      */
     async executeChangeSet(name: string, changesetId: string) {
-        const cfn = new CloudFormationClient(this.cfnconfig.client);
+        const cfn = new CloudFormationClient(this.client);
 
         let data;
         try {
             data = await describeChangeset(cfn, name, changesetId);
         } catch (err) {
-            throw new Actions.CloudFormationError('%s: %s', err.code, err.message);
+            throw new Actions.CloudFormationError(err.message);
         }
 
         if (data.ExecutionStatus !== 'AVAILABLE') {
@@ -135,7 +182,7 @@ export default class Actions {
                 ChangeSetName: changesetId
             }));
         } catch (err) {
-            throw new Actions.CloudFormationError('%s: %s', err.code, err.message);
+            throw new Actions.CloudFormationError(err.message);
         }
 
         return;
@@ -147,14 +194,14 @@ export default class Actions {
      * @param name - the name of the existing stack to update
      */
     async delete(name: string) {
-        const cfn = new CloudFormationClient(this.cfnconfig.client);
+        const cfn = new CloudFormationClient(this.client);
 
         try {
             await cfn.send(new DeleteStackCommand({
                 StackName: name
             }));
         } catch (err) {
-            throw new Actions.CloudFormationError('%s: %s', err.code, err.message);
+            throw new Actions.CloudFormationError(err.message);
         }
 
         return;
@@ -163,20 +210,20 @@ export default class Actions {
     /**
      * Monitor a stack throughout a create, delete, or update
      *
-     * @param name - the full name of the existing stack to update
+     * @param StackName - the full name of the existing stack to update
      */
-    monitor(name: string) {
+    monitor(StackName: string) {
         return new Promise((resolve, reject) => {
-            const events = eventStream(name, { ...this.cfnconfig.client })
+            const events = eventStream(StackName, { ...this.client })
                 .on('error', (err) => {
-                    return reject(new Actions.CloudFormationError('%s: %s', err.code, err.message));
+                    return reject(new Actions.CloudFormationError(err.message));
                 });
 
             const stringify = new stream.Transform({ objectMode: true });
             stringify._transform = (event, enc, cb) => {
-                let msg = event.ResourceStatus[colors[event.ResourceStatus]] + ' ' + event.LogicalResourceId;
+                let msg = event.ResourceStatus[colors.get(event.ResourceStatus)] + ' ' + event.LogicalResourceId;
                 if (event.ResourceStatusReason) msg += ': ' + event.ResourceStatusReason;
-                cb(null, currentTime() + ' ' + region + ': ' + msg + '\n');
+                cb(null, currentTime() + ' ' + this.client.region + ': ' + msg + '\n');
             };
 
             events.pipe(stringify).pipe(process.stdout);
@@ -190,12 +237,12 @@ export default class Actions {
      * @param StackName - the full name of the existing stack to update
      */
     async cancel(StackName: string) {
-        const cfn = new CloudFormationClient(this.cfnconfig.client);
+        const cfn = new CloudFormationClient(this.client);
 
         try {
             await cfn.send(new CancelUpdateStackCommand({ StackName }));
         } catch (err) {
-            throw new Actions.CloudFormationError('%s: %s', err.code, err.message);
+            throw new Actions.CloudFormationError('%s: %s', err.message);
         }
 
         return;
@@ -207,12 +254,12 @@ export default class Actions {
      * @param TemplateURL - the URL for the template on S3
      */
     async validate(TemplateURL: string) {
-        const cfn = new CloudFormationClient(this.cfnconfig.client);
+        const cfn = new CloudFormationClient(this.client);
 
         try {
             await cfn.send(new ValidateTemplateCommand({ TemplateURL }));
         } catch (err) {
-            throw new Actions.CloudFormationError('%s: %s', err.code, err.message);
+            throw new Actions.CloudFormationError(err.message);
         }
 
         return;
@@ -229,14 +276,18 @@ export default class Actions {
      * to encrypt this configuration at rest
      */
     async saveConfiguration(baseName: string, stackName: string, bucket: string, parameters: object, kms: string | undefined) {
-        const region = await Lookup.bucketRegion(bucket, stackRegion);
+        const lookup = new Lookup(this.client);
+        const region = await lookup.bucketRegion(bucket, this.client.region);
 
-        const s3 = new S3Client(this.cfnconfig.client);
+        const s3 = new S3Client({
+            region,
+            credentials: this.client.credentials
+        });
 
-        const params = {
+        const params: PutObjectCommandInput = {
             Bucket: bucket,
-            Key: Lookup.configKey(baseName, stackName, stackRegion),
-            Body: JSON.stringify(parameters)
+            Key: lookup.configKey(baseName, stackName, this.client.region),
+            Body: JSON.stringify(parameters),
         };
 
         if (kms) {
@@ -248,9 +299,9 @@ export default class Actions {
             await s3.send(new PutObjectCommand(params));
         } catch (err) {
             if (err.code === 'NoSuchBucket') {
-                throw new Actions.BucketNotFoundError('S3 bucket %s not found in %s', bucket, region);
+                throw new Actions.BucketNotFoundError(`S3 bucket ${bucket} not found in ${region}`);
             } else {
-                throw new Actions.S3Error('%s: %s', err.code, err.message);
+                throw new Actions.S3Error(err.message);
             }
         }
 
@@ -273,7 +324,7 @@ export default class Actions {
             templateBody = JSON.stringify(JSON.parse(templateBody));
         }
 
-        const s3 = new S3Client(this.cfnconfig.client);
+        const s3 = new S3Client(this.client);
 
         const params = Object.assign({
             Body: templateBody
@@ -283,9 +334,9 @@ export default class Actions {
             await s3.send(new PutObjectCommand(params));
         } catch (err) {
             if (err.code === 'NoSuchBucket') {
-                throw new Actions.BucketNotFoundError('S3 bucket %s not found in %s', params.Bucket, region);
+                throw new Actions.BucketNotFoundError(`S3 bucket ${params.Bucket} not found in ${region}`);
             } else {
-                throw new Actions.S3Error('%s: %s', err.code, err.message);
+                throw new Actions.S3Error(err.message);
             }
         }
     }
@@ -313,25 +364,6 @@ export default class Actions {
         return [host, bucket, key].join('/');
     }
 
-    /**
-     * Error representing an unexpected failure in a CloudFormation request
-     */
-    static CloudFormationError = error('CloudFormationError');
-
-    /**
-     * Error representing a bucket that does not exist
-     */
-    static BucketNotFoundError = error('BucketNotFoundError');
-
-    /**
-     * Error representing an unexpected failure in an S3 request
-     */
-    static S3Error = error('S3Error');
-
-    /**
-     * Error representing an attempt to execute a changeset that is not executable
-     */
-    static ChangeSetNotExecutableError = error('ChangeSetNotExecutableError');
 }
 
 /**
@@ -344,24 +376,24 @@ export default class Actions {
  */
 async function describeChangeset(cfn: CloudFormationClient, name: string, changesetId: string) {
     let changesetDescriptions;
-    let changes = [];
+    let changes: Change[] = [];
 
-    let nextToken = true;
+    let nextToken = '';
     do {
-        const data = await cfn.send(new DescribeChangeSetCommand({
+        const data: DescribeChangeSetCommandOutput = await cfn.send(new DescribeChangeSetCommand({
             ChangeSetName: changesetId,
             StackName: name,
-            NextToken: nextToken === true ? undefined : nextToken
+            NextToken: nextToken ? nextToken : nextToken
         }));
 
         changesetDescriptions = data;
 
-        if (data.Status === 'CREATE_COMPLETE' || data.Status === 'FAILED' || data.status === 'DELETE_COMPLETE') {
+        if (data.Status === 'CREATE_COMPLETE' || data.Status === 'FAILED' || data.Status === 'DELETE_COMPLETE') {
             changes = changes.concat(data.Changes || []);
             if (!data.NextToken) break;
         }
 
-        nextToken = data.NextToken || true;
+        nextToken = data.NextToken || '';
         if (nextToken) await sleep(1000);
     } while (nextToken);
 
@@ -388,9 +420,19 @@ function sleep(ms: number): Promise<undefined> {
  * @param {Array} [Tags=[]] - Tags to be applied to all resources in the stack
  * @returns {object} changeset - an object for use in ChangeSet requests that create/update a stack
  */
-function changeSet(StackName: string, ChangeSetType: string, TemplateURL: string, Parameters: object, expand: boolean, Tags=[]) {
+function changeSet(
+    StackName: string,
+    ChangeSetType: string,
+    TemplateURL: string,
+    Parameters: Parameter[],
+    expand: boolean,
+    Tags: Tag[] =[]
+): CreateChangeSetCommandInput {
+    const ChangeSetName = 'a' + crypto.randomBytes(16).toString('hex');
+
     const base = {
         StackName,
+        ChangeSetName,
         Capabilities: ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
         ChangeSetType,
         TemplateURL,

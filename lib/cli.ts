@@ -2,7 +2,7 @@ import path from 'path';
 import meow from 'meow';
 import CFNConfig from '../index.js';
 
-function parse(args, env) {
+function parse(args: object, env: object) {
     const cli = meow({
         argv: args,
         importMeta: import.meta,

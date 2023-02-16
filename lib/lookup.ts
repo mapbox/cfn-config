@@ -29,18 +29,19 @@ import s3urls from '@openaddresses/s3urls';
  * @class
  */
 export default class Lookup {
-    constructor(cfnconfig) {
-        this.cfnconfig = cfnconfig;
+    static client: CFNConfigClient;
+
+    constructor(client: CFNConfigClient) {
+        this.client = client;
     }
 
     /**
      * Lookup an existing CloudFormation stack's parameters
      *
      * @param {string} name - the full name of the stack
-     * @param {string} region - the region the stack is in
      */
-    async parameters(name, region) {
-        const info = await this.cfnconfig.Lookup.info(name, region);
+    async parameters(name) {
+        const info = await this.info(name, this.client.region);
         return info.Parameters;
     }
 
@@ -48,12 +49,11 @@ export default class Lookup {
      * Lookup an existing CloudFormation stack's info
      *
      * @param {string} name - the full name of the stack
-     * @param {string} region - the region the stack is in
      * @param {boolean} [resources=false] - return information about each resource in the stack
      * @param {boolean} [decrypt=false] - return secure parameters decrypted
      */
-    async info(name, region, resources=false, decrypt=false) {
-        const cfn = new CloudFormationClient(this.cfnconfig.client);
+    async info(name, resources=false, decrypt=false) {
+        const cfn = new CloudFormationClient(this.client);
 
         let data;
         try {
@@ -62,16 +62,16 @@ export default class Lookup {
             }));
         } catch (err) {
             if (err.code === 'ValidationError' && /Stack with id/.test(err.message)) {
-                throw new Lookup.StackNotFoundError('Stack %s not found in %s', name, region);
+                throw new Lookup.StackNotFoundError('Stack %s not found in %s', name, this.client.region);
             } else {
                 throw new Lookup.CloudFormationError('%s: %s', err.code, err.message);
             }
         }
 
-        if (!data.Stacks.length) throw new Lookup.StackNotFoundError('Stack %s not found in %s', name, region);
+        if (!data.Stacks.length) throw new Lookup.StackNotFoundError('Stack %s not found in %s', name, this.client.region);
 
         const stackInfo = data.Stacks[0];
-        stackInfo.Region = region;
+        stackInfo.Region = this.client.region;
 
         stackInfo.Parameters = (stackInfo.Parameters || []).reduce((memo, param) => {
             memo[param.ParameterKey] = param.ParameterValue;
@@ -130,7 +130,7 @@ export default class Lookup {
      * @param {string} region - the region the stack is in
      */
     async template(name, region) {
-        const cfn = new CloudFormationClient(this.cfnconfig.client);
+        const cfn = new CloudFormationClient(this.client);
 
         let data;
         try {
@@ -177,7 +177,7 @@ export default class Lookup {
     async configurations(name, bucket, region) {
         region = await Lookup.bucketRegion(bucket, region);
 
-        const s3 = new S3Client(this.cfnconfig.client);
+        const s3 = new S3Client(this.client);
 
         try {
             const data = await s3.send(new ListObjectsCommand({
@@ -209,7 +209,7 @@ export default class Lookup {
     async configuration(name, bucket, config) {
         const region = await Lookup.bucketRegion(bucket);
 
-        const s3 = new S3Client(this.cfnconfig.client);
+        const s3 = new S3Client(this.client);
 
         let data;
         try {
@@ -254,7 +254,7 @@ export default class Lookup {
             return {};
         }
 
-        const s3 = new S3Client(this.cfnconfig.client);
+        const s3 = new S3Client(this.client);
 
         let data;
         try {
@@ -294,7 +294,7 @@ export default class Lookup {
      * @param {string} [region] - the name of the region in which to make lookup requests
      */
     async bucketRegion(bucket, region) {
-        const s3 = new S3Client(this.cfnconfig.client);
+        const s3 = new S3Client(this.client);
 
         try {
             const data = await s3.send(new GetBucketLocationCommand({
@@ -318,11 +318,11 @@ export default class Lookup {
      * @param {string} region - stack region
      */
     async decryptParameters(parameters, region) {
-        const kms = new KMSClient(this.cfnconfig.client);
+        const kms = new KMSClient(this.client);
         const decrypted = JSON.parse(JSON.stringify(parameters));
 
         try {
-            let results = [];
+            const results = [];
             for (const key of Object.keys(parameters)) {
                 if (!(/^secure:/).test(parameters[key])) continue;
 
