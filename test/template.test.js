@@ -26,7 +26,7 @@ test('[template.read] local file cannot be parsed', async(t) => {
         t.fail();
     } catch (err) {
         t.ok(err instanceof Template.InvalidTemplateError, 'returned expected error');
-        t.ok(/Failed to parse .*: Unexpected end/.test(err.message), 'passthrough parse error');
+        t.ok(/Expected ',' or '}' after property value in JSON at position/.test(err.message), 'passthrough parse error');
     }
 
     t.end();
