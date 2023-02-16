@@ -1,6 +1,9 @@
 # Change Log
 All notable changes to this project will be documented in this file. For change log formatting, see http://keepachangelog.com/
 
+## 6.4.0 - 2023-02-15
+- Update to @openaddresses/s3urls to support GovCloud regions
+
 ## 6.3.0 - 2022-10-27
 - Request Processed Template if Original Fails to Parse
 
