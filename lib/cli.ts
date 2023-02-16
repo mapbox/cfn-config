@@ -1,6 +1,6 @@
 import path from 'path';
 import meow from 'meow';
-import cfnConfig from '../index.js';
+import CFNConfig from '../index.js';
 
 function parse(args, env) {
     const cli = meow({

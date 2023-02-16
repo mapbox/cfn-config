@@ -1,4 +1,19 @@
-import AWS from 'aws-sdk';
+import {
+    CloudFormationClient,
+    DescribeStacksCommand,
+    ListStackResourcesCommand,
+    GetTemplateCommand
+} from '@aws-sdk/client-cloudformation';
+import {
+    S3Client,
+    ListObjectsCommand,
+    GetObjectCommand,
+    GetBucketLocationCommand
+} from '@aws-sdk/client-s3';
+import {
+    KMSClient,
+    DecryptCommand
+} from '@aws-sdk/client-kms';
 import error from 'fasterror';
 import path from 'path';
 import s3urls from '@openaddresses/s3urls';
@@ -14,14 +29,18 @@ import s3urls from '@openaddresses/s3urls';
  * @class
  */
 export default class Lookup {
+    constructor(cfnconfig) {
+        this.cfnconfig = cfnconfig;
+    }
+
     /**
      * Lookup an existing CloudFormation stack's parameters
      *
      * @param {string} name - the full name of the stack
      * @param {string} region - the region the stack is in
      */
-    static async parameters(name, region) {
-        const info = await Lookup.info(name, region);
+    async parameters(name, region) {
+        const info = await this.cfnconfig.Lookup.info(name, region);
         return info.Parameters;
     }
 
@@ -33,14 +52,14 @@ export default class Lookup {
      * @param {boolean} [resources=false] - return information about each resource in the stack
      * @param {boolean} [decrypt=false] - return secure parameters decrypted
      */
-    static async info(name, region, resources=false, decrypt=false) {
-        const cfn = new AWS.CloudFormation({ region });
+    async info(name, region, resources=false, decrypt=false) {
+        const cfn = new CloudFormationClient(this.cfnconfig.client);
 
         let data;
         try {
-            data = await cfn.describeStacks({
+            data = await cfn.send(new DescribeStacksCommand({
                 StackName: name
-            }).promise();
+            }));
         } catch (err) {
             if (err.code === 'ValidationError' && /Stack with id/.test(err.message)) {
                 throw new Lookup.StackNotFoundError('Stack %s not found in %s', name, region);
@@ -80,16 +99,16 @@ export default class Lookup {
         };
 
         try {
-            let page = await cfn.listStackResources({
+            let page = await cfn.send(new ListStackResourcesCommand({
                 StackName: name
-            }).promise();
+            }));
 
             resource_data.StackResourceSummaries = resource_data.StackResourceSummaries.concat(page.StackResourceSummaries);
 
             while (page.NextToken) {
-                page = await cfn.listStackResources({
+                page = await cfn.send(new ListStackResourcesCommand({
                     NextToken: page.NextToken
-                }).promise();
+                }));
 
                 resource_data.StackResourceSummaries = resource_data.StackResourceSummaries.concat(page.StackResourceSummaries);
             }
@@ -110,15 +129,15 @@ export default class Lookup {
      * @param {string} name - the full name of the stack
      * @param {string} region - the region the stack is in
      */
-    static async template(name, region) {
-        const cfn = new AWS.CloudFormation({ region });
+    async template(name, region) {
+        const cfn = new CloudFormationClient(this.cfnconfig.client);
 
         let data;
         try {
-            data = await cfn.getTemplate({
+            data = await cfn.send(new GetTemplateCommand({
                 StackName: name,
                 TemplateStage: 'Original' // This can potentially return a YAML file if the stack was created by a different deploy tool
-            }).promise();
+            }));
         } catch (err) {
             if (err.code === 'ValidationError' && /Stack with id/.test(err.message)) {
                 throw new Lookup.StackNotFoundError('Stack %s not found in %s', name, region);
@@ -132,10 +151,10 @@ export default class Lookup {
             return JSON.parse(data.TemplateBody);
         } catch (err) {
             try {
-                data = await cfn.getTemplate({
+                data = await cfn.send(new GetTemplateCommand({
                     StackName: name,
                     TemplateStage: 'Processed'
-                }).promise();
+                }));
 
                 return JSON.parse(data.TemplateBody);
             } catch (err) {
@@ -155,16 +174,16 @@ export default class Lookup {
      * @param {string} bucket - the name of the S3 bucket containing saved configurations
      * @param {string} [region] - the name of the region in which to make lookup requests
      */
-    static async configurations(name, bucket, region) {
+    async configurations(name, bucket, region) {
         region = await Lookup.bucketRegion(bucket, region);
 
-        const s3 = new AWS.S3({ region, signatureVersion: 'v4' });
+        const s3 = new S3Client(this.cfnconfig.client);
 
         try {
-            const data = await s3.listObjects({
+            const data = await s3.send(new ListObjectsCommand({
                 Bucket: bucket,
                 Prefix: name + '/'
-            }).promise();
+            }));
 
             return data.Contents.filter((obj) => {
                 return obj.Key.split('.').slice(-2).join('.') === 'cfn.json' && obj.Size > 0;
@@ -187,20 +206,17 @@ export default class Lookup {
      * @param {string} bucket - the name of the S3 bucket containing saved configurations
      * @param {string} config - the name of the saved configuration
      */
-    static async configuration(name, bucket, config) {
+    async configuration(name, bucket, config) {
         const region = await Lookup.bucketRegion(bucket);
 
-        const s3 = new AWS.S3({
-            region,
-            signatureVersion: 'v4'
-        });
+        const s3 = new S3Client(this.cfnconfig.client);
 
         let data;
         try {
-            data = await s3.getObject({
+            data = await s3.send(new GetObjectCommand({
                 Bucket: bucket,
                 Key: Lookup.configKey(name, config)
-            }).promise();
+            }));
         } catch (err) {
             if (err.code === 'NoSuchBucket') {
                 throw new Lookup.BucketNotFoundError('S3 bucket %s not found in %s', bucket, region);
@@ -228,7 +244,7 @@ export default class Lookup {
      * @param {string} s3url - a URL pointing to a configuration object on S3
      *
      */
-    static async defaultConfiguration(s3url) {
+    async defaultConfiguration(s3url) {
         const params = s3urls.fromUrl(s3url);
 
         let region;
@@ -238,14 +254,11 @@ export default class Lookup {
             return {};
         }
 
-        const s3 = new AWS.S3({
-            region,
-            signatureVersion: 'v4'
-        });
+        const s3 = new S3Client(this.cfnconfig.client);
 
         let data;
         try {
-            data = await s3.getObject(params).promise();
+            data = await s3.send(new GetObjectCommand(params));
         } catch (err) {
             return {};
         }
@@ -268,7 +281,7 @@ export default class Lookup {
      * @param {string} config - the configuration's name
      * @returns {string} an S3 key
      */
-    static configKey(name, stackName, region) {
+    configKey(name, stackName, region) {
         return region ?
             name + '/' + stackName + '-' + region + '.cfn.json' :
             name + '/' + stackName + '.cfn.json';
@@ -280,16 +293,13 @@ export default class Lookup {
      * @param {string} bucket - the name of the bucket
      * @param {string} [region] - the name of the region in which to make lookup requests
      */
-    static async bucketRegion(bucket, region) {
-        const s3 = new AWS.S3({
-            signatureVersion: 'v4',
-            region
-        });
+    async bucketRegion(bucket, region) {
+        const s3 = new S3Client(this.cfnconfig.client);
 
         try {
-            const data = await s3.getBucketLocation({
+            const data = await s3.send(new GetBucketLocationCommand({
                 Bucket: bucket
-            }).promise();
+            }));
 
             return data.LocationConstraint || undefined;
         } catch (err) {
@@ -307,11 +317,8 @@ export default class Lookup {
      * @param {object} parameters - stack parameters
      * @param {string} region - stack region
      */
-    static async decryptParameters(parameters, region) {
-        const kms = new AWS.KMS({
-            region,
-            maxRetries: 10
-        });
+    async decryptParameters(parameters, region) {
+        const kms = new KMSClient(this.cfnconfig.client);
         const decrypted = JSON.parse(JSON.stringify(parameters));
 
         try {
@@ -321,9 +328,9 @@ export default class Lookup {
 
                 const val = parameters[key].replace(/^secure:/, '');
 
-                const data = await kms.decrypt({
+                const data = await kms.send(new DecryptCommand({
                     CiphertextBlob: new Buffer.from(val, 'base64')
-                }).promise();
+                }));
 
                 results.push({
                     key: key,

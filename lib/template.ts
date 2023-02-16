@@ -1,20 +1,32 @@
 import fs from 'fs/promises';
 import error from 'fasterror';
-import AWS from 'aws-sdk';
 import s3urls from '@openaddresses/s3urls';
+import {
+    KMSClient,
+    EncryptCommand
+} from '@aws-sdk/client-kms';
+import {
+    S3Client,
+    GetObjectCommand,
+    GetBucketLocationCommand
+} from '@aws-sdk/client-kms';
 
 /**
  * @class
  * Cloudformation Template
  */
 export default class Template {
+    constructor(cfnconfig) {
+        this.cfnconfig = cfnconfig;
+    }
+
     /**
      * Read a template from a local file or from S3
      *
      * @param {URL} templatePath - the absolute path to a local file or an S3 url
      * @param {object} [options] - an object to pass as the first argument to async templates
      */
-    static async read(templatePath, options={}) {
+    async read(templatePath, options={}) {
         if (!(templatePath instanceof URL)) throw new Error('templatePath must be of type URL');
 
         const params = s3urls.fromUrl(String(templatePath));
@@ -52,23 +64,21 @@ export default class Template {
                 return templateBody;
             }
         } else {
-            let s3 = new AWS.S3({ signatureVersion: 'v4' });
+            let s3 = new S3Client(this.cfnconfig.client);
 
             let data;
             try {
-                data = await s3.getBucketLocation({
+                data = await s3.send(new GetBucketLocationCommand({
                     Bucket: params.Bucket
-                }).promise();
+                }));
             } catch (err) {
                 throw new Template.NotFoundError('%s could not be loaded - S3 responded with %s: %s', templatePath, err.code, err.message);
             }
 
-            s3 = new AWS.S3({
-                region: data.LocationConstraint || undefined
-            });
+            s3 = new S3Client(this.cfnconfig.client);
 
             try {
-                data = await s3.getObject(params).promise();
+                data = await s3.send(new GetObjectCommand(params));
             } catch (err) {
                 throw new Template.NotFoundError('%s could not be loaded - S3 responded with %s: %s', templatePath, err.code, err.message);
             }
@@ -90,18 +100,15 @@ export default class Template {
      * @param {object} templateBody - a parsed CloudFormation template
      * @returns {array} a set of questions for user prompting
      */
-    static questions(templateBody, overrides) {
+    questions(templateBody, overrides) {
         overrides = overrides || {};
         overrides.defaults = overrides.defaults || {};
         overrides.messages = overrides.messages || {};
         overrides.choices = overrides.choices || {};
         overrides.kmsKeyId = (overrides.kmsKeyId && typeof overrides.kmsKeyId !== 'string') ? 'alias/cloudformation' : overrides.kmsKeyId;
-        overrides.region = overrides.region || 'us-east-1';
 
         // Not sure where the region should come from, but it's very important here
-        const kms = new AWS.KMS({
-            region: overrides.region
-        });
+        const kms = new KMSClient(this.cfnconfig.client);
 
         return Object.keys(templateBody.Parameters || {}).map((name) => {
             const parameter = templateBody.Parameters[name];
@@ -139,7 +146,8 @@ export default class Template {
                 const done = this.async();
 
                 if (overrides.kmsKeyId && (parameter.Description || '').indexOf('[secure]') > -1 && input.slice(0, 7) !== 'secure:') {
-                    return kms.encrypt({
+                    // TODO: this is messed up
+                    return kms.send(new EncryptCommand({
                         KeyId: overrides.kmsKeyId,
                         Plaintext: input
                     }, (err, encrypted) => {

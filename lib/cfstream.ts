@@ -4,10 +4,21 @@ import {
     DescribeStackEventsCommand,
     DescribeStacksCommand
 } from '@aws-sdk/client-cloudformation';
+import type {
+    AwsCredentialIdentity,
+    AwsCredentialIdentityProvider,
+    Provider,
+} from '@aws-sdk/types';
 
-export default function(stackName, options) {
-    options = options || {};
 
+export interface CFStreamInput {
+    region: string;
+    credentials: AwsCredentialIdentity | Provider<AwsCredentialIdentity>;
+    pollInterval: number | undefined;
+    lastEventId: string | undefined;
+}
+
+export default function(stackName: string, options: CFStreamInput) {
     const cfn = new CloudFormationClient({
         credentials: options.credentials,
         region: options.region
@@ -15,17 +26,17 @@ export default function(stackName, options) {
 
     const stream = new Readable({ objectMode: true }),
         pollInterval = options.pollInterval || 10000,
-        seen = {},
+        seen = new Map(),
         push = stream.push.bind(stream);
 
     let describing = false,
         complete = false,
         stackId = stackName,
-        events = [];
+        events: object[] = [];
 
 
     if (options.lastEventId) {
-        seen[options.lastEventId] = true;
+        seen.set(options.lastEventId, true);
     }
 
     stream._read = function() {
@@ -33,7 +44,7 @@ export default function(stackName, options) {
         describeStack();
     };
 
-    async function describeEvents(nextToken) {
+    async function describeEvents(nextToken?: string) {
         if (describing) return;
         describing = true;
         // Describe stacks using stackId (ARN) as CF stacks are actually
@@ -51,12 +62,12 @@ export default function(stackName, options) {
 
                 // Assuming StackEvents are in strictly reverse chronological order,
                 // stop reading events once we reach one we've seen already.
-                if (seen[event.EventId])
+                if (seen.has(event.EventId))
                     break;
 
                 // Collect new events in an array and mark them as "seen".
                 events.push(event);
-                seen[event.EventId] = true;
+                seen.set(event.EventId, true);
 
                 // If we reach a user initiated event assume this event is the
                 // initiating event the caller intends to monitor.

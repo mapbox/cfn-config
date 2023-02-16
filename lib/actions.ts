@@ -1,12 +1,27 @@
 import url from 'url';
+import CFNConfig from '../index.js';
 import crypto from 'crypto';
 import stream from 'stream';
-import AWS from 'aws-sdk';
 import { randomUUID } from 'crypto';
+// @ts-ignore
 import error from 'fasterror';
 import s3urls from '@openaddresses/s3urls';
 import eventStream from './cfstream.js';
 import Lookup from './lookup.js';
+import {
+    CloudFormationClient,
+    CreateChangeSetCommand,
+    DescribeChangeSetCommand,
+    ValidateTemplateCommand,
+    DeleteStackCommand,
+    ExecuteChangeSetCommand,
+    CancelUpdateStackCommand
+} from '@aws-sdk/client-cloudformation';
+
+import {
+    S3Client,
+    PutObjectCommand
+} from '@aws-sdk/client-s3';
 
 import 'colors';
 
@@ -31,32 +46,35 @@ const colors = {
     UPDATE_ROLLBACK_IN_PROGRESS: 'yellow'
 };
 
-const signatureVersion = 'v4';
-
 /**
  * @class
  */
 export default class Actions {
+    cfnconfig: CFNConfig;
+
+    constructor(cfnconfig: CFNConfig) {
+        this.cfnconfig = cfnconfig;
+    }
+
     /**
      * Determine what will change about an existing CloudFormation stack by
      * performing a specific update
      *
-     * @param {string} name - the name of the existing stack to update
-     * @param {string} region - the region the stack is in
-     * @param {string} changeSetType - the type of changeset, either UPDATE or CREATE
-     * @param {string} templateUrl - the URL for the template on S3
-     * @param {object} parameters - parameters for the ChangeSet
-     * @param {Boolean} expand - Set CAPABILITY_AUTO_EXPAND
-     * @param {Array} Tags - Tags to be applied to all resources in the stack
+     * @param name - the name of the existing stack to update
+     * @param changeSetType - the type of changeset, either UPDATE or CREATE
+     * @param templateUrl - the URL for the template on S3
+     * @param parameters - parameters for the ChangeSet
+     * @param expand - Set CAPABILITY_AUTO_EXPAND
+     * @param Tags - Tags to be applied to all resources in the stack
      */
-    static async diff(name, region, changeSetType, templateUrl, parameters, expand, tags) {
-        const cfn = new AWS.CloudFormation({ region });
+    async diff(name: string, changeSetType: string, templateUrl: string, parameters: object, expand: boolean, tags: object[]) {
+        const cfn = new CloudFormationClient(this.cfnconfig.client);
         const changesetId = 'a' + crypto.randomBytes(16).toString('hex');
         const changeSetParameters = changeSet(name, changeSetType, templateUrl, parameters, expand, tags);
         changeSetParameters.ChangeSetName = changesetId;
 
         try {
-            await cfn.createChangeSet(changeSetParameters).promise();
+            await cfn.send(new CreateChangeSetCommand(changeSetParameters));
         } catch (err) {
             throw new Actions.CloudFormationError('%s: %s', err.code, err.message);
         }
@@ -89,12 +107,11 @@ export default class Actions {
     /**
      * Execute a ChangeSet in order to perform an update on an existing CloudFormation stack
      *
-     * @param {string} name - the name of the existing stack to update
-     * @param {string} region - the region the stack is in
-     * @param {string} changesetId - the name or ARN of an existing changeset
+     * @param name - the name of the existing stack to update
+     * @param changesetId - the name or ARN of an existing changeset
      */
-    static async executeChangeSet(name, region, changesetId) {
-        const cfn = new AWS.CloudFormation({ region });
+    async executeChangeSet(name: string, changesetId: string) {
+        const cfn = new CloudFormationClient(this.cfnconfig.client);
 
         let data;
         try {
@@ -112,10 +129,10 @@ export default class Actions {
         }
 
         try {
-            await cfn.executeChangeSet({
+            await cfn.send(new ExecuteChangeSetCommand({
                 StackName: name,
                 ChangeSetName: changesetId
-            }).promise();
+            }));
         } catch (err) {
             throw new Actions.CloudFormationError('%s: %s', err.code, err.message);
         }
@@ -126,16 +143,15 @@ export default class Actions {
     /**
      * Delete an existing CloudFormation stack
      *
-     * @param {string} name - the name of the existing stack to update
-     * @param {string} region - the region the stack is in
+     * @param name - the name of the existing stack to update
      */
-    static async delete(name, region) {
-        const cfn = new AWS.CloudFormation({ region });
+    async delete(name: string) {
+        const cfn = new CloudFormationClient(this.cfnconfig.client);
 
         try {
-            await cfn.deleteStack({
+            await cfn.send(new DeleteStackCommand({
                 StackName: name
-            }).promise();
+            }));
         } catch (err) {
             throw new Actions.CloudFormationError('%s: %s', err.code, err.message);
         }
@@ -146,12 +162,11 @@ export default class Actions {
     /**
      * Monitor a stack throughout a create, delete, or update
      *
-     * @param {string} name - the full name of the existing stack to update
-     * @param {string} region - the region the stack is in
+     * @param name - the full name of the existing stack to update
      */
-    static monitor(name, region) {
+    monitor(name: string) {
         return new Promise((resolve, reject) => {
-            const events = eventStream(name, { region, credentials: AWS.config.credentials })
+            const events = eventStream(name, this.cfnconfig.client)
                 .on('error', (err) => {
                     return reject(new Actions.CloudFormationError('%s: %s', err.code, err.message));
                 });
@@ -171,14 +186,13 @@ export default class Actions {
     /**
      * Cancel a deployment to a stack, rolling it back
      *
-     * @param {string} StackName - the full name of the existing stack to update
-     * @param {string} region - the region the stack is in
+     * @param StackName - the full name of the existing stack to update
      */
-    static async cancel(StackName, region) {
-        const cfn = new AWS.CloudFormation({ region });
+    async cancel(StackName: string) {
+        const cfn = new CloudFormationClient(this.cfnconfig.client);
 
         try {
-            await cfn.cancelUpdateStack({ StackName }).promise();
+            await cfn.send(new CancelUpdateStackCommand({ StackName }));
         } catch (err) {
             throw new Actions.CloudFormationError('%s: %s', err.code, err.message);
         }
@@ -189,14 +203,13 @@ export default class Actions {
     /**
      * Validate a CloudFormation template
      *
-     * @param {string} region - the region the stack would run in
-     * @param {string} TemplateURL - the URL for the template on S3
+     * @param TemplateURL - the URL for the template on S3
      */
-    static async validate(region, TemplateURL) {
-        const cfn = new AWS.CloudFormation({ region });
+    async validate(TemplateURL: string) {
+        const cfn = new CloudFormationClient(this.cfnconfig.client);
 
         try {
-            await cfn.validateTemplate({ TemplateURL }).promise();
+            await cfn.send(new ValidateTemplateCommand({ TemplateURL }));
         } catch (err) {
             throw new Actions.CloudFormationError('%s: %s', err.code, err.message);
         }
@@ -207,18 +220,17 @@ export default class Actions {
     /**
      * Save a CloudFormation stack's configuration to S3
      *
-     * @param {string} baseName - the base name of the stack (no suffix)
-     * @param {string} stackName - the deployed name of the stack
-     * @param {string} stackRegion - the region of the stack
-     * @param {string} bucket - the name of the S3 bucket to save the configuration into
-     * @param {object} parameters - name/value pairs defining the stack configuration to save
-     * @param {string} [kms] - if desired, the ID of the AWS KMS master encryption key to use
+     * @param baseName - the base name of the stack (no suffix)
+     * @param stackName - the deployed name of the stack
+     * @param bucket - the name of the S3 bucket to save the configuration into
+     * @param parameters - name/value pairs defining the stack configuration to save
+     * @param [kms] - if desired, the ID of the AWS KMS master encryption key to use
      * to encrypt this configuration at rest
      */
-    static async saveConfiguration(baseName, stackName, stackRegion, bucket, parameters, kms=false) {
+    async saveConfiguration(baseName: string, stackName: string, bucket: string, parameters: object, kms: string | undefined) {
         const region = await Lookup.bucketRegion(bucket, stackRegion);
 
-        const s3 = new AWS.S3({ region, signatureVersion });
+        const s3 = new S3Client(this.cfnconfig.client);
 
         const params = {
             Bucket: bucket,
@@ -232,7 +244,7 @@ export default class Actions {
         }
 
         try {
-            await s3.putObject(params).promise();
+            await s3.send(PutObjectCommand(params));
         } catch (err) {
             if (err.code === 'NoSuchBucket') {
                 throw new Actions.BucketNotFoundError('S3 bucket %s not found in %s', bucket, region);
@@ -247,10 +259,10 @@ export default class Actions {
     /**
      * Save a CloudFormation template to S3
      *
-     * @param {string} templateUrl - an S3 URL where the template will be saved
-     * @param {string} templateBody - the CloudFormation template as a JSON string
+     * @param templateUrl - an S3 URL where the template will be saved
+     * @param templateBody - the CloudFormation template as a JSON string
      */
-    static async saveTemplate(templateUrl, templateBody) {
+    async saveTemplate(templateUrl: string, templateBody: string) {
         const uri = url.parse(templateUrl);
         const prefix = uri.host.replace(/^s3[-.]/, '').split('.');
         const region = prefix.length === 2 ? 'us-east-1' : prefix[0];
@@ -260,14 +272,14 @@ export default class Actions {
             templateBody = JSON.stringify(JSON.parse(templateBody));
         }
 
-        const s3 = new AWS.S3({ region, signatureVersion });
+        const s3 = new S3Client(this.cfnconfig.client);
 
         const params = Object.assign({
             Body: templateBody
         }, s3urls.fromUrl(templateUrl));
 
         try {
-            await s3.putObject(params).promise();
+            await s3.send(PutObjectCommand(params));
         } catch (err) {
             if (err.code === 'NoSuchBucket') {
                 throw new Actions.BucketNotFoundError('S3 bucket %s not found in %s', params.Bucket, region);
@@ -280,12 +292,12 @@ export default class Actions {
     /**
      * Create an S3 URL for a template
      *
-     * @param {string} bucket - the bucket in which the template will be placed
-     * @param {string} region - the region that the bucket is in
-     * @param {string} name - the base name of the stack
-     * @returns {string} an S3 URL where the template will be saved
+     * @param bucket - the bucket in which the template will be placed
+     * @param region - the region that the bucket is in
+     * @param name - the base name of the stack
+     * @returns an S3 URL where the template will be saved
      */
-    static templateUrl(bucket, region, name) {
+    templateUrl(bucket: string, region: string, name: string): string {
         const key = randomUUID() + '-' + name + '.template.json';
 
         let host;
@@ -329,17 +341,17 @@ export default class Actions {
  * @param {string} name - the name of the existing stack to update
  * @param {string} changesetId - the name or ARN of an existing changeset
  */
-async function describeChangeset(cfn, name, changesetId) {
+async function describeChangeset(cfn: CloudFormationClient, name: string, changesetId: string) {
     let changesetDescriptions;
     let changes = [];
 
     let nextToken = true;
     do {
-        const data = await cfn.describeChangeSet({
+        const data = await cfn.send(new DescribeChangeSetCommand({
             ChangeSetName: changesetId,
             StackName: name,
             NextToken: nextToken === true ? undefined : nextToken
-        }).promise();
+        }));
 
         changesetDescriptions = data;
 
@@ -356,7 +368,7 @@ async function describeChangeset(cfn, name, changesetId) {
     return changesetDescriptions;
 }
 
-function sleep(ms) {
+function sleep(ms: number): Promise {
     return new Promise((resolve) => {
         setTimeout(resolve, ms);
     });
@@ -375,7 +387,7 @@ function sleep(ms) {
  * @param {Array} [Tags=[]] - Tags to be applied to all resources in the stack
  * @returns {object} changeset - an object for use in ChangeSet requests that create/update a stack
  */
-function changeSet(StackName, ChangeSetType, TemplateURL, Parameters, expand, Tags=[]) {
+function changeSet(StackName: string, ChangeSetType: string, TemplateURL: string, Parameters: object, expand: boolean, Tags=[]) {
     const base = {
         StackName,
         Capabilities: ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],

@@ -1,4 +1,5 @@
 /* eslint-disable no-console */
+import CFNConfig from '../index.js';
 import assert from 'assert';
 import path from 'path';
 import jsonDiff from 'json-diff';
@@ -9,7 +10,10 @@ import Actions from './actions.js';
 import Lookup from './lookup.js';
 import Prompt from './prompt.js';
 import Template from './template.js';
-import AWS from 'aws-sdk';
+import {
+    KMSClient,
+    DecryptCommand
+} from '@aws-sdk/client-kms';
 
 const NOECHO_MASK = '****';
 
@@ -56,7 +60,8 @@ import 'colors';
  * @param {boolean} dryrun Used by the tests to return the context without running
  */
 class Commands {
-    constructor(config={}, dryrun=false) {
+    constructor(cfnconfig, config={}, dryrun=false) {
+        this.cfnconfig = cfnconfig;
         this.config = config;
         this.dryrun = dryrun;
     }
@@ -295,16 +300,13 @@ class Operations {
         for (const key of Object.keys(masterConfigJSON)) {
             if (Object.prototype.hasOwnProperty.call(context.oldParameters, key)) {
                 if (context.kms && context.oldParameters[key].includes('secure')) {
-                    const kms = new AWS.KMS({
-                        region: context.stackRegion,
-                        maxRetries: 10
-                    });
+                    const kms = new KMSClient(this.cfnconfig.client);
 
                     const valueToDecrypt = context.oldParameters[key].replace(/^secure:/, '');
 
-                    const data = await kms.decrypt({
+                    const data = await kms.send(DecryptCommand({
                         CiphertextBlob: new Buffer.from(valueToDecrypt, 'base64')
-                    }).promise();
+                    }));
 
                     const decryptedOldParams = new Buffer.from(data.Plaintext, 'base64').toString('utf-8');
                     const decryptedMaster = masterConfigJSON[key];
@@ -449,7 +451,7 @@ class Operations {
 
     static async cancelStackDeploy(context) {
         try {
-            await Actions.cancel(context.stackName, context.config.region);
+            await Actions.cancel(context.stackName);
         } catch (err) {
             let msg = '';
             msg += err.message;
@@ -641,7 +643,7 @@ class Operations {
 
     static async deleteStack(context) {
         try {
-            await Actions.delete(context.stackName, context.stackRegion);
+            await Actions.delete(context.stackName);
         } catch (err) {
             let msg = 'Failed to delete stack: '; // err instanceof Actions.CloudFormationError
             msg += err.message;
