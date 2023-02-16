@@ -27,7 +27,6 @@
         "@openaddresses/s3urls": "^3.3.0",
         "aws-sdk": "^2.720.0",
         "colors": "1.4.0",
-        "cuid": "^2.1.1",
         "diff": "^5.0.0",
         "easy-table": "^1.0.0",
         "fasterror": "^1.0.0",
