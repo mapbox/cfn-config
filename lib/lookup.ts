@@ -54,9 +54,6 @@ export interface InfoOutput {
     StackResources?: StackResourceSummary[];
 }
 
-/**
- * @class
- */
 export default class Lookup {
     client: CFNConfigClient;
 

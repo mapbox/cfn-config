@@ -20,12 +20,10 @@ import type {
 import 'colors';
 
 export interface CommandOptions {
-    parameters?: Parameter[];   // Default Values for parameters
     name?: string;
     tags?: Tag[];
     configBucket?: string;
     templateBucket?: string;
-    force?: boolean;            // Do not prompt user for any input -- accept all
 }
 
 /**
@@ -309,7 +307,7 @@ class Operations {
     }
 
     static async confirmTemplate(context: CommandContext) {
-        const diff = compareTemplate(context.oldTemplate, context.newTemplate);
+        const diff = compareTemplate(context.oldTemplate.body, context.newTemplate.body);
 
         if (!diff) return;
 
