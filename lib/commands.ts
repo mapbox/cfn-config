@@ -216,7 +216,10 @@ class CommandContext {
     tags: Tags[];
     operations: Function[];
 
-    constructor(client, config, suffix, operations)  {
+    template?: object;
+    newTemplate?: object;
+
+    constructor(client: CFNConfigClient, config: CommandOptions, suffix: string, operations: Function[])  {
         this.client = client;
         this.config = config;
         this.baseName = config.name;
@@ -256,7 +259,7 @@ class CommandContext {
  * @class
  */
 class Operations {
-    static async updatePreamble(context) {
+    static async updatePreamble(context: CommandContext) {
         try {
             if (!context.template) {
                 throw new Template.NotFoundError('No template passed');
@@ -284,12 +287,12 @@ class Operations {
         }
     }
 
-    static async promptParameters(context) {
+    static async promptParameters(context: CommandContext) {
         const newTemplateParameters = context.newTemplate.Parameters || {};
         const overrideParameters = {};
 
         if (context.overrides.parameters) {
-            Object.keys(context.overrides.parameters).forEach((key) => {
+            Object.keys(context.overrides.parameters).forEach((key: string) => {
                 if (newTemplateParameters[key] || context.oldParameters[key])
                     overrideParameters[key] = context.overrides.parameters[key];
             });
@@ -297,7 +300,7 @@ class Operations {
 
         if (context.overrides.force || context.overrides.skipPromptParameters) {
             context.newParameters = {};
-            Object.keys(newTemplateParameters).forEach((key) => {
+            Object.keys(newTemplateParameters).forEach((key: string) => {
                 const value = key in overrideParameters ? overrideParameters[key] : context.oldParameters[key];
                 if (value !== undefined) {
                     context.newParameters[key] = value;
@@ -334,7 +337,7 @@ class Operations {
         return;
     }
 
-    static async confirmParameters(context) {
+    static async confirmParameters(context: CommandContext) {
         if (context.overrides.force || context.overrides.skipConfirmParameters) {
             return;
         }
@@ -365,7 +368,7 @@ class Operations {
         return;
     }
 
-    static async confirmTemplate(context) {
+    static async confirmTemplate(context: CommandContext) {
         if (context.overrides.force || context.overrides.skipConfirmTemplate) {
             return;
         }
@@ -396,8 +399,8 @@ class Operations {
         return;
     }
 
-    static async saveTemplate(context) {
-        const actions = new Actions(this.client);
+    static async saveTemplate(context: CommandContext) {
+        const actions = new Actions(context.client);
         context.templateUrl = actions.templateUrl(context.templateBucket, context.stackRegion, context.suffix);
 
         try {
@@ -414,8 +417,8 @@ class Operations {
         return;
     }
 
-    static async cancelStackDeploy(context) {
-        const actions = new Actions(this.client);
+    static async cancelStackDeploy(context: CommandContext) {
+        const actions = new Actions(context.client);
         try {
             await actions.cancel(context.stackName);
         } catch (err) {
@@ -428,8 +431,8 @@ class Operations {
         return;
     }
 
-    static async validateTemplate(context) {
-        const actions = new Actions(this.client);
+    static async validateTemplate(context: CommandContext) {
+        const actions = new Actions(context.client);
         try {
             await actions.validate(context.stackRegion, context.templateUrl);
         } catch (err) {
@@ -442,7 +445,7 @@ class Operations {
         return;
     }
 
-    static async validateParametersHook(context) {
+    static async validateParametersHook(context: CommandContext) {
         if (!context.overrides.validateParameters) return;
 
         context.overrides.validateParameters(context, function(err) {
@@ -451,7 +454,7 @@ class Operations {
         });
     }
 
-    static async beforeUpdateHook(context) {
+    static async beforeUpdateHook(context: CommandContext) {
         if (!context.overrides.beforeUpdate) return;
 
         context.overrides.beforeUpdate(context, function(err) {
@@ -460,16 +463,16 @@ class Operations {
         });
     }
 
-    static async getChangesetCreate(context) {
+    static async getChangesetCreate(context: CommandContext) {
         await Operations.getChangeset(context, 'CREATE');
     }
 
-    static async getChangesetUpdate(context) {
+    static async getChangesetUpdate(context: CommandContext) {
         await Operations.getChangeset(context, 'UPDATE');
     }
 
     static async getChangeset(context, changeSetType) {
-        const actions = new Actions(this.client);
+        const actions = new Actions(context.client);
         try {
             const details = await actions.diff(
                 context.stackName,
@@ -490,7 +493,7 @@ class Operations {
         }
     }
 
-    static async confirmChangeset(context) {
+    static async confirmChangeset(context: CommandContext) {
         if (context.overrides.force || (context.overrides.skipConfirmTemplate && context.overrides.skipConfirmParameters)) {
             return;
         }
@@ -504,8 +507,8 @@ class Operations {
         if (!ready) throw new Error('aborted');
     }
 
-    static async executeChangeSet(context) {
-        const actions = new Actions(this.client);
+    static async executeChangeSet(context: CommandContext) {
+        const actions = new Actions(context.client);
         try {
             await actions.executeChangeSet(context.stackName, context.stackRegion, context.changeset.id);
         } catch (err) {
@@ -518,7 +521,7 @@ class Operations {
         }
     }
 
-    static async createPreamble(context) {
+    static async createPreamble(context: CommandContext) {
         context.create = true;
 
         try {
@@ -547,7 +550,7 @@ class Operations {
         }
     }
 
-    static async selectConfig(context) {
+    static async selectConfig(context: CommandContext) {
         if (context.overrides.force) return;
 
         const savedConfig = await Prompt.configuration(context.configNames);
@@ -558,7 +561,7 @@ class Operations {
         return;
     }
 
-    static async loadConfig(context) {
+    static async loadConfig(context: CommandContext) {
         const lookup = new Lookup(this.client);
 
         if (!context.configName) {
@@ -598,22 +601,22 @@ class Operations {
         }
     }
 
-    static async confirmCreate(context) {
+    static async confirmCreate(context: CommandContext) {
         if (context.overrides.force) return;
 
         const ready = await Prompt.confirm('Ready to create the stack?');
         if (!ready) throw new Error('aborted');
     }
 
-    static async confirmDelete(context) {
+    static async confirmDelete(context: CommandContext) {
         if (context.overrides.force) return;
         const msg = 'Are you sure you want to delete ' + context.stackName + ' in region ' + context.stackRegion + '?';
         const ready = await Prompt.confirm(msg, false);
         if (!ready) throw new Error('aborted');
     }
 
-    static async deleteStack(context) {
-        const actions = new Actions(this.client);
+    static async deleteStack(context: CommandContext) {
+        const actions = new Actions(context.client);
         try {
             await actions.delete(context.stackName);
         } catch (err) {
@@ -625,7 +628,7 @@ class Operations {
         }
     }
 
-    static async monitorStack(context) {
+    static async monitorStack(context: CommandContext) {
         const actions = new Actions(this.client);
         try {
             await actions.monitor(context.stackName, context.stackRegion);
@@ -636,7 +639,7 @@ class Operations {
         }
     }
 
-    static async getOldParameters(context) {
+    static async getOldParameters(context: CommandContext) {
         const lookup = new Lookup(this.client);
         try {
             const info = await lookup.parameters(context.stackName, context.stackRegion);
@@ -651,19 +654,19 @@ class Operations {
         }
     }
 
-    static async promptSaveConfig(context) {
+    static async promptSaveConfig(context: CommandContext) {
         const name = await Prompt.input('Name for saved configuration:', context.suffix);
         context.saveName = name;
     }
 
-    static async confirmSaveConfig(context) {
+    static async confirmSaveConfig(context: CommandContext) {
         process.stdout.write(stableStringify(context.oldParameters, { space: 2 }) + '\n\n');
         const ready = await Prompt.confirm('Ready to save this configuration as "' + context.saveName + '"?');
         if (!ready) throw new Error('aborted');
     }
 
-    static async saveConfig(context) {
-        const actions = new Actions(this.client);
+    static async saveConfig(context: CommandContext) {
+        const actions = new Actions(context.client);
         const maskedParameters = Object.assign({}, context.newParameters || {});
         const templateBody = context.newTemplate || {};
 
@@ -693,7 +696,7 @@ class Operations {
         }
     }
 
-    static async mergeMetadata(context) {
+    static async mergeMetadata(context: CommandContext) {
         if (!context.overrides.metadata) return;
 
         context.newTemplate.Metadata = context.newTemplate.Metadata || {};
@@ -707,7 +710,7 @@ class Operations {
     }
 }
 
-function compare(existing, desired) {
+function compare(existing: object, desired: object) {
     existing = JSON.parse(JSON.stringify(existing));
     desired = JSON.parse(JSON.stringify(desired));
     try {
@@ -718,7 +721,7 @@ function compare(existing, desired) {
     }
 }
 
-function compareTemplate(existing, desired) {
+function compareTemplate(existing: object, desired: object) {
     // --------------------------------------------------
     // Hacky exemption for Mapbox's Metadata.LastDeployedBy
     existing = JSON.parse(JSON.stringify(existing));
@@ -772,7 +775,7 @@ function compareTemplate(existing, desired) {
 function formatDiff(details) {
     const t = new Table();
 
-    function colors(msg) {
+    function colors(msg: string) {
         if (msg === 'Modify') return msg.yellow;
         if (msg === 'Add') return msg.green;
         if (msg === 'Remove') return msg.red;
@@ -792,7 +795,7 @@ function formatDiff(details) {
     return t.toString();
 }
 
-function stackName(name, suffix) {
+function stackName(name: string, suffix?: string) {
     return suffix ? name + '-' + suffix : name;
 }
 
@@ -810,7 +813,7 @@ function changesetParameters(oldParameters, newParameters, overrideParameters, i
     overrideParameters = overrideParameters || {};
 
     return Object.entries(newParameters).map(([key, value]) => {
-        const parameter = {
+        const parameter: Parameter = {
             ParameterKey: key
         };
 
