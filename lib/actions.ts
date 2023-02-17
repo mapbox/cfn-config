@@ -338,11 +338,12 @@ export default class Actions {
      * Create an S3 URL for a template
      *
      * @param bucket - the bucket in which the template will be placed
-     * @param region - the region that the bucket is in
      * @param name - the base name of the stack
      * @returns an S3 URL where the template will be saved
      */
-    templateUrl(bucket: string, region: string, name: string): string {
+    async templateUrl(bucket: string, name: string): Promise<string> {
+        const lookup = new Lookup(this.client);
+        const region = await lookup.bucketRegion(bucket);
         const key = randomUUID() + '-' + name + '.template.json';
 
         let host;

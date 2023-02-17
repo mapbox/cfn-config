@@ -27,7 +27,6 @@ class S3Error extends Error {};
 class BucketNotFoundError extends Error {};
 class ConfigurationNotFoundError extends Error {};
 class InvalidConfigurationError extends Error {};
-class DecryptParametersError extends Error {};
 
 // TODO Finish the rest of the props
 export interface InfoOutput {
@@ -73,14 +72,13 @@ export default class Lookup {
     static BucketNotFoundError = BucketNotFoundError;
     static ConfigurationNotFoundError = ConfigurationNotFoundError;
     static InvalidConfigurationError = InvalidConfigurationError;
-    static DecryptParametersError = DecryptParametersError;
 
     /**
      * Lookup an existing CloudFormation stack's parameters
      *
      * @param StackName - the full name of the stack
      */
-    async parameters(StackName: string) {
+    async parameters(StackName: string): Promise<Map<string, string>> {
         const info = await this.info(StackName);
         return info.Parameters;
     }

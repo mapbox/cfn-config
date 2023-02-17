@@ -68,7 +68,7 @@ export default class Prompt {
      *
      * @param {object} questions - inquirer questions for a CloudFormation stack's parameters
      */
-    static async parameters(questions) {
+    static async parameters(questions: any) {
         const answers = await inquirer.prompt(questions);
 
         for (const key in answers) {

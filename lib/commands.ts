@@ -9,7 +9,8 @@ import Table from 'easy-table';
 import Actions from './actions.js';
 import Lookup from './lookup.js';
 import Prompt from './prompt.js';
-import Template from './template.js';
+import TemplateReader from './template.js';
+import type { Template } from './template.js';
 import type {
     Tag,
     Parameter
@@ -21,6 +22,10 @@ import 'colors';
 
 export interface CommandOptions {
     parameters?: Parameter[];   // Default Values for parameters
+    name?: string;
+    tags?: Tag[];
+    configBucket?: string;
+    templateBucket?: string;
     force?: boolean;            // Do not prompt user for any input -- accept all
     templateOptions?: object;   // An options object to provide as the first argument to a JavaScript template which exports a function
     beforeUpdate?: Function;    // A hook into the update flow that allows the caller to inject functionality into the flow after the user has specified
@@ -43,7 +48,7 @@ class Commands {
     config: CommandOptions;
     dryrun: boolean;
 
-    constructor(client, config: CommandOptions = {}, dryrun: boolean = false) {
+    constructor(client: CFNConfigClient, config: CommandOptions = {}, dryrun: boolean = false) {
         this.client = client;
         this.config = config;
         this.dryrun = dryrun;
@@ -98,7 +103,7 @@ class Commands {
      * @param {@link overrides} [overrides] - any overrides to the create flow
      */
     async update(suffix: string, template: string, overrides={}) {
-        const context = new CommandContext(this.config, suffix, [
+        const context = new CommandContext(this.client, this.config, suffix, [
             Operations.updatePreamble,
             Operations.promptParameters,
             Operations.confirmParameters,
@@ -131,7 +136,7 @@ class Commands {
      * @param {@link overrides} [overrides] - any overrides to the create flow
      */
     async delete(suffix: string, overrides={}) {
-        const context = new CommandContext(this.config, suffix, [
+        const context = new CommandContext(this.client, this.config, suffix, [
             Operations.confirmDelete,
             Operations.deleteStack,
             Operations.monitorStack
@@ -149,7 +154,7 @@ class Commands {
      * @param suffix - the trailing part of the stack's name
      */
     async cancel(suffix: string) {
-        const context = new CommandContext(this.config, suffix, [
+        const context = new CommandContext(this.client, this.config, suffix, [
             Operations.cancelStackDeploy,
             Operations.monitorStack
         ]);
@@ -168,7 +173,7 @@ class Commands {
     async info(suffix: string, resources: boolean = false) {
         if (this.dryrun) return true;
         const lookup = new Lookup(this.client);
-        return await lookup.info(stackName(this.config.name, suffix), this.config.region, resources);
+        return await lookup.info(stackName(this.config.name, suffix), resources);
     }
 
     /**
@@ -179,7 +184,7 @@ class Commands {
      * @param {string} suffix - the trailing part of the new stack's name
      */
     async save(suffix: string) {
-        const context = new CommandContext(this.config, suffix, [
+        const context = new CommandContext(this.client, this.config, suffix, [
             Operations.getOldParameters,
             Operations.promptSaveConfig,
             Operations.confirmSaveConfig,
@@ -210,14 +215,30 @@ class CommandContext {
     stackRegion: string;
     configBucket: string;
     templateBucket: string;
-    overrides: {};
-    oldParameters: {};
-    diffs: {};
-    tags: Tags[];
+    overrides?: {
+        force?: boolean;
+        preapproved?: object;
+        validateParameters?: Function;
+        beforeUpdate?: Function;
+        defaultConfig?: object;
+        skipPromptParameters?: boolean;
+        skipConfirmParameters?: boolean;
+        skipConfirmTemplate?: boolean;
+        templateOptions?: object;
+        parameters?: object;
+        metadata?: object;
+    };
+    oldParameters?: Map<string, string>;
+    newParameters?: Map<string, string>;
+    changesetParameters?: Parameter[];
+    diffs: object;
+    tags: Tag[];
     operations: Function[];
 
-    template?: object;
-    newTemplate?: object;
+    template?: string;
+    templateUrl?: string;
+    oldTemplate?: Template;
+    newTemplate?: Template;
 
     constructor(client: CFNConfigClient, config: CommandOptions, suffix: string, operations: Function[])  {
         this.client = client;
@@ -225,11 +246,10 @@ class CommandContext {
         this.baseName = config.name;
         this.suffix = suffix;
         this.stackName = stackName(config.name, suffix);
-        this.stackRegion = config.region;
         this.configBucket = config.configBucket;
         this.templateBucket = config.templateBucket;
         this.overrides = {};
-        this.oldParameters = {};
+        this.oldParameters = new Map();
         this.diffs = {};
         this.tags = config.tags || [];
 
@@ -260,12 +280,14 @@ class CommandContext {
  */
 class Operations {
     static async updatePreamble(context: CommandContext) {
+        const template = new TemplateReader(context.client);
+
         try {
             if (!context.template) {
-                throw new Template.NotFoundError('No template passed');
+                throw new TemplateReader.NotFoundError('No template passed');
             } else if (typeof context.template === 'string') {
-                context.newTemplate = await Template.read(
-                    new URL(path.resolve(context.template), 'file://'),
+                context.newTemplate = await template.read(
+                    new URL(path.resolve(context.template), 'file://').pathname,
                     context.overrides.templateOptions
                 );
             } else {
@@ -273,12 +295,13 @@ class Operations {
                 context.newTemplate = context.template;
             }
 
-            context.oldParameters = await Lookup.parameters(context.stackName, context.stackRegion);
-            context.oldTemplate = await Lookup.template(context.stackName, context.stackRegion);
+            const lookup = new Lookup(context.client);
+            context.oldParameters = await lookup.parameters(context.stackName);
+            context.oldTemplate = await lookup.template(context.stackName);
         } catch (err) {
             let msg = '';
-            if (err instanceof Template.NotFoundError) msg += 'Could not load template: ';
-            if (err instanceof Template.InvalidTemplateError) msg += 'Could not parse template: ';
+            if (err instanceof TemplateReader.NotFoundError) msg += 'Could not load template: ';
+            if (err instanceof TemplateReader.InvalidTemplateError) msg += 'Could not parse template: ';
             if (err instanceof Lookup.StackNotFoundError) msg += 'Missing stack: ';
             if (err instanceof Lookup.CloudFormationError) msg += 'Failed to find existing stack: ';
             msg += err.message;
@@ -288,22 +311,22 @@ class Operations {
     }
 
     static async promptParameters(context: CommandContext) {
-        const newTemplateParameters = context.newTemplate.Parameters || {};
-        const overrideParameters = {};
+        const newTemplateParameters = context.newTemplate.Parameters || new Map();
+        const overrideParameters = new Map();
 
         if (context.overrides.parameters) {
             Object.keys(context.overrides.parameters).forEach((key: string) => {
-                if (newTemplateParameters[key] || context.oldParameters[key])
-                    overrideParameters[key] = context.overrides.parameters[key];
+                if (newTemplateParameters.has(key) || context.oldParameters.has(key))
+                    overrideParameters.set(key, context.overrides.parameters.get(key));
             });
         }
 
         if (context.overrides.force || context.overrides.skipPromptParameters) {
-            context.newParameters = {};
+            context.newParameters = new Map();
             Object.keys(newTemplateParameters).forEach((key: string) => {
-                const value = key in overrideParameters ? overrideParameters[key] : context.oldParameters[key];
+                const value = overrideParameters.has(key) ? overrideParameters.get(key) : context.oldParameters.get(key);
                 if (value !== undefined) {
-                    context.newParameters[key] = value;
+                    context.newParameters.set(key, value);
                 }
             });
             context.changesetParameters = changesetParameters(
@@ -318,10 +341,10 @@ class Operations {
             Object.assign(context.oldParameters, overrideParameters);
         }
 
-        const questions = Template.questions(context.newTemplate, {
+        const template = new TemplateReader(context.client);
+        const questions = template.questions(context.newTemplate, {
             defaults: context.oldParameters,
-            region: context.stackRegion,
-            kmsKeyId: context.overrides.kms
+            region: context.client.region,
         });
 
         const answers = await Prompt.parameters(questions);
@@ -401,7 +424,7 @@ class Operations {
 
     static async saveTemplate(context: CommandContext) {
         const actions = new Actions(context.client);
-        context.templateUrl = actions.templateUrl(context.templateBucket, context.stackRegion, context.suffix);
+        context.templateUrl = await actions.templateUrl(context.templateBucket, context.suffix);
 
         try {
             await actions.saveTemplate(context.templateUrl, stableStringify(context.newTemplate, { space: 2 }));
@@ -434,7 +457,7 @@ class Operations {
     static async validateTemplate(context: CommandContext) {
         const actions = new Actions(context.client);
         try {
-            await actions.validate(context.stackRegion, context.templateUrl);
+            await actions.validate(context.templateUrl);
         } catch (err) {
             let msg = 'Invalid template: '; // err instanceof Actions.CloudFormationError
             msg += err.message;
@@ -476,7 +499,6 @@ class Operations {
         try {
             const details = await actions.diff(
                 context.stackName,
-                context.stackRegion,
                 changeSetType,
                 context.templateUrl,
                 context.changesetParameters,
@@ -510,7 +532,7 @@ class Operations {
     static async executeChangeSet(context: CommandContext) {
         const actions = new Actions(context.client);
         try {
-            await actions.executeChangeSet(context.stackName, context.stackRegion, context.changeset.id);
+            await actions.executeChangeSet(context.stackName, context.changeset.id);
         } catch (err) {
             let msg = '';
             if (err instanceof Actions.CloudFormationError) msg += 'Failed to execute changeset: ';
@@ -522,14 +544,15 @@ class Operations {
     }
 
     static async createPreamble(context: CommandContext) {
+        const template = new TemplateReader(context.client);
         context.create = true;
 
         try {
             if (!context.template) {
-                throw new Template.NotFoundError('No template passed');
+                throw new TemplateReader.NotFoundError('No template passed');
             } else if (typeof context.template === 'string') {
-                context.newTemplate = await Template.read(
-                    new URL(path.resolve(context.template), 'file://'),
+                context.newTemplate = await template.read(
+                    new URL(path.resolve(context.template), 'file://').pathname,
                     context.overrides.templateOptions
                 );
             } else {
@@ -537,7 +560,8 @@ class Operations {
                 context.newTemplate = context.template;
             }
 
-            context.configNames = await Lookup.configurations(context.baseName, context.configBucket, context.stackRegion);
+            const lookup = new Lookup(context.client);
+            context.configNames = await lookup.configurations(context.baseName, context.configBucket);
         } catch (err) {
             let msg = '';
             if (err instanceof Template.NotFoundError) msg += 'Could not load template: ';
@@ -562,7 +586,7 @@ class Operations {
     }
 
     static async loadConfig(context: CommandContext) {
-        const lookup = new Lookup(this.client);
+        const lookup = new Lookup(context.client);
 
         if (!context.configName) {
             if (context.overrides.defaultConfig) {
@@ -610,7 +634,7 @@ class Operations {
 
     static async confirmDelete(context: CommandContext) {
         if (context.overrides.force) return;
-        const msg = 'Are you sure you want to delete ' + context.stackName + ' in region ' + context.stackRegion + '?';
+        const msg = 'Are you sure you want to delete ' + context.stackName + ' in region ' + context.client.region + '?';
         const ready = await Prompt.confirm(msg, false);
         if (!ready) throw new Error('aborted');
     }
@@ -629,20 +653,20 @@ class Operations {
     }
 
     static async monitorStack(context: CommandContext) {
-        const actions = new Actions(this.client);
+        const actions = new Actions(context.client);
         try {
-            await actions.monitor(context.stackName, context.stackRegion);
+            await actions.monitor(context.stackName);
         } catch (err) {
             err.failure = err.message;
-            err.message = `Monitoring your deploy failed, but the deploy in region ${context.stackRegion} will continue. Check on your stack's status in the CloudFormation console.`;
+            err.message = `Monitoring your deploy failed, but the deploy in region ${context.client.region} will continue. Check on your stack's status in the CloudFormation console.`;
             throw err;
         }
     }
 
     static async getOldParameters(context: CommandContext) {
-        const lookup = new Lookup(this.client);
+        const lookup = new Lookup(context.client);
         try {
-            const info = await lookup.parameters(context.stackName, context.stackRegion);
+            const info = await lookup.parameters(context.stackName);
             context.oldParameters = info;
         } catch (err) {
             let msg = '';
@@ -682,7 +706,6 @@ class Operations {
             await actions.saveConfiguration(
                 context.baseName,
                 context.stackName,
-                context.stackRegion,
                 context.configBucket,
                 maskedParameters
             );
@@ -722,22 +745,14 @@ function compare(existing: object, desired: object) {
 }
 
 function compareTemplate(existing: object, desired: object) {
-    // --------------------------------------------------
-    // Hacky exemption for Mapbox's Metadata.LastDeployedBy
-    existing = JSON.parse(JSON.stringify(existing));
-    desired = JSON.parse(JSON.stringify(desired));
-    delete (existing.Metadata || {}).LastDeployedBy;
-    delete (desired.Metadata || {}).LastDeployedBy;
-    // --------------------------------------------------
-
-    existing = stableStringify(existing, { space: 2 });
-    desired = stableStringify(desired, { space: 2 });
+    const existingstr = stableStringify(existing, { space: 2 });
+    const desiredstr = stableStringify(desired, { space: 2 });
 
     try {
         assert.equal(existing, desired);
         return;
     } catch (err) {
-        const strDiff = diffLines(existing, desired, {
+        const strDiff = diffLines(existingstr, desiredstr, {
             ignoreWhitespace: true
         });
 
@@ -748,8 +763,7 @@ function compareTemplate(existing: object, desired: object) {
             const delimiter = '\n---------------------------------------------\n\n';
 
             if (color === 'grey') {
-                const lines = part.value.split('\n').slice(0, tw
-);
+                const lines = part.value.split('\n').slice(0, -1);
                 if (lines.length > 10) {
                     const first = lines.slice(0, 3).map((line: string) => ` ${line}`);
                     const last = lines.slice(-3).map((line: string) => ` ${line}`);
@@ -803,22 +817,25 @@ function stackName(name: string, suffix?: string) {
  * Build parameters object for CloudFormation requests
  *
  * @private
- * @param {object} oldParameters - name/value pairs defining old or default parameters
- * @param {object} newParameters - name/value pairs defining the new, unchanged old, or accepted default parameters
- * @param {object} [overrideParameters={}] - name/value pairs for any parameter values passed as overrides
- * @param {boolean} isCreate - indicates that UsePreviousValue shoudld not be used on stack create. set in createPreable().
+ * @param oldParameters - name/value pairs defining old or default parameters
+ * @param newParameters - name/value pairs defining the new, unchanged old, or accepted default parameters
+ * @param [overrideParameters={}] - name/value pairs for any parameter values passed as overrides
+ * @param isCreate - indicates that UsePreviousValue shoudld not be used on stack create. set in createPreable().
  * @returns {array} params - parameters objects for use in ChangeSet requests that create/update a stack
  */
-function changesetParameters(oldParameters, newParameters, overrideParameters, isCreate) {
-    overrideParameters = overrideParameters || {};
-
+function changesetParameters(
+    oldParameters: Map<string, string>,
+    newParameters: Map<string, string>,
+    overrideParameters: Map<string, string> = new Map(),
+    isCreate: boolean
+): Parameter[]  {
     return Object.entries(newParameters).map(([key, value]) => {
         const parameter: Parameter = {
             ParameterKey: key
         };
 
-        const unchanged = oldParameters[key] === newParameters[key];
-        const isOverriden = overrideParameters[key] && unchanged;
+        const unchanged = oldParameters.get(key) === newParameters.get(key);
+        const isOverriden = overrideParameters.has(key) && unchanged;
 
         if (isCreate || isOverriden) {
             parameter.ParameterValue = value;

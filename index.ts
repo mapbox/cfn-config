@@ -2,7 +2,7 @@ import Actions from './lib/actions.js';
 import { Commands } from './lib/commands.js';
 import Lookup from './lib/lookup.js';
 import Prompt from './lib/prompt.js';
-import Template from './lib/template.js';
+import TemplateReader from './lib/template.js';
 import type {
     AwsCredentialIdentity,
     AwsCredentialIdentityProvider,
@@ -19,7 +19,7 @@ export default class CFNConfig {
     commands: Commands;
     lookup: Lookup;
     prompt: Prompt;
-    template: Template;
+    template: TemplateReader;
     client: CFNConfigClient;
 
     constructor(credentials: AwsCredentialIdentity | Provider<AwsCredentialIdentity>, region: string) {
@@ -32,6 +32,6 @@ export default class CFNConfig {
         this.commands = new Commands(this.client);
         this.lookup = new Lookup(this.client);
         this.prompt = Prompt;
-        this.template = new Template(this.client);
+        this.template = new TemplateReader(this.client);
     }
 }

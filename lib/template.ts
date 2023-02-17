@@ -1,28 +1,48 @@
 import fs from 'fs/promises';
 import type { CFNConfigClient } from '../index.js';
 // @ts-ignore
-import error from 'fasterror';
 import s3urls from '@openaddresses/s3urls';
-import {
-    KMSClient,
-    EncryptCommand
-} from '@aws-sdk/client-kms';
 import {
     S3Client,
     GetObjectCommand,
     GetBucketLocationCommand
 } from '@aws-sdk/client-s3';
 
+export class Template {
+    Description?: string;
+    Parameters?: Map<string, string>;
+    Resources?: object;
+    Metadata?: object;
+    Outputs?: object;
+    [x: string]: unknown;
+
+    constructor(raw) {
+        Object.assign(this, raw);
+    }
+
+    json(): object {
+        return
+    }
+}
+
+class NotFoundError extends Error {};
+class InvalidTemplateError extends Error {};
+class KmsError extends Error {};
+
 /**
  * @class
  * Cloudformation Template
  */
-export default class Template {
+export default class TemplateReader {
     client: CFNConfigClient;
 
     constructor(client: CFNConfigClient) {
         this.client = client;
     }
+
+    static NotFoundError = NotFoundError;
+    static InvalidTemplateError = InvalidTemplateError;
+    static KmsError = KmsError;
 
     /**
      * Read a template from a local file or from S3
@@ -30,7 +50,7 @@ export default class Template {
      * @param {URL} templatePath - the absolute path to a local file or an S3 url
      * @param {object} [options] - an object to pass as the first argument to async templates
      */
-    async read(templatePath: string, options?={}) {
+    async read(templatePath: string, options?={}): Template {
         if (!(templatePath instanceof URL)) throw new Error('templatePath must be of type URL');
 
         const params = s3urls.fromUrl(String(templatePath));
@@ -53,7 +73,7 @@ export default class Template {
                     throw new Template.InvalidTemplateError('Failed to parse %s: %s', templatePath, err.message);
                 }
 
-                return templateBody;
+                return new Template(templateBody);
             }
 
             try {
@@ -65,7 +85,7 @@ export default class Template {
             if (typeof templateBody === 'function') {
                 return await async(templateBody, options);
             } else {
-                return templateBody;
+                return new Template(templateBody);
             }
         } else {
             let s3 = new S3Client(this.client);
@@ -94,7 +114,7 @@ export default class Template {
                 throw new Template.InvalidTemplateError('Failed to parse %s', templatePath);
             }
 
-            return templateBody;
+            return new Template(templateBody);
         }
     }
 
@@ -109,10 +129,6 @@ export default class Template {
         overrides.defaults = overrides.defaults || {};
         overrides.messages = overrides.messages || {};
         overrides.choices = overrides.choices || {};
-        overrides.kmsKeyId = (overrides.kmsKeyId && typeof overrides.kmsKeyId !== 'string') ? 'alias/cloudformation' : overrides.kmsKeyId;
-
-        // Not sure where the region should come from, but it's very important here
-        const kms = new KMSClient(this.client);
 
         return Object.keys(templateBody.Parameters || {}).map((name) => {
             const parameter = templateBody.Parameters[name];
@@ -146,25 +162,6 @@ export default class Template {
                 return valid;
             };
 
-            question.filter = function(input) {
-                const done = this.async();
-
-                if (overrides.kmsKeyId && (parameter.Description || '').indexOf('[secure]') > -1 && input.slice(0, 7) !== 'secure:') {
-                    // TODO: this is messed up
-                    return kms.send(new EncryptCommand({
-                        KeyId: overrides.kmsKeyId,
-                        Plaintext: input
-                    }, (err, encrypted) => {
-                        if (err && err.code === 'NotFoundException') return done(new Template.NotFoundError('Unable to find KMS encryption key "' + overrides.kmsKeyId + '"'));
-                        if (err) return done(new Template.KmsError('%s: %s', err.code, err.message));
-
-                        return done(null, 'secure:' + encrypted.CiphertextBlob.toString('base64'));
-                    }));
-                } else {
-                    return done(null, input);
-                }
-            };
-
             if (name in overrides.choices) question.choices = overrides.choices[name];
             if (name in overrides.messages) question.message = overrides.messages[name];
             if (name in overrides.defaults) {
@@ -175,19 +172,4 @@ export default class Template {
             return question;
         });
     }
-
-    /**
-     * Error representing a template that could not be found
-     */
-    static NotFoundError = error('NotFoundError');
-
-    /**
-     * Error representing a template that could not be parsed
-     */
-    static InvalidTemplateError = error('InvalidTemplateError');
-
-    /**
-     * Error representing an unrecognized KMS failure
-     */
-    static KmsError = error('KmsError');
 }
