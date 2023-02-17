@@ -29,10 +29,6 @@ class NotFoundError extends Error {};
 class InvalidTemplateError extends Error {};
 class KmsError extends Error {};
 
-/**
- * @class
- * Cloudformation Template
- */
 export default class TemplateReader {
     client: CFNConfigClient;
 
@@ -59,7 +55,7 @@ export default class TemplateReader {
             try {
                 await fs.stat(templatePath);
             } catch (err) {
-                throw new Template.NotFoundError('%s does not exist', templatePath);
+                throw new TemplateReader.NotFoundError('%s does not exist', templatePath);
             }
 
             let templateBody;
@@ -70,7 +66,7 @@ export default class TemplateReader {
                 try {
                     templateBody = JSON.parse(templateBody);
                 } catch (err) {
-                    throw new Template.InvalidTemplateError('Failed to parse %s: %s', templatePath, err.message);
+                    throw new TemplateReader.InvalidTemplateError('Failed to parse %s: %s', templatePath, err.message);
                 }
 
                 return new Template(templateBody);
@@ -79,7 +75,7 @@ export default class TemplateReader {
             try {
                 templateBody = (await import(templatePath)).default;
             } catch (err) {
-                throw new Template.InvalidTemplateError('Failed to parse %s: %s', templatePath, err.message);
+                throw new TemplateReader.InvalidTemplateError('Failed to parse %s: %s', templatePath, err.message);
             }
 
             if (typeof templateBody === 'function') {
@@ -96,7 +92,7 @@ export default class TemplateReader {
                     Bucket: params.Bucket
                 }));
             } catch (err) {
-                throw new Template.NotFoundError('%s could not be loaded - S3 responded with %s: %s', templatePath, err.code, err.message);
+                throw new TemplateReader.NotFoundError('%s could not be loaded - S3 responded with %s: %s', templatePath, err.code, err.message);
             }
 
             s3 = new S3Client(this.client);
@@ -104,14 +100,14 @@ export default class TemplateReader {
             try {
                 data = await s3.send(new GetObjectCommand(params));
             } catch (err) {
-                throw new Template.NotFoundError('%s could not be loaded - S3 responded with %s: %s', templatePath, err.code, err.message);
+                throw new TemplateReader.NotFoundError('%s could not be loaded - S3 responded with %s: %s', templatePath, err.code, err.message);
             }
 
             let templateBody;
             try {
                 templateBody = JSON.parse(data.Body.toString());
             } catch (err) {
-                throw new Template.InvalidTemplateError('Failed to parse %s', templatePath);
+                throw new TemplateReader.InvalidTemplateError('Failed to parse %s', templatePath);
             }
 
             return new Template(templateBody);
@@ -124,7 +120,7 @@ export default class TemplateReader {
      * @param {object} templateBody - a parsed CloudFormation template
      * @returns {array} a set of questions for user prompting
      */
-    questions(templateBody: object) {
+    questions(templateBody: Template) {
         return Object.keys(templateBody.Parameters || {}).map((name) => {
             const parameter = templateBody.Parameters[name];
 

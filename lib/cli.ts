@@ -31,21 +31,8 @@ function parse(args: object, env: object) {
                                 Required for the create, update, and save commands.
         -t, --template_bucket   an S3 bucket for storing templates
                                 (default: cfn-config-templates-$AWS_ACCOUNT_ID-region)
-        -k, --kms               a KMS key ID for parameter encryption or
-                                configuration encryption at rest on S3. If not
-                                provided, no encryption will be performed. If
-                                provided as a flag without a value, the default
-                                key id alias/cloudformation will be used.
-        -f, --force             perform a create/update/delete command without any
-                                prompting, accepting all defaults
-        -e, --extended          display resource details with the info command
-            ---tags             Add a tag that will be applied to all resources in the stack
+        ---tags                 Add a tag that will be applied to all resources in the stack
                                 --tags Key=Value --tags=Key2=Value2
-        -d, --decrypt           decrypt secure parameters with the info command
-        -p, --parameters        JSON string of parameters to override on create/update
-        -x, --expand            Add CAPABILITY_AUTO_EXPAND to the changeset capabilities.
-                                This allows transformation macros to be expanded on stack
-                                creation or update.
     `,
         flags: {
             config_bucket: {
@@ -69,34 +56,6 @@ function parse(args: object, env: object) {
                 alias: 'r',
                 type: 'string',
                 default: 'us-east-1'
-            },
-            kms: {
-                alias: 'k',
-                default: false
-            },
-            force: {
-                alias: 'f',
-                type: 'boolean',
-                default: false
-            },
-            extended: {
-                alias: 'e',
-                type: 'boolean',
-                extended: false,
-            },
-            decrypt: {
-                alias: 'd',
-                type: 'boolean',
-                default: false
-            },
-            parameters: {
-                alias: 'p',
-                type: 'string'
-            },
-            expand: {
-                alias: 'x',
-                type: 'boolean',
-                defaults: false
             }
         }
     });
@@ -130,7 +89,6 @@ function parse(args: object, env: object) {
         command: cli.input[0],
         environment: cli.input[1],
         templatePath: cli.input[2] ? path.resolve(cli.input[2]) : undefined,
-        overrides: { force: cli.flags.force, kms: cli.flags.kms, parameters: cli.flags.parameters, expand: cli.flags.expand },
         options: cli.flags,
         help: cli.help
     };
@@ -154,16 +112,7 @@ async function main(parsed) {
     // Set the arguments for the command that will run
     const args = [parsed.environment];
 
-    if (parsed.command === 'info') {
-        args.push(parsed.options.extended);
-        args.push(parsed.options.decrypt);
-    }
-
     if (/create|update/.test(parsed.command)) args.push(parsed.templatePath);
-
-    if (parsed.overrides.kms && parsed.command === 'save') args.push(parsed.overrides.kms);
-
-    if (/create|update|delete/.test(parsed.command)) args.push(parsed.overrides);
 
     // Run the command
     await available[parsed.command](...args);
