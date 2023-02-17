@@ -1,33 +1,54 @@
 import fs from 'fs/promises';
 import type { CFNConfigClient } from '../index.js';
-// @ts-ignore
 import s3urls from '@openaddresses/s3urls';
 import {
     S3Client,
     GetObjectCommand,
     GetBucketLocationCommand
 } from '@aws-sdk/client-s3';
+import {
+    Parameter
+} from '@aws-sdk/client-cloudformation';
 
 export class Template {
-    Description?: string;
-    Parameters?: Map<string, string>;
-    Resources?: object;
-    Metadata?: object;
-    Outputs?: object;
-    [x: string]: unknown;
+    body: {
+        Description: string;
+        Parameters: {
+            [x: string]: {
+                Type: string;
+                Default?: string;
+                Description?: string;
+                AllowedPattern?: string;
+                AllowedValues: string[];
+                [x: string]: unknown;
+            };
+        };
+        Resources: {
+            [x: string]: object;
+        };
+        Metadata?: object;
+        Outputs: object;
+        Mappings?: object;
+        [x: string]: unknown;
 
-    constructor(raw) {
-        Object.assign(this, raw);
-    }
+    };
+    parameters: Map<string, string>
 
-    json(): object {
-        return
+    constructor(body?: any) {
+        if (!body.Description) body.Description = '';
+        if (!body.Parameters) body.Parameters = {};
+        if (!body.Resources) body.Resources = {};
+        if (!body.Outputs) body.Resources = {};
+
+        this.body = body;
+
+        this.parameters = new Map();
     }
 }
 
-class NotFoundError extends Error {};
-class InvalidTemplateError extends Error {};
-class KmsError extends Error {};
+class NotFoundError extends Error {}
+class InvalidTemplateError extends Error {}
+class KmsError extends Error {}
 
 export default class TemplateReader {
     client: CFNConfigClient;
@@ -43,10 +64,10 @@ export default class TemplateReader {
     /**
      * Read a template from a local file or from S3
      *
-     * @param {URL} templatePath - the absolute path to a local file or an S3 url
-     * @param {object} [options] - an object to pass as the first argument to async templates
+     * @param templatePath - the absolute path to a local file or an S3 url
+     * @param [options] - an object to pass as the first argument to async templates
      */
-    async read(templatePath: string, options?={}): Template {
+    async read(templatePath: URL, options?: any): Promise<Template> {
         if (!(templatePath instanceof URL)) throw new Error('templatePath must be of type URL');
 
         const params = s3urls.fromUrl(String(templatePath));
@@ -55,7 +76,7 @@ export default class TemplateReader {
             try {
                 await fs.stat(templatePath);
             } catch (err) {
-                throw new TemplateReader.NotFoundError('%s does not exist', templatePath);
+                throw new TemplateReader.NotFoundError(`${templatePath} does not exist`);
             }
 
             let templateBody;
@@ -66,20 +87,20 @@ export default class TemplateReader {
                 try {
                     templateBody = JSON.parse(templateBody);
                 } catch (err) {
-                    throw new TemplateReader.InvalidTemplateError('Failed to parse %s: %s', templatePath, err.message);
+                    throw new TemplateReader.InvalidTemplateError(`Failed to parse ${templatePath}: ${err.message}`);
                 }
 
                 return new Template(templateBody);
             }
 
             try {
-                templateBody = (await import(templatePath)).default;
+                templateBody = (await import(templatePath.pathname)).default;
             } catch (err) {
-                throw new TemplateReader.InvalidTemplateError('Failed to parse %s: %s', templatePath, err.message);
+                throw new TemplateReader.InvalidTemplateError(`Failed to parse ${templatePath}: ${err.message}`);
             }
 
             if (typeof templateBody === 'function') {
-                return await async(templateBody, options);
+                return await templateBody(options);
             } else {
                 return new Template(templateBody);
             }
@@ -92,7 +113,7 @@ export default class TemplateReader {
                     Bucket: params.Bucket
                 }));
             } catch (err) {
-                throw new TemplateReader.NotFoundError('%s could not be loaded - S3 responded with %s: %s', templatePath, err.code, err.message);
+                throw new TemplateReader.NotFoundError(`${templatePath} could not be loaded - S3 responded with ${err.message}`);
             }
 
             s3 = new S3Client(this.client);
@@ -100,14 +121,14 @@ export default class TemplateReader {
             try {
                 data = await s3.send(new GetObjectCommand(params));
             } catch (err) {
-                throw new TemplateReader.NotFoundError('%s could not be loaded - S3 responded with %s: %s', templatePath, err.code, err.message);
+                throw new TemplateReader.NotFoundError(`${templatePath} could not be loaded - S3 responded with ${err.message}`);
             }
 
             let templateBody;
             try {
                 templateBody = JSON.parse(data.Body.toString());
             } catch (err) {
-                throw new TemplateReader.InvalidTemplateError('Failed to parse %s', templatePath);
+                throw new TemplateReader.InvalidTemplateError(`Failed to parse ${templatePath}`);
             }
 
             return new Template(templateBody);
@@ -118,13 +139,12 @@ export default class TemplateReader {
      * Create questions for each Parameter in a CloudFormation template
      *
      * @param {object} templateBody - a parsed CloudFormation template
-     * @returns {array} a set of questions for user prompting
      */
-    questions(templateBody: Template) {
-        return Object.keys(templateBody.Parameters || {}).map((name) => {
-            const parameter = templateBody.Parameters[name];
+    questions(templateBody: Template, defaults: Map<string, string> = new Map()) {
+        return Object.keys(templateBody.body.Parameters || {}).map((name: string) => {
+            const parameter = templateBody.body.Parameters[name];
 
-            const question = {};
+            const question: any = {};
             question.name = name;
             question.choices = parameter.AllowedValues;
             question.default = parameter.Default;
@@ -139,7 +159,7 @@ export default class TemplateReader {
                 return 'input';
             })();
 
-            question.validate = (input) => {
+            question.validate = (input: string) => {
                 let valid = true;
                 if ('MinLength' in parameter) valid = valid && input.length >= parameter.MinLength;
                 if ('MaxLength' in parameter) valid = valid && input.length <= parameter.MaxLength;
@@ -152,6 +172,12 @@ export default class TemplateReader {
 
                 return valid;
             };
+
+            if (defaults.has(name)) {
+                if (!question.choices || question.choices.indexOf(defaults.get(name)) !== -1) {
+                    question.default = defaults.get(name);
+                }
+            }
 
             return question;
         });

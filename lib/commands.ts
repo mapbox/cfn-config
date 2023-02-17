@@ -7,16 +7,15 @@ import stableStringify from 'json-stable-stringify';
 import { diffLines } from 'diff';
 import Table from 'easy-table';
 import Actions from './actions.js';
+import type { ChangeSetDetail, ChangeSetDetailChange } from './actions.js';
 import Lookup from './lookup.js';
 import Prompt from './prompt.js';
 import TemplateReader from './template.js';
-import type { Template } from './template.js';
+import { Template } from './template.js';
 import type {
     Tag,
     Parameter
 } from '@aws-sdk/client-cloudformation';
-
-const NOECHO_MASK = '****';
 
 import 'colors';
 
@@ -40,7 +39,7 @@ class Commands {
     config: CommandOptions;
     dryrun: boolean;
 
-    constructor(client: CFNConfigClient, config: CommandOptions = {}, dryrun: boolean = false) {
+    constructor(client: CFNConfigClient, config: CommandOptions = {}, dryrun = false) {
         this.client = client;
         this.config = config;
         this.dryrun = dryrun;
@@ -150,7 +149,7 @@ class Commands {
      * @param {boolean} [resources=false] - if set to `true`, returned information
      * will include details of each resource in the stack
      */
-    async info(suffix: string, resources: boolean = false) {
+    async info(suffix: string, resources = false) {
         if (this.dryrun) return true;
         const lookup = new Lookup(this.client);
         return await lookup.info(stackName(this.config.name, suffix), resources);
@@ -196,10 +195,15 @@ class CommandContext {
     configBucket: string;
     templateBucket: string;
 
+    changeset?: ChangeSetDetail;
     oldParameters?: Map<string, string>;
     newParameters?: Map<string, string>;
     changesetParameters?: Parameter[];
-    diffs: object;
+    diffs: any;
+    saveName?: string;
+    configNames?: string[];
+    configName?: string;
+    create?: boolean;
     tags: Tag[];
     operations: Function[];
 
@@ -254,7 +258,7 @@ class Operations {
                 throw new TemplateReader.NotFoundError('No template passed');
             } else if (typeof context.template === 'string') {
                 context.newTemplate = await template.read(
-                    new URL(path.resolve(context.template), 'file://').pathname
+                    new URL(path.resolve(context.template), 'file://')
                 );
             } else {
                 // we assume if template is not string, it's a pre-loaded template body object
@@ -277,13 +281,8 @@ class Operations {
     }
 
     static async promptParameters(context: CommandContext) {
-        const newTemplateParameters = context.newTemplate.Parameters || new Map();
-
         const template = new TemplateReader(context.client);
-        const questions = template.questions(context.newTemplate, {
-            defaults: context.oldParameters,
-            region: context.client.region,
-        });
+        const questions = template.questions(context.newTemplate, context.oldParameters);
 
         const answers = await Prompt.parameters(questions);
 
@@ -375,7 +374,7 @@ class Operations {
         await Operations.getChangeset(context, 'UPDATE');
     }
 
-    static async getChangeset(context, changeSetType) {
+    static async getChangeset(context: CommandContext, changeSetType: string) {
         const actions = new Actions(context.client);
         try {
             const details = await actions.diff(
@@ -428,7 +427,7 @@ class Operations {
                 throw new TemplateReader.NotFoundError('No template passed');
             } else if (typeof context.template === 'string') {
                 context.newTemplate = await template.read(
-                    new URL(path.resolve(context.template), 'file://').pathname,
+                    new URL(path.resolve(context.template), 'file://')
                 );
             } else {
                 // we assume if template is not string, it's a pre-loaded template body object
@@ -439,8 +438,8 @@ class Operations {
             context.configNames = await lookup.configurations(context.baseName, context.configBucket);
         } catch (err) {
             let msg = '';
-            if (err instanceof Template.NotFoundError) msg += 'Could not load template: ';
-            if (err instanceof Template.InvalidTemplateError) msg += 'Could not parse template: ';
+            if (err instanceof TemplateReader.NotFoundError) msg += 'Could not load template: ';
+            if (err instanceof TemplateReader.InvalidTemplateError) msg += 'Could not parse template: ';
             if (err instanceof Lookup.BucketNotFoundError) msg += 'Could not find config bucket: ';
             if (err instanceof Lookup.S3Error) msg += 'Could not load saved configurations: ';
             msg += err.message;
@@ -539,23 +538,18 @@ class Operations {
 
     static async saveConfig(context: CommandContext) {
         const actions = new Actions(context.client);
-        const maskedParameters = Object.assign({}, context.newParameters || {});
-        const templateBody = context.newTemplate || {};
+        const template = context.newTemplate || new Template();
 
-        Object.keys(templateBody.Parameters || {}).forEach((name) => {
-            const parameter = templateBody.Parameters[name];
-            if (parameter.NoEcho) {
-                maskedParameters[name] = NOECHO_MASK;
-            }
+        Object.keys(template.body.Parameters || {}).forEach((name) => {
+            const parameter = template.body.Parameters[name];
         });
-
 
         try {
             await actions.saveConfiguration(
                 context.baseName,
                 context.stackName,
                 context.configBucket,
-                maskedParameters
+                context.newTemplate.parameters
             );
         } catch (err) {
             let msg = '';
@@ -621,7 +615,7 @@ function compareTemplate(existing: object, desired: object) {
     }
 }
 
-function formatDiff(details) {
+function formatDiff(details: ChangeSetDetail): string {
     const t = new Table();
 
     function colors(msg: string) {
@@ -633,7 +627,7 @@ function formatDiff(details) {
         return msg;
     }
 
-    details.changes.forEach((change) => {
+    details.changes.forEach((change: ChangeSetDetailChange) => {
         t.cell('Action', colors(change.action));
         t.cell('Name', colors(change.name));
         t.cell('Type', colors(change.type));

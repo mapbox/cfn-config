@@ -54,7 +54,7 @@ export interface ChangeSetDetail {
     status: string;
     execution: string;
     changes: ChangeSetDetailChange[];
-};
+}
 
 export interface ChangeSetDetailChange {
     id: string;
@@ -62,22 +62,22 @@ export interface ChangeSetDetailChange {
     type: string;
     action: string;
     replacement: boolean;
-};
+}
 
 /**
  * Error representing an unexpected failure in a CloudFormation request
  */
-class CloudFormationError extends Error {};
+class CloudFormationError extends Error {}
 
 /**
  * Error representing a bucket that does not exist
  */
-class BucketNotFoundError extends Error {};
+class BucketNotFoundError extends Error {}
 
 /**
  * Error representing an unexpected failure in an S3 request
  */
-class S3Error extends Error {};
+class S3Error extends Error {}
 
 /**
  * Error representing an attempt to execute a changeset that is not executable
@@ -86,7 +86,7 @@ class ChangeSetNotExecutableError extends Error {
     status?: string;
     execution?: string;
     reason?: string;
-};
+}
 
 /**
  * @class
@@ -114,7 +114,7 @@ export default class Actions {
      * @param Tags - Tags to be applied to all resources in the stack
      * @param expand - Set CAPABILITY_AUTO_EXPAND
      */
-    async diff(name: string, changeSetType: string, templateUrl: string, parameters: Parameter[], tags: Tag[], expand: boolean) {
+    async diff(name: string, changeSetType: string, templateUrl: string, parameters: Parameter[], tags: Tag[], expand = false): Promise<ChangeSetDetail> {
         const cfn = new CloudFormationClient(this.client);
         const changeSetParameters = changeSet(name, changeSetType, templateUrl, parameters, expand, tags);
 

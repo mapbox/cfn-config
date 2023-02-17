@@ -1,6 +1,4 @@
 import {
-    Tag,
-    Output,
     StackDriftInformation,
     RollbackConfiguration,
     CloudFormationClient,
@@ -21,12 +19,12 @@ import type {
 import path from 'path';
 import s3urls from '@openaddresses/s3urls';
 
-class CloudFormationError extends Error {};
-class StackNotFoundError extends Error {};
-class S3Error extends Error {};
-class BucketNotFoundError extends Error {};
-class ConfigurationNotFoundError extends Error {};
-class InvalidConfigurationError extends Error {};
+class CloudFormationError extends Error {}
+class StackNotFoundError extends Error {}
+class S3Error extends Error {}
+class BucketNotFoundError extends Error {}
+class ConfigurationNotFoundError extends Error {}
+class InvalidConfigurationError extends Error {}
 
 // TODO Finish the rest of the props
 export interface InfoOutput {
@@ -89,7 +87,7 @@ export default class Lookup {
      * @param name - the full name of the stack
      * @param resources - return information about each resource in the stack
      */
-    async info(StackName: string, resources: boolean = false): Promise<InfoOutput> {
+    async info(StackName: string, resources = false): Promise<InfoOutput> {
         const cfn = new CloudFormationClient(this.client);
 
         let data;
@@ -228,7 +226,7 @@ export default class Lookup {
      * @param {string} bucket - the name of the S3 bucket containing saved configurations
      * @param {string} config - the name of the saved configuration
      */
-    async configuration(name: string, bucket: string, config: string): Promise<object> {
+    async configuration(name: string, bucket: string, config: string): Promise<Map<string, string>> {
         const region = await this.bucketRegion(bucket);
 
         const s3 = new S3Client(this.client);
@@ -250,7 +248,13 @@ export default class Lookup {
         }
 
         try {
-            return JSON.parse(data.Body.toString());
+            const params = JSON.parse(data.Body.toString());
+            const config: Map<string, string> = new Map();
+            for (const key of Object.keys(params)) {
+                config.set(key, params[key]);
+            }
+
+            return config;
         } catch (err) {
             throw new Lookup.InvalidConfigurationError('Invalid configuration');
         }
@@ -272,7 +276,10 @@ export default class Lookup {
             return {};
         }
 
-        const s3 = new S3Client(this.client);
+        const s3 = new S3Client({
+            region,
+            credentials: this.client.credentials
+        });
 
         let data;
         try {
