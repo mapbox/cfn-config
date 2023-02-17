@@ -290,7 +290,6 @@ test('[actions.diff] changeset failed to create', async(t) => {
     t.end();
 });
 
-/**
 test('[actions.diff] success', async(t) => {
     const url = 'https://my-bucket.s3.amazonaws.com/my-template.json';
     let changesetId;
@@ -454,6 +453,7 @@ test('[actions.diff] success', async(t) => {
     t.end();
 });
 
+/**
 test('[actions.executeChangeSet] describeChangeSet error', async(t) => {
     AWS.stub('CloudFormation', 'describeChangeSet', () => {
         throw new Error('unexpected');
