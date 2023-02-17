@@ -277,7 +277,7 @@ export default class Actions {
      */
     async saveConfiguration(baseName: string, stackName: string, bucket: string, parameters: object, kms: string | undefined) {
         const lookup = new Lookup(this.client);
-        const region = await lookup.bucketRegion(bucket, this.client.region);
+        const region = await lookup.bucketRegion(bucket);
 
         const s3 = new S3Client({
             region,
@@ -286,7 +286,7 @@ export default class Actions {
 
         const params: PutObjectCommandInput = {
             Bucket: bucket,
-            Key: lookup.configKey(baseName, stackName, this.client.region),
+            Key: lookup.configKey(baseName, stackName),
             Body: JSON.stringify(parameters),
         };
 

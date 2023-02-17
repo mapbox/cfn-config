@@ -1,6 +1,11 @@
 import {
+    Tag,
+    Output,
+    StackDriftInformation,
+    RollbackConfiguration,
     CloudFormationClient,
     DescribeStacksCommand,
+    StackResourceSummary,
     ListStackResourcesCommand,
     GetTemplateCommand
 } from '@aws-sdk/client-cloudformation';
@@ -10,139 +15,159 @@ import {
     GetObjectCommand,
     GetBucketLocationCommand
 } from '@aws-sdk/client-s3';
-import {
-    KMSClient,
-    DecryptCommand
-} from '@aws-sdk/client-kms';
-import error from 'fasterror';
+import type {
+    CFNConfigClient
+} from '../index.js';
 import path from 'path';
 import s3urls from '@openaddresses/s3urls';
 
-/**
- * Information about a CloudFormation stack
- *
- * @name StackInfo
- * TODO: more
- */
+class CloudFormationError extends Error {};
+class StackNotFoundError extends Error {};
+class S3Error extends Error {};
+class BucketNotFoundError extends Error {};
+class ConfigurationNotFoundError extends Error {};
+class InvalidConfigurationError extends Error {};
+class DecryptParametersError extends Error {};
+
+// TODO Finish the rest of the props
+export interface InfoOutput {
+    StackId?: string;
+    StackName: string;
+    ChangeSetId?: string;
+    Description?: string;
+    Parameters: Map<string, string>;
+    CreationTime: Date;
+    LastUpdatedTime?: Date;
+    RollbackConfiguration?: RollbackConfiguration;
+    StackStatus: string;
+    StackStatusReson?: string;
+    DisableRollback?: boolean;
+    NotificationARNs?: string[];
+    TimeoutInMinutes?: number;
+    Capabilities: string[];
+    Outputs: Map<string, string>;
+    RoleARN?: string;
+    EnableTerminationProjection?: boolean;
+    ParentId?: string;
+    RoleId?: string;
+    DriftInformation?: StackDriftInformation;
+    DeletionTime?: Date;
+    Region: string;
+    Tags: Map<string, string>;
+    StackResources?: StackResourceSummary[];
+}
 
 /**
  * @class
  */
 export default class Lookup {
-    static client: CFNConfigClient;
+    client: CFNConfigClient;
 
     constructor(client: CFNConfigClient) {
         this.client = client;
     }
 
+    static CloudFormationError = CloudFormationError;
+    static StackNotFoundError = StackNotFoundError;
+    static S3Error = S3Error;
+    static BucketNotFoundError = BucketNotFoundError;
+    static ConfigurationNotFoundError = ConfigurationNotFoundError;
+    static InvalidConfigurationError = InvalidConfigurationError;
+    static DecryptParametersError = DecryptParametersError;
+
     /**
      * Lookup an existing CloudFormation stack's parameters
      *
-     * @param {string} name - the full name of the stack
+     * @param StackName - the full name of the stack
      */
-    async parameters(name) {
-        const info = await this.info(name, this.client.region);
+    async parameters(StackName: string) {
+        const info = await this.info(StackName);
         return info.Parameters;
     }
 
     /**
      * Lookup an existing CloudFormation stack's info
      *
-     * @param {string} name - the full name of the stack
-     * @param {boolean} [resources=false] - return information about each resource in the stack
-     * @param {boolean} [decrypt=false] - return secure parameters decrypted
+     * @param name - the full name of the stack
+     * @param resources - return information about each resource in the stack
      */
-    async info(name, resources=false, decrypt=false) {
+    async info(StackName: string, resources: boolean = false): Promise<InfoOutput> {
         const cfn = new CloudFormationClient(this.client);
 
         let data;
         try {
-            data = await cfn.send(new DescribeStacksCommand({
-                StackName: name
-            }));
+            data = await cfn.send(new DescribeStacksCommand({ StackName }));
         } catch (err) {
             if (err.code === 'ValidationError' && /Stack with id/.test(err.message)) {
-                throw new Lookup.StackNotFoundError('Stack %s not found in %s', name, this.client.region);
+                throw new Lookup.StackNotFoundError(`Stack ${StackName} not found in ${this.client.region}`);
             } else {
-                throw new Lookup.CloudFormationError('%s: %s', err.code, err.message);
+                throw new Lookup.CloudFormationError(err.message);
             }
         }
 
-        if (!data.Stacks.length) throw new Lookup.StackNotFoundError('Stack %s not found in %s', name, this.client.region);
+        if (!data.Stacks.length) throw new Lookup.StackNotFoundError(`Stack ${StackName} not found in ${this.client.region}`);
 
-        const stackInfo = data.Stacks[0];
-        stackInfo.Region = this.client.region;
-
-        stackInfo.Parameters = (stackInfo.Parameters || []).reduce((memo, param) => {
-            memo[param.ParameterKey] = param.ParameterValue;
-            return memo;
-        }, {});
-
-        stackInfo.Outputs = (stackInfo.Outputs || []).reduce((memo, output) => {
-            memo[output.OutputKey] = output.OutputValue;
-            return memo;
-        }, {});
-
-        stackInfo.Tags = (stackInfo.Tags || []).reduce((memo, output) => {
-            memo[output.Key] = output.Value;
-            return memo;
-        }, {});
-
-        if (!resources) {
-            if (!decrypt) return stackInfo;
-            stackInfo.Parameters = await Lookup.decryptParameters(stackInfo.Parameters, region);
-            return stackInfo;
-        }
-
-        const resource_data = {
-            StackResourceSummaries: []
+        const stackInfo: InfoOutput = {
+            ...data.Stacks[0],
+            Region: this.client.region,
+            Capabilities: data.Stacks[0].Capabilities || [],
+            Parameters: (data.Stacks[0].Parameters || []).reduce((memo, param) => {
+                memo.set(param.ParameterKey, param.ParameterValue);
+                return memo;
+            }, new Map()),
+            Outputs: (data.Stacks[0].Outputs || []).reduce((memo, output) => {
+                memo.set(output.OutputKey, output.OutputValue);
+                return memo;
+            }, new Map()),
+            Tags: (data.Stacks[0].Tags || []).reduce((memo, output) => {
+                memo.set(output.Key, output.Value);
+                return memo;
+            }, new Map())
         };
 
-        try {
-            let page = await cfn.send(new ListStackResourcesCommand({
-                StackName: name
-            }));
 
-            resource_data.StackResourceSummaries = resource_data.StackResourceSummaries.concat(page.StackResourceSummaries);
+        if (!resources) return stackInfo;
+
+        let StackResourceSummaries: StackResourceSummary[] = [];
+
+        try {
+            let page = await cfn.send(new ListStackResourcesCommand({ StackName }));
+
+            StackResourceSummaries = StackResourceSummaries.concat(page.StackResourceSummaries);
 
             while (page.NextToken) {
-                page = await cfn.send(new ListStackResourcesCommand({
-                    NextToken: page.NextToken
-                }));
-
-                resource_data.StackResourceSummaries = resource_data.StackResourceSummaries.concat(page.StackResourceSummaries);
+                page = await cfn.send(new ListStackResourcesCommand({ StackName, NextToken: page.NextToken }));
+                StackResourceSummaries = StackResourceSummaries.concat(page.StackResourceSummaries);
             }
 
-            stackInfo.StackResources = resource_data.StackResourceSummaries;
+            stackInfo.StackResources = StackResourceSummaries;
 
-            if (!decrypt) return stackInfo;
-            stackInfo.Parameters = await Lookup.decryptParameters(stackInfo.Parameters, region);
             return stackInfo;
         } catch (err) {
-            throw new Lookup.CloudFormationError('%s: %s', err.code, err.message);
+            throw new Lookup.CloudFormationError(err.message);
         }
     }
 
     /**
      * Lookup an existing CloudFormation stack's template
      *
-     * @param {string} name - the full name of the stack
-     * @param {string} region - the region the stack is in
+     * @param StackName - the full name of the stack
      */
-    async template(name, region) {
+    async template(StackName: string) {
         const cfn = new CloudFormationClient(this.client);
 
         let data;
         try {
             data = await cfn.send(new GetTemplateCommand({
-                StackName: name,
-                TemplateStage: 'Original' // This can potentially return a YAML file if the stack was created by a different deploy tool
+                StackName,
+                // This can potentially return a YAML file if the stack was created by a different deploy tool
+                TemplateStage: 'Original'
             }));
         } catch (err) {
             if (err.code === 'ValidationError' && /Stack with id/.test(err.message)) {
-                throw new Lookup.StackNotFoundError('Stack %s not found in %s', name, region);
+                throw new Lookup.StackNotFoundError(`Stack ${StackName} not found in ${this.client.region}`);
             } else {
-                throw new Lookup.CloudFormationError('%s: %s', err.code, err.message);
+                throw new Lookup.CloudFormationError(err.message);
             }
         }
 
@@ -152,16 +177,16 @@ export default class Lookup {
         } catch (err) {
             try {
                 data = await cfn.send(new GetTemplateCommand({
-                    StackName: name,
+                    StackName,
                     TemplateStage: 'Processed'
                 }));
 
                 return JSON.parse(data.TemplateBody);
             } catch (err) {
                 if (err.code === 'ValidationError' && /Stack with id/.test(err.message)) {
-                    throw new Lookup.StackNotFoundError('Stack %s not found in %s', name, region);
+                    throw new Lookup.StackNotFoundError(`Stack ${StackName} not found in ${this.client.region}`);
                 } else {
-                    throw new Lookup.CloudFormationError('%s: %s', err.code, err.message);
+                    throw new Lookup.CloudFormationError(err.message);
                 }
             }
         }
@@ -170,20 +195,19 @@ export default class Lookup {
     /**
      * Lookup available saved configurations on S3
      *
-     * @param {string} name - the base name of the stack (no suffix)
-     * @param {string} bucket - the name of the S3 bucket containing saved configurations
-     * @param {string} [region] - the name of the region in which to make lookup requests
+     * @param name - the base name of the stack (no suffix)
+     * @param Bucket - the name of the S3 bucket containing saved configurations
      */
-    async configurations(name, bucket, region) {
-        region = await Lookup.bucketRegion(bucket, region);
+    async configurations(name: string, Bucket: string): Promise<string[]> {
+        const region = await this.bucketRegion(Bucket);
 
-        const s3 = new S3Client(this.client);
+        const s3 = new S3Client({
+            region,
+            credentials: this.client.credentials
+        });
 
         try {
-            const data = await s3.send(new ListObjectsCommand({
-                Bucket: bucket,
-                Prefix: name + '/'
-            }));
+            const data = await s3.send(new ListObjectsCommand({ Bucket, Prefix: name + '/' }));
 
             return data.Contents.filter((obj) => {
                 return obj.Key.split('.').slice(-2).join('.') === 'cfn.json' && obj.Size > 0;
@@ -192,9 +216,9 @@ export default class Lookup {
             });
         } catch (err) {
             if (err.code === 'NoSuchBucket') {
-                throw new Lookup.BucketNotFoundError('S3 bucket %s not found in %s', bucket, region);
+                throw new Lookup.BucketNotFoundError(`S3 bucket ${Bucket} not found in ${region}`);
             } else {
-                throw new Lookup.S3Error('%s: %s', err.code, err.message);
+                throw new Lookup.S3Error(err.message);
             }
         }
     }
@@ -206,8 +230,8 @@ export default class Lookup {
      * @param {string} bucket - the name of the S3 bucket containing saved configurations
      * @param {string} config - the name of the saved configuration
      */
-    async configuration(name, bucket, config) {
-        const region = await Lookup.bucketRegion(bucket);
+    async configuration(name: string, bucket: string, config: string): Promise<object> {
+        const region = await this.bucketRegion(bucket);
 
         const s3 = new S3Client(this.client);
 
@@ -215,41 +239,37 @@ export default class Lookup {
         try {
             data = await s3.send(new GetObjectCommand({
                 Bucket: bucket,
-                Key: Lookup.configKey(name, config)
+                Key: this.configKey(name, config)
             }));
         } catch (err) {
             if (err.code === 'NoSuchBucket') {
-                throw new Lookup.BucketNotFoundError('S3 bucket %s not found in %s', bucket, region);
+                throw new Lookup.BucketNotFoundError(`S3 bucket ${bucket} not found in ${region}`);
             } else if (err.code === 'NoSuchKey') {
-                throw new Lookup.ConfigurationNotFoundError('Configuration %s not found in %s in %s', config, bucket, region);
+                throw new Lookup.ConfigurationNotFoundError(`Configuration ${config} not found in ${bucket} in ${region}`);
             } else {
-                throw new Lookup.S3Error('%s: %s', err.code, err.message);
+                throw new Lookup.S3Error(err.message);
             }
         }
 
-        let info = data.Body.toString();
         try {
-            info = JSON.parse(info);
+            return JSON.parse(data.Body.toString());
         } catch (err) {
             throw new Lookup.InvalidConfigurationError('Invalid configuration');
         }
-
-        return info;
     }
 
     /**
      * Lookup a default saved configuration by providing an S3 url. This function will
      * silently absorb any failures encountered while fetching or parsing the requested file.
      *
-     * @param {string} s3url - a URL pointing to a configuration object on S3
-     *
+     * @param s3url - a URL pointing to a configuration object on S3
      */
-    async defaultConfiguration(s3url) {
+    async defaultConfiguration(s3url: string): Promise<object> {
         const params = s3urls.fromUrl(s3url);
 
         let region;
         try {
-            region = await Lookup.bucketRegion(params.bucket);
+            region = await this.bucketRegion(params.Bucket);
         } catch (err) {
             return {};
         }
@@ -263,124 +283,42 @@ export default class Lookup {
             return {};
         }
 
-        let info = data.Body.toString();
         try {
-            info = JSON.parse(info);
+            return JSON.parse(data.Body.toString());
         } catch (err) {
             return {};
         }
-
-        return info;
     }
 
     /**
      * Given a stack name and configuration name, provides the key where the configuration
      * should be stored on S3
      *
-     * @param {string} name - the stack's base name (no suffix)
-     * @param {string} config - the configuration's name
-     * @returns {string} an S3 key
+     * @param name - the stack's base name (no suffix)
+     * @param config - the configuration's name
+     * @returns an S3 key
      */
-    configKey(name, stackName, region) {
-        return region ?
-            name + '/' + stackName + '-' + region + '.cfn.json' :
-            name + '/' + stackName + '.cfn.json';
+    configKey(name: string, config: string): string {
+        return `${name}/${config}-${this.client.region}.cfn.json`;
     }
 
     /**
      * Find a bucket's region
      *
-     * @param {string} bucket - the name of the bucket
-     * @param {string} [region] - the name of the region in which to make lookup requests
+     * @param Bucket - the name of the bucket
      */
-    async bucketRegion(bucket, region) {
+    async bucketRegion(Bucket: string): Promise<string | undefined> {
         const s3 = new S3Client(this.client);
 
         try {
-            const data = await s3.send(new GetBucketLocationCommand({
-                Bucket: bucket
-            }));
-
+            const data = await s3.send(new GetBucketLocationCommand({ Bucket }));
             return data.LocationConstraint || undefined;
         } catch (err) {
             if (err.code === 'NoSuchBucket') {
-                throw new Lookup.BucketNotFoundError('S3 bucket %s not found', bucket);
+                throw new Lookup.BucketNotFoundError(`S3 bucket ${Bucket} not found`);
             } else {
-                throw new Lookup.S3Error('%s: %s', err.code, err.message);
+                throw new Lookup.S3Error(err.message);
             }
         }
     }
-
-    /**
-     * Decrypt any encrypted parameters.
-     *
-     * @param {object} parameters - stack parameters
-     * @param {string} region - stack region
-     */
-    async decryptParameters(parameters, region) {
-        const kms = new KMSClient(this.client);
-        const decrypted = JSON.parse(JSON.stringify(parameters));
-
-        try {
-            const results = [];
-            for (const key of Object.keys(parameters)) {
-                if (!(/^secure:/).test(parameters[key])) continue;
-
-                const val = parameters[key].replace(/^secure:/, '');
-
-                const data = await kms.send(new DecryptCommand({
-                    CiphertextBlob: new Buffer.from(val, 'base64')
-                }));
-
-                results.push({
-                    key: key,
-                    val: val,
-                    decrypted: (new Buffer.from(data.Plaintext, 'base64')).toString('utf8')
-                });
-            }
-
-            results.forEach((data) => {
-                decrypted[data.key] = data.decrypted;
-            });
-
-            return decrypted;
-        } catch (err) {
-            throw new Lookup.DecryptParametersError('%s: %s', err.code, err.message);
-        }
-    }
-
-    /**
-     * Error representing an unexpected failure in a CloudFormation request
-     */
-    static CloudFormationError = error('CloudFormationError');
-
-    /**
-     * Error representing a template that does not exist
-     */
-    static StackNotFoundError = error('StackNotFoundError');
-
-    /**
-     * Error representing an unexpected failure in an S3 request
-     */
-    static S3Error = error('S3Error');
-
-    /**
-     * Error representing a bucket that does not exist
-     */
-    static BucketNotFoundError = error('BucketNotFoundError');
-
-    /**
-     * Error representing a saved configuration that does not exist
-     */
-    static ConfigurationNotFoundError = error('ConfigurationNotFoundError');
-
-    /**
-     * Error representing a saved configuration object that could not be parsed
-     */
-    static InvalidConfigurationError = error('InvalidConfigurationError');
-
-    /**
-     * Error representing a failure to decrypt secure parameters
-     */
-    static DecryptParametersError = error('DecryptParametersError');
 }
