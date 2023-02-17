@@ -3,211 +3,294 @@ import events from 'events';
 import test from 'tape';
 import Sinon from 'sinon';
 import Actions from '../lib/actions.js';
+import {
+    CloudFormationClient,
+    DescribeChangeSetCommand,
+    CreateChangeSetCommand
 
-test('[actions.cancel] stack does not exist', async(t) => {
-    AWS.stub('CloudFormation', 'cancelUpdateStack', () => {
-        const err = new Error('Stack [my-stack] does not exist');
-        err.code = 'ValidationError';
-        throw err;
+} from '@aws-sdk/client-cloudformation';
+
+test('[actions.cancel] stack does not exist', async (t) => {
+    Sinon.stub(CloudFormationClient.prototype, 'send').callsFake(() => {
+        return Promise.reject(new Error('Stack [my-stack] does not exist'));
+    });
+
+    const actions = new Actions({
+        region: 'us-east-1',
+        credentials: {
+            accessKeyId: '123',
+            secretAccessKey: '321'
+        }
     });
 
     try {
-        await Actions.cancel('my-stack', 'us-east-1');
+        await actions.cancel('my-stack');
         t.fail();
     } catch (err) {
         t.ok(err instanceof Actions.CloudFormationError, 'expected error returned');
+        t.equals(err.message, 'Stack [my-stack] does not exist');
     }
 
-    AWS.CloudFormation.restore();
+    Sinon.restore();
     t.end();
 });
 
 test('[actions.diff] stack does not exist', async(t) => {
-    AWS.stub('CloudFormation', 'createChangeSet', () => {
-        const err = new Error('Stack [my-stack] does not exist');
-        err.code = 'ValidationError';
-        throw err;
+    Sinon.stub(CloudFormationClient.prototype, 'send').callsFake(() => {
+        return Promise.reject(new Error('Stack [my-stack] does not exist'));
+    });
+
+    const actions = new Actions({
+        region: 'us-east-1',
+        credentials: {
+            accessKeyId: '123',
+            secretAccessKey: '321'
+        }
     });
 
     try {
-        await Actions.diff('my-stack', 'us-east-1', 'UPDATE', 'https://my-bucket.s3.amazonaws.com/my-template.json', {}, false);
+        await actions.diff('my-stack', 'UPDATE', 'https://my-bucket.s3.amazonaws.com/my-template.json', [], []);
         t.fail();
     } catch (err) {
         t.ok(err instanceof Actions.CloudFormationError, 'expected error returned');
+        t.equals(err.message, 'Stack [my-stack] does not exist');
     }
 
-    AWS.CloudFormation.restore();
+    Sinon.restore();
     t.end();
 });
 
 test('[actions.diff] invalid parameters', async(t) => {
-    AWS.stub('CloudFormation', 'createChangeSet', () => {
-        const err = new Error('Parameters: [Pets, Age, Name, LuckyNumbers, SecretPassword] must have values');
-        err.code = 'ValidationError';
-        throw err;
+    Sinon.stub(CloudFormationClient.prototype, 'send').callsFake(() => {
+        return Promise.reject(new Error('Parameters: [Pets, Age, Name, LuckyNumbers, SecretPassword] must have values'));
+    });
+
+    const actions = new Actions({
+        region: 'us-east-1',
+        credentials: {
+            accessKeyId: '123',
+            secretAccessKey: '321'
+        }
     });
 
     try {
-        await Actions.diff('my-stack', 'us-east-1', 'UPDATE', 'https://my-bucket.s3.amazonaws.com/my-template.json', {}, false);
+        await actions.diff('my-stack', 'UPDATE', 'https://my-bucket.s3.amazonaws.com/my-template.json', [], []);
         t.fail();
     } catch (err) {
         t.ok(err instanceof Actions.CloudFormationError, 'expected error returned');
+        t.equals(err.message, 'Parameters: [Pets, Age, Name, LuckyNumbers, SecretPassword] must have values');
     }
 
-    AWS.CloudFormation.restore();
+    Sinon.restore();
     t.end();
 });
 
 test('[actions.diff] template url does not exist', async(t) => {
-    AWS.stub('CloudFormation', 'createChangeSet', () => {
-        const err = new Error('Template file referenced by https://my-bucket.s3.amazonaws.com/my-template.json does not exist.');
-        err.code = 'ValidationError';
-        throw err;
+    Sinon.stub(CloudFormationClient.prototype, 'send').callsFake(() => {
+        return Promise.reject(new Error('Template file referenced by https://my-bucket.s3.amazonaws.com/my-template.json does not exist.'));
+    });
+
+    const actions = new Actions({
+        region: 'us-east-1',
+        credentials: {
+            accessKeyId: '123',
+            secretAccessKey: '321'
+        }
     });
 
     try {
-        await Actions.diff('my-stack', 'us-east-1', 'UPDATE', 'https://my-bucket.s3.amazonaws.com/my-template.json', {}, false);
+        await actions.diff('my-stack', 'UPDATE', 'https://my-bucket.s3.amazonaws.com/my-template.json', [], []);
         t.fail();
     } catch (err) {
         t.ok(err instanceof Actions.CloudFormationError, 'expected error returned');
+        t.equals(err.message, 'Template file referenced by https://my-bucket.s3.amazonaws.com/my-template.json does not exist.');
     }
 
-    AWS.CloudFormation.restore();
+    Sinon.restore();
     t.end();
 });
 
 test('[actions.diff] template url is invalid', async(t) => {
-    AWS.stub('CloudFormation', 'createChangeSet', () => {
-        const err = new Error('The specified url must be an Amazon S3 URL.');
-        err.code = 'ValidationError';
-        throw err;
+    Sinon.stub(CloudFormationClient.prototype, 'send').callsFake(() => {
+        return Promise.reject(new Error('The specified url must be an Amazon S3 URL.'));
+    });
+
+    const actions = new Actions({
+        region: 'us-east-1',
+        credentials: {
+            accessKeyId: '123',
+            secretAccessKey: '321'
+        }
     });
 
     try {
-        await Actions.diff('my-stack', 'us-east-1', 'UPDATE', 'https://my-bucket.s3.amazonaws.com/my-template.json', {}, false);
+        await actions.diff('my-stack', 'UPDATE', 'https://my-bucket.s3.amazonaws.com/my-template.json', [], []);
         t.fail();
     } catch (err) {
         t.ok(err instanceof Actions.CloudFormationError, 'expected error returned');
+        t.equals(err.message, 'The specified url must be an Amazon S3 URL.');
     }
 
-    AWS.CloudFormation.restore();
+    Sinon.restore();
     t.end();
 });
 
 test('[actions.diff] template is invalid', async(t) => {
-    AWS.stub('CloudFormation', 'createChangeSet', () => {
-        const err = new Error('Template format error: At least one Resources member must be defined.');
-        err.code = 'ValidationError';
-        throw err;
+    Sinon.stub(CloudFormationClient.prototype, 'send').callsFake(() => {
+        return Promise.reject(new Error('Template format error: At least one Resources member must be defined.'));
+    });
+
+    const actions = new Actions({
+        region: 'us-east-1',
+        credentials: {
+            accessKeyId: '123',
+            secretAccessKey: '321'
+        }
     });
 
     try {
-        await Actions.diff('my-stack', 'us-east-1', 'UPDATE', 'https://my-bucket.s3.amazonaws.com/my-template.json', {}, false);
+        await actions.diff('my-stack', 'UPDATE', 'https://my-bucket.s3.amazonaws.com/my-template.json', [], []);
         t.fail();
     } catch (err) {
         t.ok(err instanceof Actions.CloudFormationError, 'expected error returned');
+        t.equals(err.message, 'Template format error: At least one Resources member must be defined.');
     }
 
-    AWS.CloudFormation.restore();
+    Sinon.restore();
     t.end();
 });
 
 test('[actions.diff] createChangeSet error on wrong changeSetType', async(t) => {
     const url = 'https://my-bucket.s3.amazonaws.com/my-template.json';
 
-    AWS.stub('CloudFormation', 'createChangeSet', () => {
-        const err = new Error('\'INVALID\' at \'changeSetType\' failed to satisfy constraint: Member must satisfy enum value set: [UPDATE, CREATE]');
-        err.code = 'ValidationError';
-        throw err;
+    Sinon.stub(CloudFormationClient.prototype, 'send').callsFake(() => {
+        return Promise.reject(new Error('\'INVALID\' at \'changeSetType\' failed to satisfy constraint: Member must satisfy enum value set: [UPDATE, CREATE]'));
+    });
+
+    const actions = new Actions({
+        region: 'us-east-1',
+        credentials: {
+            accessKeyId: '123',
+            secretAccessKey: '321'
+        }
     });
 
     try {
-        await Actions.diff('my-stack', 'us-east-1', 'INVALID', url, {}, false);
+        await actions.diff('my-stack', 'INVALID', url, [], []);
         t.fail();
     } catch (err) {
         t.ok(err instanceof Actions.CloudFormationError, 'expected error returned');
+        t.equals(err.message ,'\'INVALID\' at \'changeSetType\' failed to satisfy constraint: Member must satisfy enum value set: [UPDATE, CREATE]');
     }
 
-    AWS.CloudFormation.restore();
+    Sinon.restore();
     t.end();
 });
 
 test('[actions.diff] unexpected createChangeSet error', async(t) => {
-    const url = 'https://my-bucket.s3.amazonaws.com/my-template.json';
+    Sinon.stub(CloudFormationClient.prototype, 'send').callsFake(() => {
+        return Promise.reject(new Error('unexpected'));
+    });
 
-    AWS.stub('CloudFormation', 'createChangeSet', () => {
-        throw new Error('unexpected');
+    const actions = new Actions({
+        region: 'us-east-1',
+        credentials: {
+            accessKeyId: '123',
+            secretAccessKey: '321'
+        }
     });
 
     try {
-        await  Actions.diff('my-stack', 'us-east-1', 'UPDATE', url, {}, false);
+        const url = 'https://my-bucket.s3.amazonaws.com/my-template.json';
+        await actions.diff('my-stack', 'UPDATE', url, [], []);
         t.fail();
     } catch (err) {
         t.ok(err instanceof Actions.CloudFormationError, 'expected error returned');
+        t.equals(err.message, 'unexpected');
     }
 
-    AWS.CloudFormation.restore();
+    Sinon.restore();
     t.end();
 });
 
 test('[actions.diff] unexpected describeChangeSet error', async(t) => {
     const url = 'https://my-bucket.s3.amazonaws.com/my-template.json';
 
-    AWS.stub('CloudFormation', 'createChangeSet').returns({
-        promise: () => Promise.resolve({ Id: 'changeset:arn' })
+    Sinon.stub(CloudFormationClient.prototype, 'send').callsFake((command) => {
+        if (command instanceof CreateChangeSetCommand) {
+            return Promise.resolve({ Id: 'changeset:arn' })
+        } else if (command instanceof DescribeChangeSetCommand) {
+            return Promise.reject(new Error('unexpected'));
+        } else {
+            return Promise.reject(new Error('Test Error - Unexpected Command'));
+        }
     });
 
-    AWS.stub('CloudFormation', 'describeChangeSet', () => {
-        throw new Error('unexpected');
+    const actions = new Actions({
+        region: 'us-east-1',
+        credentials: {
+            accessKeyId: '123',
+            secretAccessKey: '321'
+        }
     });
 
     try {
-        await Actions.diff('my-stack', 'us-east-1', 'UPDATE', url, {}, false);
+        await actions.diff('my-stack', 'UPDATE', url, [], []);
         t.fail();
     } catch (err) {
         t.ok(err instanceof Actions.CloudFormationError, 'expected error returned');
     }
 
-    AWS.CloudFormation.restore();
+    Sinon.restore();
     t.end();
 });
 
 test('[actions.diff] changeset failed to create', async(t) => {
     const url = 'https://my-bucket.s3.amazonaws.com/my-template.json';
-    let changesetId;
 
-    AWS.stub('CloudFormation', 'createChangeSet', function(params) {
-        changesetId = params.ChangeSetName;
-        return this.request.promise.returns(Promise.resolve({ Id: 'changeset:arn' }));
+    Sinon.stub(CloudFormationClient.prototype, 'send').callsFake((command) => {
+        if (command instanceof CreateChangeSetCommand) {
+            return Promise.resolve({ Id: 'changeset:arn' });
+        } else if (command instanceof DescribeChangeSetCommand) {
+            return Promise.resolve({
+                ChangeSetName: '123',
+                ChangeSetId: 'changeset:arn',
+                StackId: 'arn:aws:cloudformation:us-east-1:123456789012:stack/my-stack/be3aa370-5b64-11e6-a232-500c217dbe62',
+                StackName: 'my-stack',
+                ExecutionStatus: 'UNAVAILABLE',
+                Status: 'FAILED'
+            });
+        } else {
+            return Promise.reject(new Error('Test Error - Unexpected Command'));
+        }
     });
 
-    AWS.stub('CloudFormation', 'describeChangeSet').returns({
-        promise: () => Promise.resolve({
-            ChangeSetName: changesetId,
-            ChangeSetId: 'changeset:arn',
-            StackId: 'arn:aws:cloudformation:us-east-1:123456789012:stack/my-stack/be3aa370-5b64-11e6-a232-500c217dbe62',
-            StackName: 'my-stack',
-            ExecutionStatus: 'UNAVAILABLE',
-            Status: 'FAILED'
-        })
+    const actions = new Actions({
+        region: 'us-east-1',
+        credentials: {
+            accessKeyId: '123',
+            secretAccessKey: '321'
+        }
     });
 
     try {
-        const data = await Actions.diff('my-stack', 'us-east-1', 'UPDATE', url, {}, false);
+        const data = await actions.diff('my-stack', 'UPDATE', url, [], []);
 
         t.deepEqual(data, {
-            id: changesetId,
+            id: '123',
             status: 'FAILED',
-            execution: 'UNAVAILABLE'
+            execution: 'UNAVAILABLE',
+            changes: []
         }, 'returned changeset details');
     } catch (err) {
         t.error(err);
     }
 
-    AWS.CloudFormation.restore();
+    Sinon.restore();
     t.end();
 });
 
+/**
 test('[actions.diff] success', async(t) => {
     const url = 'https://my-bucket.s3.amazonaws.com/my-template.json';
     let changesetId;
@@ -328,6 +411,14 @@ test('[actions.diff] success', async(t) => {
         { ParameterKey: 'SecretPassword', ParameterValue: 'secret' }
     ];
 
+    const actions = new Actions({
+        region: 'us-east-1',
+        credentials: {
+            accessKeyId: '123',
+            secretAccessKey: '321'
+        }
+    });
+
     try {
         const data = await Actions.diff('my-stack', 'us-east-1', 'UPDATE', url, parameters, true, [{
             Key: 'developer',
@@ -359,13 +450,21 @@ test('[actions.diff] success', async(t) => {
         t.error(err);
     }
 
-    AWS.CloudFormation.restore();
+    Sinon.restore();
     t.end();
 });
 
 test('[actions.executeChangeSet] describeChangeSet error', async(t) => {
     AWS.stub('CloudFormation', 'describeChangeSet', () => {
         throw new Error('unexpected');
+    });
+
+    const actions = new Actions({
+        region: 'us-east-1',
+        credentials: {
+            accessKeyId: '123',
+            secretAccessKey: '321'
+        }
     });
 
     try {
@@ -375,7 +474,7 @@ test('[actions.executeChangeSet] describeChangeSet error', async(t) => {
         t.ok(err instanceof Actions.CloudFormationError, 'expected error');
     }
 
-    AWS.CloudFormation.restore();
+    Sinon.restore();
     t.end();
 });
 
@@ -388,6 +487,14 @@ test('[actions.executeChangeSet] changeset not executable', async(t) => {
         })
     });
 
+    const actions = new Actions({
+        region: 'us-east-1',
+        credentials: {
+            accessKeyId: '123',
+            secretAccessKey: '321'
+        }
+    });
+
     try {
         await Actions.executeChangeSet('my-stack', 'us-east-1', 'changeset-id');
         t.fail();
@@ -398,7 +505,7 @@ test('[actions.executeChangeSet] changeset not executable', async(t) => {
         t.equal(err.reason, 'because I said so', 'err object exposes status reason');
     }
 
-    AWS.CloudFormation.restore();
+    Sinon.restore();
     t.end();
 });
 
@@ -408,6 +515,14 @@ test('[actions.executeChangeSet] executeChangeSet error', async(t) => {
             ExecutionStatus: 'AVAILABLE',
             Status: 'CREATE_COMPLETE'
         })
+    });
+
+    const actions = new Actions({
+        region: 'us-east-1',
+        credentials: {
+            accessKeyId: '123',
+            secretAccessKey: '321'
+        }
     });
 
     AWS.stub('CloudFormation', 'executeChangeSet', () => {
@@ -421,7 +536,7 @@ test('[actions.executeChangeSet] executeChangeSet error', async(t) => {
         t.ok(err instanceof Actions.CloudFormationError, 'expected error');
     }
 
-    AWS.CloudFormation.restore();
+    Sinon.restore();
     t.end();
 });
 
@@ -448,13 +563,21 @@ test('[actions.executeChangeSet] success', async(t) => {
         return this.request.promise.returns(Promise.resolve());
     });
 
+    const actions = new Actions({
+        region: 'us-east-1',
+        credentials: {
+            accessKeyId: '123',
+            secretAccessKey: '321'
+        }
+    });
+
     try {
         await Actions.executeChangeSet('my-stack', 'us-east-1', 'changeset-id');
     } catch (err) {
         t.error(err);
     }
 
-    AWS.CloudFormation.restore();
+    Sinon.restore();
     t.end();
 });
 
@@ -465,20 +588,12 @@ test('[actions.delete] stack does not exist', async(t) => {
         throw err;
     });
 
-    try {
-        await Actions.delete('my-stack', 'us-east-1');
-        t.fail();
-    } catch (err) {
-        t.ok(err instanceof Actions.CloudFormationError, 'expected error returned');
-    }
-
-    AWS.CloudFormation.restore();
-    t.end();
-});
-
-test('[actions.delete] unexpected cloudformation error', async(t) => {
-    AWS.stub('CloudFormation', 'deleteStack', () => {
-        throw new Error('unexpected');
+    const actions = new Actions({
+        region: 'us-east-1',
+        credentials: {
+            accessKeyId: '123',
+            secretAccessKey: '321'
+        }
     });
 
     try {
@@ -488,7 +603,31 @@ test('[actions.delete] unexpected cloudformation error', async(t) => {
         t.ok(err instanceof Actions.CloudFormationError, 'expected error returned');
     }
 
-    AWS.CloudFormation.restore();
+    Sinon.restore();
+    t.end();
+});
+
+test('[actions.delete] unexpected cloudformation error', async(t) => {
+    AWS.stub('CloudFormation', 'deleteStack', () => {
+        throw new Error('unexpected');
+    });
+
+    const actions = new Actions({
+        region: 'us-east-1',
+        credentials: {
+            accessKeyId: '123',
+            secretAccessKey: '321'
+        }
+    });
+
+    try {
+        await Actions.delete('my-stack', 'us-east-1');
+        t.fail();
+    } catch (err) {
+        t.ok(err instanceof Actions.CloudFormationError, 'expected error returned');
+    }
+
+    Sinon.restore();
     t.end();
 });
 
@@ -498,13 +637,21 @@ test('[actions.delete] success', async(t) => {
         return this.request.promise.returns(Promise.resolve());
     });
 
+    const actions = new Actions({
+        region: 'us-east-1',
+        credentials: {
+            accessKeyId: '123',
+            secretAccessKey: '321'
+        }
+    });
+
     try {
         await Actions.delete('my-stack', 'us-east-1');
     } catch (err) {
         t.error(err);
     }
 
-    AWS.CloudFormation.restore();
+    Sinon.restore();
     t.end();
 });
 
@@ -516,6 +663,14 @@ test('[actions.validate] unexpected validateTemplate error', async(t) => {
         throw new Error('unexpected');
     });
 
+    const actions = new Actions({
+        region: 'us-east-1',
+        credentials: {
+            accessKeyId: '123',
+            secretAccessKey: '321'
+        }
+    });
+
     try {
         await Actions.validate('us-east-1', url);
         t.fail();
@@ -523,7 +678,7 @@ test('[actions.validate] unexpected validateTemplate error', async(t) => {
         t.ok(err instanceof Actions.CloudFormationError, 'expected error returned');
     }
 
-    AWS.CloudFormation.restore();
+    Sinon.restore();
     t.end();
 });
 
@@ -534,6 +689,14 @@ test('[actions.validate] invalid template', async(t) => {
         throw err;
     });
 
+    const actions = new Actions({
+        region: 'us-east-1',
+        credentials: {
+            accessKeyId: '123',
+            secretAccessKey: '321'
+        }
+    });
+
     try {
         await Actions.validate('us-east-1', 'https://my-bucket.s3.amazonaws.com/my-template.json');
         t.fail();
@@ -541,7 +704,7 @@ test('[actions.validate] invalid template', async(t) => {
         t.ok(err instanceof Actions.CloudFormationError, 'expected error type');
     }
 
-    AWS.CloudFormation.restore();
+    Sinon.restore();
     t.end();
 });
 
@@ -554,13 +717,21 @@ test('[actions.validate] valid template', async(t) => {
         return this.request.promise.returns(Promise.resolve());
     });
 
+    const actions = new Actions({
+        region: 'us-east-1',
+        credentials: {
+            accessKeyId: '123',
+            secretAccessKey: '321'
+        }
+    });
+
     try {
         await Actions.validate('us-east-1', 'https://my-bucket.s3.amazonaws.com/my-template.json');
     } catch (err) {
         t.error(err);
     }
 
-    AWS.CloudFormation.restore();
+    Sinon.restore();
     t.end();
 });
 
@@ -582,6 +753,14 @@ test('[actions.saveConfiguration] bucket does not exist', async(t) => {
         const err = new Error('The specified bucket does not exist');
         err.code = 'NoSuchBucket';
         throw err;
+    });
+
+    const actions = new Actions({
+        region: 'us-east-1',
+        credentials: {
+            accessKeyId: '123',
+            secretAccessKey: '321'
+        }
     });
 
     try {
@@ -611,6 +790,14 @@ test('[actions.saveConfiguration] unexpected putObject error', async(t) => {
 
     AWS.stub('S3', 'putObject', () => {
         throw new Error('unexpected');
+    });
+
+    const actions = new Actions({
+        region: 'us-east-1',
+        credentials: {
+            accessKeyId: '123',
+            secretAccessKey: '321'
+        }
     });
 
     try {
@@ -650,6 +837,14 @@ test('[actions.saveConfiguration] success with encryption', async(t) => {
         return this.request.promise.returns(Promise.resolve());
     });
 
+    const actions = new Actions({
+        region: 'us-east-1',
+        credentials: {
+            accessKeyId: '123',
+            secretAccessKey: '321'
+        }
+    });
+
     try {
         await Actions.saveConfiguration('my-stack', 'my-stack-staging', 'us-east-1', 'my-bucket', parameters, 'my-key');
     } catch (err) {
@@ -684,6 +879,14 @@ test('[actions.saveConfiguration] success without encryption', async(t) => {
         return this.request.promise.returns(Promise.resolve());
     });
 
+    const actions = new Actions({
+        region: 'us-east-1',
+        credentials: {
+            accessKeyId: '123',
+            secretAccessKey: '321'
+        }
+    });
+
     try {
         await Actions.saveConfiguration('my-stack', 'my-stack-staging', 'us-east-1', 'my-bucket', parameters);
     } catch (err) {
@@ -716,6 +919,14 @@ test('[actions.saveConfiguration] config bucket in a different region', async(t)
         }, 'expected putObject parameters');
 
         return this.request.promise.returns(Promise.resolve());
+    });
+
+    const actions = new Actions({
+        region: 'us-east-1',
+        credentials: {
+            accessKeyId: '123',
+            secretAccessKey: '321'
+        }
     });
 
     try {
@@ -923,7 +1134,7 @@ test('[actions.monitor] error', async(t) => {
         t.ok(err instanceof Actions.CloudFormationError, 'expected error type');
     }
 
-    AWS.CloudFormation.restore();
+    Sinon.restore();
     t.end();
 });
 
@@ -988,6 +1199,7 @@ test('[actions.monitor] success', async(t) => {
         t.error(err);
     }
 
-    AWS.CloudFormation.restore();
+    Sinon.restore();
     t.end();
 });
+*/

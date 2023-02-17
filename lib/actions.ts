@@ -242,7 +242,7 @@ export default class Actions {
         try {
             await cfn.send(new CancelUpdateStackCommand({ StackName }));
         } catch (err) {
-            throw new Actions.CloudFormationError('%s: %s', err.message);
+            throw new Actions.CloudFormationError(err.message);
         }
 
         return;
