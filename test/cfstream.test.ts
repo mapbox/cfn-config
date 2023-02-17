@@ -24,8 +24,7 @@ test('emits an error for a non-existent stack', (t) => {
         })
         .on('error', (err) => {
             t.ok(err.message.includes('No Stack Found'));
-            // @ts-ignore
-            CloudFormationClient.prototype.send.restore();
+            Sinon.restore();
             t.end();
         });
 });

@@ -6,7 +6,6 @@ import {
 } from '@aws-sdk/client-cloudformation';
 import type {
     AwsCredentialIdentity,
-    AwsCredentialIdentityProvider,
     Provider,
 } from '@aws-sdk/types';
 

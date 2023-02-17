@@ -6,34 +6,31 @@ import {
     GetObjectCommand,
     GetBucketLocationCommand
 } from '@aws-sdk/client-s3';
-import {
-    Parameter
-} from '@aws-sdk/client-cloudformation';
+
+export interface CloudFormationTemplate {
+    Description: string;
+    Parameters: {
+        [x: string]: {
+            Type: string;
+            Default?: string;
+            Description?: string;
+            AllowedPattern?: string;
+            AllowedValues: string[];
+            [x: string]: unknown;
+        };
+    };
+    Resources: {
+        [x: string]: object;
+    };
+    Metadata?: object;
+    Outputs: object;
+    Mappings?: object;
+    [x: string]: unknown;
+}
 
 export class Template {
-    body: {
-        Description: string;
-        Parameters: {
-            [x: string]: {
-                Type: string;
-                Default?: string;
-                Description?: string;
-                AllowedPattern?: string;
-                AllowedValues: string[];
-                [x: string]: unknown;
-            };
-        };
-        Resources: {
-            [x: string]: object;
-        };
-        Metadata?: object;
-        Outputs: object;
-        Mappings?: object;
-        [x: string]: unknown;
-
-    };
+    body: CloudFormationTemplate;
     parameters: Map<string, string>
-
     constructor(body?: any) {
         if (!body.Description) body.Description = '';
         if (!body.Parameters) body.Parameters = {};

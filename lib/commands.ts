@@ -194,8 +194,6 @@ class CommandContext {
     templateBucket: string;
 
     changeset?: ChangeSetDetail;
-    oldParameters?: Map<string, string>;
-    newParameters?: Map<string, string>;
     changesetParameters?: Parameter[];
     diffs: any;
     saveName?: string;
@@ -218,7 +216,6 @@ class CommandContext {
         this.stackName = stackName(config.name, suffix);
         this.configBucket = config.configBucket;
         this.templateBucket = config.templateBucket;
-        this.oldParameters = new Map();
         this.diffs = {};
         this.tags = config.tags || [];
 
@@ -264,8 +261,8 @@ class Operations {
             }
 
             const lookup = new Lookup(context.client);
-            context.oldParameters = await lookup.parameters(context.stackName);
             context.oldTemplate = await lookup.template(context.stackName);
+            context.oldTemplate.parameters = await lookup.parameters(context.stackName);
         } catch (err) {
             let msg = '';
             if (err instanceof TemplateReader.NotFoundError) msg += 'Could not load template: ';
@@ -280,14 +277,14 @@ class Operations {
 
     static async promptParameters(context: CommandContext) {
         const template = new TemplateReader(context.client);
-        const questions = template.questions(context.newTemplate, context.oldParameters);
+        const questions = template.questions(context.newTemplate, context.oldTemplate.parameters);
 
         const answers = await Prompt.parameters(questions);
 
-        context.newParameters = answers;
+        context.newTemplate.parameters = answers;
         context.changesetParameters = changesetParameters(
-            context.oldParameters,
-            context.newParameters,
+            context.oldTemplate.parameters,
+            context.newTemplate.parameters,
             context.create
         );
 
@@ -295,7 +292,7 @@ class Operations {
     }
 
     static async confirmParameters(context: CommandContext) {
-        const diff = compare(context.oldParameters, context.newParameters);
+        const diff = compareParameters(context.oldTemplate, context.newTemplate);
 
         if (!diff) return;
 
@@ -307,7 +304,7 @@ class Operations {
     }
 
     static async confirmTemplate(context: CommandContext) {
-        const diff = compareTemplate(context.oldTemplate.body, context.newTemplate.body);
+        const diff = compareTemplate(context.oldTemplate, context.newTemplate);
 
         if (!diff) return;
 
@@ -323,7 +320,7 @@ class Operations {
         context.templateUrl = await actions.templateUrl(context.templateBucket, context.suffix);
 
         try {
-            await actions.saveTemplate(context.templateUrl, stableStringify(context.newTemplate, { space: 2 }));
+            await actions.saveTemplate(context.templateUrl, stableStringify(context.newTemplate.body, { space: 2 }));
         } catch (err) {
             let msg = '';
             if (err instanceof Actions.BucketNotFoundError) msg += 'Could not find template bucket: ';
@@ -460,7 +457,7 @@ class Operations {
 
         try {
             const info = await lookup.configuration(context.baseName, context.configBucket, context.configName);
-            context.oldParameters = info;
+            context.oldTemplate.parameters = info;
         } catch (err){
             let msg = '';
             if (err instanceof Lookup.BucketNotFoundError) msg += 'Could not find config bucket: ';
@@ -512,7 +509,7 @@ class Operations {
         const lookup = new Lookup(context.client);
         try {
             const info = await lookup.parameters(context.stackName);
-            context.oldParameters = info;
+            context.oldTemplate.parameters = info;
         } catch (err) {
             let msg = '';
             if (err instanceof Lookup.StackNotFoundError) msg += 'Missing stack: ';
@@ -529,7 +526,7 @@ class Operations {
     }
 
     static async confirmSaveConfig(context: CommandContext) {
-        process.stdout.write(stableStringify(context.oldParameters, { space: 2 }) + '\n\n');
+        process.stdout.write(stableStringify(context.oldTemplate.parameters, { space: 2 }) + '\n\n');
         const ready = await Prompt.confirm('Ready to save this configuration as "' + context.saveName + '"?');
         if (!ready) throw new Error('aborted');
     }
@@ -560,9 +557,9 @@ class Operations {
     }
 }
 
-function compare(existing: object, desired: object) {
-    existing = JSON.parse(JSON.stringify(existing));
-    desired = JSON.parse(JSON.stringify(desired));
+function compareParameters(existing: Template, desired: Template) {
+    existing = JSON.parse(JSON.stringify(Object.fromEntries(existing.parameters)));
+    desired = JSON.parse(JSON.stringify(Object.fromEntries(desired.parameters)));
     try {
         assert.deepEqual(existing, desired);
         return;
@@ -571,12 +568,13 @@ function compare(existing: object, desired: object) {
     }
 }
 
-function compareTemplate(existing: object, desired: object) {
-    const existingstr = stableStringify(existing, { space: 2 });
-    const desiredstr = stableStringify(desired, { space: 2 });
+function compareTemplate(existing: Template, desired: Template) {
+    console.log('I AM COMPARING');
+    const existingstr = stableStringify(existing.body, { space: 2 });
+    const desiredstr = stableStringify(desired.body, { space: 2 });
 
     try {
-        assert.equal(existing, desired);
+        assert.equal(existingstr, desiredstr);
         return;
     } catch (err) {
         const strDiff = diffLines(existingstr, desiredstr, {
