@@ -137,9 +137,9 @@ export default class TemplateReader {
      *
      * @param {object} templateBody - a parsed CloudFormation template
      */
-    questions(templateBody: Template, defaults: Map<string, string> = new Map()) {
-        return Object.keys(templateBody.body.Parameters || {}).map((name: string) => {
-            const parameter = templateBody.body.Parameters[name];
+    questions(template: Template, defaults: Map<string, string> = new Map()) {
+        return Array.from(template.body.Parameters.keys()).map((name: string) => {
+            const parameter = template.body.Parameters[name];
 
             const question: any = {};
             question.name = name;
