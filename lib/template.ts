@@ -124,12 +124,7 @@ export default class TemplateReader {
      * @param {object} templateBody - a parsed CloudFormation template
      * @returns {array} a set of questions for user prompting
      */
-    questions(templateBody: object, overrides?: object) {
-        overrides = overrides || {};
-        overrides.defaults = overrides.defaults || {};
-        overrides.messages = overrides.messages || {};
-        overrides.choices = overrides.choices || {};
-
+    questions(templateBody: object) {
         return Object.keys(templateBody.Parameters || {}).map((name) => {
             const parameter = templateBody.Parameters[name];
 
@@ -161,13 +156,6 @@ export default class TemplateReader {
 
                 return valid;
             };
-
-            if (name in overrides.choices) question.choices = overrides.choices[name];
-            if (name in overrides.messages) question.message = overrides.messages[name];
-            if (name in overrides.defaults) {
-                if (!question.choices || question.choices.indexOf(overrides.defaults[name]) !== -1)
-                    question.default = overrides.defaults[name];
-            }
 
             return question;
         });

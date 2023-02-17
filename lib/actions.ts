@@ -111,10 +111,10 @@ export default class Actions {
      * @param changeSetType - the type of changeset, either UPDATE or CREATE
      * @param templateUrl - the URL for the template on S3
      * @param parameters - parameters for the ChangeSet
-     * @param expand - Set CAPABILITY_AUTO_EXPAND
      * @param Tags - Tags to be applied to all resources in the stack
+     * @param expand - Set CAPABILITY_AUTO_EXPAND
      */
-    async diff(name: string, changeSetType: string, templateUrl: string, parameters: Parameter[], expand: boolean, tags: Tag[]) {
+    async diff(name: string, changeSetType: string, templateUrl: string, parameters: Parameter[], tags: Tag[], expand: boolean) {
         const cfn = new CloudFormationClient(this.client);
         const changeSetParameters = changeSet(name, changeSetType, templateUrl, parameters, expand, tags);
 

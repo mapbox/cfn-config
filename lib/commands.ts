@@ -27,14 +27,6 @@ export interface CommandOptions {
     configBucket?: string;
     templateBucket?: string;
     force?: boolean;            // Do not prompt user for any input -- accept all
-    templateOptions?: object;   // An options object to provide as the first argument to a JavaScript template which exports a function
-    beforeUpdate?: Function;    // A hook into the update flow that allows the caller to inject functionality into the flow after the user has specified
-                                   // configuration, but before the update has occurred. The function will be provided
-                                   // with a `context` object containing information about the intended stack
-                                   // configuration, and a callback function to fire when all before-update functionality
-                                   // has been accomplished
-    defaultConfig?: string;     // The url for a default configuration object on S3. If provided, this configuration will be used by new stacks that select the "New configuration" option during the prompting phase.
-    metadata?: object;          // An object of additional metadata to merge into the template metadata.
 }
 
 /**
@@ -63,17 +55,14 @@ class Commands {
      *
      * @param suffix - the trailing part of the new stack's name
      * @param template - either the template as object or the filesystem path to the template file to load
-     * @param {@link overrides} [overrides] - any overrides to the create flow
      */
-    async create(suffix: string, template: string, overrides={}) {
+    async create(suffix: string, template: string) {
         const context = new CommandContext(this.client, this.config, suffix, [
             Operations.createPreamble,
             Operations.selectConfig,
             Operations.loadConfig,
             Operations.promptParameters,
-            Operations.validateParametersHook,
             Operations.confirmCreate,
-            Operations.mergeMetadata,
             Operations.saveTemplate,
             Operations.validateTemplate,
             Operations.getChangesetCreate,
@@ -82,7 +71,6 @@ class Commands {
             Operations.saveConfig
         ]);
 
-        context.overrides = overrides;
         context.template = template;
 
         if (this.dryrun) return context;
@@ -100,19 +88,15 @@ class Commands {
      *
      * @param suffix - the trailing part of the new stack's name
      * @param template - either the template as object or the filesystem path to the template file to load
-     * @param {@link overrides} [overrides] - any overrides to the create flow
      */
-    async update(suffix: string, template: string, overrides={}) {
+    async update(suffix: string, template: string) {
         const context = new CommandContext(this.client, this.config, suffix, [
             Operations.updatePreamble,
             Operations.promptParameters,
             Operations.confirmParameters,
-            Operations.validateParametersHook,
-            Operations.mergeMetadata,
             Operations.confirmTemplate,
             Operations.saveTemplate,
             Operations.validateTemplate,
-            Operations.beforeUpdateHook,
             Operations.getChangesetUpdate,
             Operations.confirmChangeset,
             Operations.executeChangeSet,
@@ -120,7 +104,6 @@ class Commands {
             Operations.saveConfig
         ]);
 
-        context.overrides = overrides;
         context.template = template;
 
         if (this.dryrun) return context;
@@ -133,16 +116,13 @@ class Commands {
      *   - monitor events during the deletion
      *
      * @param suffix - the trailing part of the existing stack's name
-     * @param {@link overrides} [overrides] - any overrides to the create flow
      */
-    async delete(suffix: string, overrides={}) {
+    async delete(suffix: string) {
         const context = new CommandContext(this.client, this.config, suffix, [
             Operations.confirmDelete,
             Operations.deleteStack,
             Operations.monitorStack
         ]);
-
-        context.overrides = overrides;
 
         if (this.dryrun) return context;
         await context.run();
@@ -215,19 +195,7 @@ class CommandContext {
     stackRegion: string;
     configBucket: string;
     templateBucket: string;
-    overrides?: {
-        force?: boolean;
-        preapproved?: object;
-        validateParameters?: Function;
-        beforeUpdate?: Function;
-        defaultConfig?: object;
-        skipPromptParameters?: boolean;
-        skipConfirmParameters?: boolean;
-        skipConfirmTemplate?: boolean;
-        templateOptions?: object;
-        parameters?: object;
-        metadata?: object;
-    };
+
     oldParameters?: Map<string, string>;
     newParameters?: Map<string, string>;
     changesetParameters?: Parameter[];
@@ -248,7 +216,6 @@ class CommandContext {
         this.stackName = stackName(config.name, suffix);
         this.configBucket = config.configBucket;
         this.templateBucket = config.templateBucket;
-        this.overrides = {};
         this.oldParameters = new Map();
         this.diffs = {};
         this.tags = config.tags || [];
@@ -287,8 +254,7 @@ class Operations {
                 throw new TemplateReader.NotFoundError('No template passed');
             } else if (typeof context.template === 'string') {
                 context.newTemplate = await template.read(
-                    new URL(path.resolve(context.template), 'file://').pathname,
-                    context.overrides.templateOptions
+                    new URL(path.resolve(context.template), 'file://').pathname
                 );
             } else {
                 // we assume if template is not string, it's a pre-loaded template body object
@@ -312,34 +278,6 @@ class Operations {
 
     static async promptParameters(context: CommandContext) {
         const newTemplateParameters = context.newTemplate.Parameters || new Map();
-        const overrideParameters = new Map();
-
-        if (context.overrides.parameters) {
-            Object.keys(context.overrides.parameters).forEach((key: string) => {
-                if (newTemplateParameters.has(key) || context.oldParameters.has(key))
-                    overrideParameters.set(key, context.overrides.parameters.get(key));
-            });
-        }
-
-        if (context.overrides.force || context.overrides.skipPromptParameters) {
-            context.newParameters = new Map();
-            Object.keys(newTemplateParameters).forEach((key: string) => {
-                const value = overrideParameters.has(key) ? overrideParameters.get(key) : context.oldParameters.get(key);
-                if (value !== undefined) {
-                    context.newParameters.set(key, value);
-                }
-            });
-            context.changesetParameters = changesetParameters(
-                context.oldParameters,
-                context.newParameters,
-                overrideParameters,
-                context.create
-            );
-            return;
-        }
-        else {
-            Object.assign(context.oldParameters, overrideParameters);
-        }
 
         const template = new TemplateReader(context.client);
         const questions = template.questions(context.newTemplate, {
@@ -353,7 +291,6 @@ class Operations {
         context.changesetParameters = changesetParameters(
             context.oldParameters,
             context.newParameters,
-            overrideParameters,
             context.create
         );
 
@@ -361,28 +298,9 @@ class Operations {
     }
 
     static async confirmParameters(context: CommandContext) {
-        if (context.overrides.force || context.overrides.skipConfirmParameters) {
-            return;
-        }
-
         const diff = compare(context.oldParameters, context.newParameters);
 
-        if (!diff) {
-            context.overrides.skipConfirmParameters = true;
-            return;
-        }
-
-        if (context.overrides.preapproved && context.overrides.preapproved.parameters) {
-            const preapproved = context.overrides.preapproved.parameters.filter((previous) => {
-                return previous === diff;
-            }).length;
-
-            if (preapproved) {
-                console.log('Auto-confirming parameter changes... Changes were pre-approved in another region.');
-                context.overrides.skipConfirmParameters = true;
-                return;
-            }
-        }
+        if (!diff) return;
 
         const ready = await Prompt.confirm([diff, 'Accept parameter changes?'].join('\n'));
         if (!ready) throw new Error('aborted');
@@ -392,28 +310,9 @@ class Operations {
     }
 
     static async confirmTemplate(context: CommandContext) {
-        if (context.overrides.force || context.overrides.skipConfirmTemplate) {
-            return;
-        }
-
         const diff = compareTemplate(context.oldTemplate, context.newTemplate);
 
-        if (!diff) {
-            context.overrides.skipConfirmTemplate = true;
-            return;
-        }
-
-        if (context.overrides.preapproved && context.overrides.preapproved.template) {
-            const preapproved = context.overrides.preapproved.template.filter((previous) => {
-                return previous === diff;
-            }).length;
-
-            if (preapproved) {
-                console.log('Auto-confirming template changes... Changes were pre-approved in another region.');
-                context.overrides.skipConfirmTemplate = true;
-                return;
-            }
-        }
+        if (!diff) return;
 
         const ready = await Prompt.confirm([diff, 'Accept template changes?'].join('\n'));
         if (!ready) throw new Error('aborted');
@@ -468,24 +367,6 @@ class Operations {
         return;
     }
 
-    static async validateParametersHook(context: CommandContext) {
-        if (!context.overrides.validateParameters) return;
-
-        context.overrides.validateParameters(context, function(err) {
-            if (err) throw err;
-            return;
-        });
-    }
-
-    static async beforeUpdateHook(context: CommandContext) {
-        if (!context.overrides.beforeUpdate) return;
-
-        context.overrides.beforeUpdate(context, function(err) {
-            if (err) throw err;
-            return;
-        });
-    }
-
     static async getChangesetCreate(context: CommandContext) {
         await Operations.getChangeset(context, 'CREATE');
     }
@@ -502,7 +383,6 @@ class Operations {
                 changeSetType,
                 context.templateUrl,
                 context.changesetParameters,
-                context.overrides.expand,
                 context.tags
             );
 
@@ -516,10 +396,6 @@ class Operations {
     }
 
     static async confirmChangeset(context: CommandContext) {
-        if (context.overrides.force || (context.overrides.skipConfirmTemplate && context.overrides.skipConfirmParameters)) {
-            return;
-        }
-
         const msg = [
             formatDiff(context.changeset),
             'Accept changes and update the stack?'
@@ -553,7 +429,6 @@ class Operations {
             } else if (typeof context.template === 'string') {
                 context.newTemplate = await template.read(
                     new URL(path.resolve(context.template), 'file://').pathname,
-                    context.overrides.templateOptions
                 );
             } else {
                 // we assume if template is not string, it's a pre-loaded template body object
@@ -575,8 +450,6 @@ class Operations {
     }
 
     static async selectConfig(context: CommandContext) {
-        if (context.overrides.force) return;
-
         const savedConfig = await Prompt.configuration(context.configNames);
         if (savedConfig === 'New configuration') return;
 
@@ -587,28 +460,6 @@ class Operations {
 
     static async loadConfig(context: CommandContext) {
         const lookup = new Lookup(context.client);
-
-        if (!context.configName) {
-            if (context.overrides.defaultConfig) {
-                try {
-                    const info = await lookup.defaultConfiguration(context.overrides.defaultConfig);
-                    context.oldParameters = info;
-
-                    return;
-                } catch (err){
-                    let msg = '';
-                    if (err instanceof Lookup.BucketNotFoundError) msg += 'Could not find config bucket: ';
-                    if (err instanceof Lookup.ConfigurationNotFoundError) msg += 'Could not find saved configuration: ';
-                    if (err instanceof Lookup.InvalidConfigurationError) msg += 'Saved configuration error: ';
-                    if (err instanceof Lookup.S3Error) msg += 'Failed to read saved configuration: ';
-                    msg += err.message;
-                    err.message = msg;
-                    throw err;
-                }
-            } else {
-                return;
-            }
-        }
 
         try {
             const info = await lookup.configuration(context.baseName, context.configBucket, context.configName);
@@ -626,14 +477,11 @@ class Operations {
     }
 
     static async confirmCreate(context: CommandContext) {
-        if (context.overrides.force) return;
-
         const ready = await Prompt.confirm('Ready to create the stack?');
         if (!ready) throw new Error('aborted');
     }
 
     static async confirmDelete(context: CommandContext) {
-        if (context.overrides.force) return;
         const msg = 'Are you sure you want to delete ' + context.stackName + ' in region ' + context.client.region + '?';
         const ready = await Prompt.confirm(msg, false);
         if (!ready) throw new Error('aborted');
@@ -716,19 +564,6 @@ class Operations {
             msg += err.message;
             err.message = msg;
             throw err;
-        }
-    }
-
-    static async mergeMetadata(context: CommandContext) {
-        if (!context.overrides.metadata) return;
-
-        context.newTemplate.Metadata = context.newTemplate.Metadata || {};
-        for (const k in context.overrides.metadata) {
-            if (context.newTemplate.Metadata[k] !== undefined) {
-                throw new Error('Metadata.' + k + ' already exists in template');
-            } else {
-                context.newTemplate.Metadata[k] = context.overrides.metadata[k];
-            }
         }
     }
 }
@@ -819,14 +654,12 @@ function stackName(name: string, suffix?: string) {
  * @private
  * @param oldParameters - name/value pairs defining old or default parameters
  * @param newParameters - name/value pairs defining the new, unchanged old, or accepted default parameters
- * @param [overrideParameters={}] - name/value pairs for any parameter values passed as overrides
  * @param isCreate - indicates that UsePreviousValue shoudld not be used on stack create. set in createPreable().
  * @returns {array} params - parameters objects for use in ChangeSet requests that create/update a stack
  */
 function changesetParameters(
     oldParameters: Map<string, string>,
     newParameters: Map<string, string>,
-    overrideParameters: Map<string, string> = new Map(),
     isCreate: boolean
 ): Parameter[]  {
     return Object.entries(newParameters).map(([key, value]) => {
@@ -835,9 +668,8 @@ function changesetParameters(
         };
 
         const unchanged = oldParameters.get(key) === newParameters.get(key);
-        const isOverriden = overrideParameters.has(key) && unchanged;
 
-        if (isCreate || isOverriden) {
+        if (isCreate) {
             parameter.ParameterValue = value;
         } else if (unchanged) {
             parameter.UsePreviousValue = true;
