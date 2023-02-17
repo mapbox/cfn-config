@@ -272,10 +272,8 @@ export default class Actions {
      * @param stackName - the deployed name of the stack
      * @param bucket - the name of the S3 bucket to save the configuration into
      * @param parameters - name/value pairs defining the stack configuration to save
-     * @param [kms] - if desired, the ID of the AWS KMS master encryption key to use
-     * to encrypt this configuration at rest
      */
-    async saveConfiguration(baseName: string, stackName: string, bucket: string, parameters: object, kms: string | undefined) {
+    async saveConfiguration(baseName: string, stackName: string, bucket: string, parameters: object) {
         const lookup = new Lookup(this.client);
         const region = await lookup.bucketRegion(bucket);
 
@@ -289,11 +287,6 @@ export default class Actions {
             Key: lookup.configKey(baseName, stackName),
             Body: JSON.stringify(parameters),
         };
-
-        if (kms) {
-            params.ServerSideEncryption = 'aws:kms';
-            params.SSEKMSKeyId = kms;
-        }
 
         try {
             await s3.send(new PutObjectCommand(params));

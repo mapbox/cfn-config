@@ -1,5 +1,5 @@
 /* eslint-disable no-console */
-import CFNConfig from '../index.js';
+import type { CFNConfigClient } from '../index.js';
 import assert from 'assert';
 import path from 'path';
 import jsonDiff from 'json-diff';
@@ -10,58 +10,41 @@ import Actions from './actions.js';
 import Lookup from './lookup.js';
 import Prompt from './prompt.js';
 import Template from './template.js';
-import {
-    KMSClient,
-    DecryptCommand
-} from '@aws-sdk/client-kms';
+import type {
+    Tag,
+    Parameter
+} from '@aws-sdk/client-cloudformation';
 
 const NOECHO_MASK = '****';
 
 import 'colors';
 
-/**
- * Override various aspects of the deployment chain
- *
- * @name overrides
- * @property {object} [parameters] - provide default values for parameters
- * during prompting
- * @property {boolean} [force] - do not prompt user for any input -- accept all
- * default values
- * @property {object} [templateOptions] - an options object to provide as the
- * first argument to a JavaScript template which exports a function
- * @property {function} [beforeUpdate] - a hook into the update flow that allows
- * the caller to inject functionality into the flow after the user has specified
- * configuration, but before the update has occurred. The function will be provided
- * with a `context` object containing information about the intended stack
- * configuration, and a callback function to fire when all before-update functionality
- * has been accomplished
- * @property {string} [defaultConfig] - the url for a default configuration
- * object on S3. If provided, this configuration will be used by new stacks that
- * select the "New configuration" option during the prompting phase.
- * @property {string|boolean} [kms] - either `true` if you wish to use the
- * default KMS key (id `alias/cloudformation`) for parameter encryption and
- * at-rest configuration encryption, or a string indicating the id of the KMS
- * key that should be used.
- * @property {object} [metadata] - an object of additional metadata to merge
- * into the template metadata.
- */
+export interface CommandOptions {
+    parameters?: Parameter[];   // Default Values for parameters
+    force?: boolean;            // Do not prompt user for any input -- accept all
+    templateOptions?: object;   // An options object to provide as the first argument to a JavaScript template which exports a function
+    beforeUpdate?: Function;    // A hook into the update flow that allows the caller to inject functionality into the flow after the user has specified
+                                   // configuration, but before the update has occurred. The function will be provided
+                                   // with a `context` object containing information about the intended stack
+                                   // configuration, and a callback function to fire when all before-update functionality
+                                   // has been accomplished
+    defaultConfig?: string;     // The url for a default configuration object on S3. If provided, this configuration will be used by new stacks that select the "New configuration" option during the prompting phase.
+    metadata?: object;          // An object of additional metadata to merge into the template metadata.
+}
 
 /**
  * Provides a set of commands for interacting with a CloudFormation stack
  * @class
  *
- * @param {object} config
- * @param {string} config.name - the base name of the stack (no suffix)
- * @param {string} config.region - the region the stack resides, or will reside in
- * @param {string} config.configBucket - the bucket that contains saved configurations
- * @param {string} config.templateBucket - the bucket where templates can be stored.
  * This bucket must be in the same region as the stack.
- *
- * @param {boolean} dryrun Used by the tests to return the context without running
  */
 class Commands {
-    constructor(cfnconfig, config={}, dryrun=false) {
-        this.cfnconfig = cfnconfig;
+    client: CFNConfigClient;
+    config: CommandOptions;
+    dryrun: boolean;
+
+    constructor(client, config: CommandOptions = {}, dryrun: boolean = false) {
+        this.client = client;
         this.config = config;
         this.dryrun = dryrun;
     }
@@ -73,12 +56,12 @@ class Commands {
      *     selected configuration
      *   - confirm stack creation and monitor events during creation
      *
-     * @param {string} suffix - the trailing part of the new stack's name
-     * @param {string} template - either the template as object or the filesystem path to the template file to load
+     * @param suffix - the trailing part of the new stack's name
+     * @param template - either the template as object or the filesystem path to the template file to load
      * @param {@link overrides} [overrides] - any overrides to the create flow
      */
-    async create(suffix, template, overrides={}) {
-        const context = new CommandContext(this.config, suffix, [
+    async create(suffix: string, template: string, overrides={}) {
+        const context = new CommandContext(this.client, this.config, suffix, [
             Operations.createPreamble,
             Operations.selectConfig,
             Operations.loadConfig,
@@ -110,14 +93,13 @@ class Commands {
      *   - confirm changes that will be made to existing stack resources
      *   - monitor events during the update
      *
-     * @param {string} suffix - the trailing part of the new stack's name
-     * @param {string} template - either the template as object or the filesystem path to the template file to load
+     * @param suffix - the trailing part of the new stack's name
+     * @param template - either the template as object or the filesystem path to the template file to load
      * @param {@link overrides} [overrides] - any overrides to the create flow
      */
-    async update(suffix, template, overrides={}) {
+    async update(suffix: string, template: string, overrides={}) {
         const context = new CommandContext(this.config, suffix, [
             Operations.updatePreamble,
-            Operations.getMasterConfig,
             Operations.promptParameters,
             Operations.confirmParameters,
             Operations.validateParametersHook,
@@ -145,10 +127,10 @@ class Commands {
      *   - confirm the deletion of the stack
      *   - monitor events during the deletion
      *
-     * @param {string} suffix - the trailing part of the existing stack's name
+     * @param suffix - the trailing part of the existing stack's name
      * @param {@link overrides} [overrides] - any overrides to the create flow
      */
-    async delete(suffix, overrides={}) {
+    async delete(suffix: string, overrides={}) {
         const context = new CommandContext(this.config, suffix, [
             Operations.confirmDelete,
             Operations.deleteStack,
@@ -164,9 +146,9 @@ class Commands {
     /**
      * Cancel an update to a CloudFormation stack, rolling it back
      *
-     * @param {string} suffix - the trailing part of the stack's name
+     * @param suffix - the trailing part of the stack's name
      */
-    async cancel(suffix) {
+    async cancel(suffix: string) {
         const context = new CommandContext(this.config, suffix, [
             Operations.cancelStackDeploy,
             Operations.monitorStack
@@ -182,11 +164,11 @@ class Commands {
      * @param {string} suffix - the trailing part of the existing stack's name
      * @param {boolean} [resources=false] - if set to `true`, returned information
      * will include details of each resource in the stack
-     * @param {boolean} [decrypt=false] - return secure parameters decrypted
      */
-    async info(suffix, resources=false, decrypt=false) {
+    async info(suffix: string, resources: boolean = false) {
         if (this.dryrun) return true;
-        return await Lookup.info(stackName(this.config.name, suffix), this.config.region, resources, decrypt);
+        const lookup = new Lookup(this.client);
+        return await lookup.info(stackName(this.config.name, suffix), this.config.region, resources);
     }
 
     /**
@@ -195,18 +177,14 @@ class Commands {
      * parameters that will be saved.
      *
      * @param {string} suffix - the trailing part of the new stack's name
-     * @param {string|boolean} [kms=false] - if specified, this KMS key id will
-     * be used to encrypt the contents of the file at-rest on S3.
      */
-    async save(suffix, kms=false) {
+    async save(suffix: string) {
         const context = new CommandContext(this.config, suffix, [
             Operations.getOldParameters,
             Operations.promptSaveConfig,
             Operations.confirmSaveConfig,
             Operations.saveConfig
         ]);
-
-        context.kms = kms;
 
         if (this.dryrun) return context;
         await context.run();
@@ -224,7 +202,22 @@ class Commands {
  * called in order to build the desired deployment flow.
  */
 class CommandContext {
-    constructor(config, suffix, operations)  {
+    client: CFNConfigClient;
+    config: CommandOptions;
+    baseName: string;
+    suffix: string;
+    stackName: string;
+    stackRegion: string;
+    configBucket: string;
+    templateBucket: string;
+    overrides: {};
+    oldParameters: {};
+    diffs: {};
+    tags: Tags[];
+    operations: Function[];
+
+    constructor(client, config, suffix, operations)  {
+        this.client = client;
         this.config = config;
         this.baseName = config.name;
         this.suffix = suffix;
@@ -235,7 +228,6 @@ class CommandContext {
         this.overrides = {};
         this.oldParameters = {};
         this.diffs = {};
-        this.kms = false;
         this.tags = config.tags || [];
 
         this.operations = operations;
@@ -292,40 +284,12 @@ class Operations {
         }
     }
 
-    static async getMasterConfig(context) {
-        if (!context.overrides.masterConfig) return;
-
-        const masterConfigJSON = await Lookup.defaultConfiguration(context.overrides.masterConfig);
-
-        for (const key of Object.keys(masterConfigJSON)) {
-            if (Object.prototype.hasOwnProperty.call(context.oldParameters, key)) {
-                if (context.kms && context.oldParameters[key].includes('secure')) {
-                    const kms = new KMSClient(this.cfnconfig.client);
-
-                    const valueToDecrypt = context.oldParameters[key].replace(/^secure:/, '');
-
-                    const data = await kms.send(DecryptCommand({
-                        CiphertextBlob: new Buffer.from(valueToDecrypt, 'base64')
-                    }));
-
-                    const decryptedOldParams = new Buffer.from(data.Plaintext, 'base64').toString('utf-8');
-                    const decryptedMaster = masterConfigJSON[key];
-                    if (decryptedOldParams !== decryptedMaster) {
-                        context.oldParameters[key] = masterConfigJSON[key];
-                    }
-                }
-            }
-        }
-
-        return;
-    }
-
     static async promptParameters(context) {
         const newTemplateParameters = context.newTemplate.Parameters || {};
         const overrideParameters = {};
 
         if (context.overrides.parameters) {
-            Object.keys(context.overrides.parameters).forEach(function(key){
+            Object.keys(context.overrides.parameters).forEach((key) => {
                 if (newTemplateParameters[key] || context.oldParameters[key])
                     overrideParameters[key] = context.overrides.parameters[key];
             });
@@ -333,7 +297,7 @@ class Operations {
 
         if (context.overrides.force || context.overrides.skipPromptParameters) {
             context.newParameters = {};
-            Object.keys(newTemplateParameters).forEach(function(key) {
+            Object.keys(newTemplateParameters).forEach((key) => {
                 const value = key in overrideParameters ? overrideParameters[key] : context.oldParameters[key];
                 if (value !== undefined) {
                     context.newParameters[key] = value;
@@ -433,10 +397,11 @@ class Operations {
     }
 
     static async saveTemplate(context) {
-        context.templateUrl = this.cfnconfig.actions.templateUrl(context.templateBucket, context.stackRegion, context.suffix);
+        const actions = new Actions(this.client);
+        context.templateUrl = actions.templateUrl(context.templateBucket, context.stackRegion, context.suffix);
 
         try {
-            await this.cfnconfig.actions.saveTemplate(context.templateUrl, stableStringify(context.newTemplate, { space: 2 }));
+            await actions.saveTemplate(context.templateUrl, stableStringify(context.newTemplate, { space: 2 }));
         } catch (err) {
             let msg = '';
             if (err instanceof Actions.BucketNotFoundError) msg += 'Could not find template bucket: ';
@@ -450,8 +415,9 @@ class Operations {
     }
 
     static async cancelStackDeploy(context) {
+        const actions = new Actions(this.client);
         try {
-            await this.cfnconfig.actions.cancel(context.stackName);
+            await actions.cancel(context.stackName);
         } catch (err) {
             let msg = '';
             msg += err.message;
@@ -463,8 +429,9 @@ class Operations {
     }
 
     static async validateTemplate(context) {
+        const actions = new Actions(this.client);
         try {
-            await this.cfnconfig.actions.validate(context.stackRegion, context.templateUrl);
+            await actions.validate(context.stackRegion, context.templateUrl);
         } catch (err) {
             let msg = 'Invalid template: '; // err instanceof Actions.CloudFormationError
             msg += err.message;
@@ -502,8 +469,9 @@ class Operations {
     }
 
     static async getChangeset(context, changeSetType) {
+        const actions = new Actions(this.client);
         try {
-            const details = await this.cfnconfig.actions.diff(
+            const details = await actions.diff(
                 context.stackName,
                 context.stackRegion,
                 changeSetType,
@@ -537,8 +505,9 @@ class Operations {
     }
 
     static async executeChangeSet(context) {
+        const actions = new Actions(this.client);
         try {
-            await this.cfnconfig.actions.executeChangeSet(context.stackName, context.stackRegion, context.changeset.id);
+            await actions.executeChangeSet(context.stackName, context.stackRegion, context.changeset.id);
         } catch (err) {
             let msg = '';
             if (err instanceof Actions.CloudFormationError) msg += 'Failed to execute changeset: ';
@@ -590,10 +559,12 @@ class Operations {
     }
 
     static async loadConfig(context) {
+        const lookup = new Lookup(this.client);
+
         if (!context.configName) {
             if (context.overrides.defaultConfig) {
                 try {
-                    const info = await Lookup.defaultConfiguration(context.overrides.defaultConfig);
+                    const info = await lookup.defaultConfiguration(context.overrides.defaultConfig);
                     context.oldParameters = info;
 
                     return;
@@ -613,7 +584,7 @@ class Operations {
         }
 
         try {
-            const info = await Lookup.configuration(context.baseName, context.configBucket, context.configName);
+            const info = await lookup.configuration(context.baseName, context.configBucket, context.configName);
             context.oldParameters = info;
         } catch (err){
             let msg = '';
@@ -642,8 +613,9 @@ class Operations {
     }
 
     static async deleteStack(context) {
+        const actions = new Actions(this.client);
         try {
-            await this.cfnconfig.actions.delete(context.stackName);
+            await actions.delete(context.stackName);
         } catch (err) {
             let msg = 'Failed to delete stack: '; // err instanceof Actions.CloudFormationError
             msg += err.message;
@@ -654,8 +626,9 @@ class Operations {
     }
 
     static async monitorStack(context) {
+        const actions = new Actions(this.client);
         try {
-            await this.cfnconfig.actions.monitor(context.stackName, context.stackRegion);
+            await actions.monitor(context.stackName, context.stackRegion);
         } catch (err) {
             err.failure = err.message;
             err.message = `Monitoring your deploy failed, but the deploy in region ${context.stackRegion} will continue. Check on your stack's status in the CloudFormation console.`;
@@ -664,8 +637,9 @@ class Operations {
     }
 
     static async getOldParameters(context) {
+        const lookup = new Lookup(this.client);
         try {
-            const info = await Lookup.parameters(context.stackName, context.stackRegion);
+            const info = await lookup.parameters(context.stackName, context.stackRegion);
             context.oldParameters = info;
         } catch (err) {
             let msg = '';
@@ -689,7 +663,7 @@ class Operations {
     }
 
     static async saveConfig(context) {
-        const kms = (context.overrides.kms && typeof context.overrides.kms !== 'string') ? 'alias/cloudformation' : context.overrides.kms;
+        const actions = new Actions(this.client);
         const maskedParameters = Object.assign({}, context.newParameters || {});
         const templateBody = context.newTemplate || {};
 
@@ -702,13 +676,12 @@ class Operations {
 
 
         try {
-            await this.cfnconfig.actions.saveConfiguration(
+            await actions.saveConfiguration(
                 context.baseName,
                 context.stackName,
                 context.stackRegion,
                 context.configBucket,
-                maskedParameters,
-                kms
+                maskedParameters
             );
         } catch (err) {
             let msg = '';
@@ -772,10 +745,11 @@ function compareTemplate(existing, desired) {
             const delimiter = '\n---------------------------------------------\n\n';
 
             if (color === 'grey') {
-                const lines = part.value.split('\n').slice(0, -1);
+                const lines = part.value.split('\n').slice(0, tw
+);
                 if (lines.length > 10) {
-                    const first = lines.slice(0, 3).map((line) => ` ${line}`);
-                    const last = lines.slice(-3).map((line) => ` ${line}`);
+                    const first = lines.slice(0, 3).map((line: string) => ` ${line}`);
+                    const last = lines.slice(-3).map((line: string) => ` ${line}`);
                     if (i !== 0) diffText += `${first.join('\n')}\n`.grey;
                     if (i !== 0 && i !== strDiff.length - 1) diffText += delimiter.grey;
                     if (i !== strDiff.length - 1) diffText += `${last.join('\n')}\n`.grey;

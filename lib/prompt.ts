@@ -7,10 +7,10 @@ export default class Prompt {
     /**
      * Confirm an action with a yes/no prompt
      *
-     * @param {string} message - a question for the user to answer yes or no
-     * @param {boolean} [defaultValue=true] - boolean to use as default
+     * @param message - a question for the user to answer yes or no
+     * @param [defaultValue=true] - boolean to use as default
      */
-    static async confirm(message, defaultValue=true) {
+    static async confirm(message: string, defaultValue: boolean = true) {
         const lines = message.split('\n');
 
         if (lines.length > 1) {
@@ -33,10 +33,10 @@ export default class Prompt {
     /**
      * Prompt the user for text input
      *
-     * @param {string} message - the message to prompt
-     * @param {string} [def] - a default value
+     * @param message - the message to prompt
+     * @param [def] - a default value
      */
-    static async input(message, def) {
+    static async input(message: string, def: string) {
         const answers = await inquirer.prompt({
             type: 'input',
             name: 'data',
@@ -50,9 +50,9 @@ export default class Prompt {
     /**
      * Prompt the user to select a saved configuration
      *
-     * @param {array} configs - names of available saved configurations
+     * @param configs - names of available saved configurations
      */
-    static async configuration(configs) {
+    static async configuration(configs: string[]) {
         const answers = await inquirer.prompt({
             type: 'list',
             name: 'config',

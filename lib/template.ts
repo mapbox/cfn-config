@@ -1,5 +1,5 @@
 import fs from 'fs/promises';
-import CFNConfig from '../index.js';
+import type { CFNConfigClient } from '../index.js';
 // @ts-ignore
 import error from 'fasterror';
 import s3urls from '@openaddresses/s3urls';
@@ -18,10 +18,10 @@ import {
  * Cloudformation Template
  */
 export default class Template {
-    cfnconfig: CFNConfig;
+    client: CFNConfigClient;
 
-    constructor(cfnconfig: CFNConfig) {
-        this.cfnconfig = cfnconfig;
+    constructor(client: CFNConfigClient) {
+        this.client = client;
     }
 
     /**
@@ -68,7 +68,7 @@ export default class Template {
                 return templateBody;
             }
         } else {
-            let s3 = new S3Client(this.cfnconfig.client);
+            let s3 = new S3Client(this.client);
 
             let data;
             try {
@@ -79,7 +79,7 @@ export default class Template {
                 throw new Template.NotFoundError('%s could not be loaded - S3 responded with %s: %s', templatePath, err.code, err.message);
             }
 
-            s3 = new S3Client(this.cfnconfig.client);
+            s3 = new S3Client(this.client);
 
             try {
                 data = await s3.send(new GetObjectCommand(params));
@@ -112,7 +112,7 @@ export default class Template {
         overrides.kmsKeyId = (overrides.kmsKeyId && typeof overrides.kmsKeyId !== 'string') ? 'alias/cloudformation' : overrides.kmsKeyId;
 
         // Not sure where the region should come from, but it's very important here
-        const kms = new KMSClient(this.cfnconfig.client);
+        const kms = new KMSClient(this.client);
 
         return Object.keys(templateBody.Parameters || {}).map((name) => {
             const parameter = templateBody.Parameters[name];
