@@ -326,7 +326,6 @@ class Operations {
     static async promptParameters(context: CommandContext) {
         const template = new TemplateReader(context.client);
 
-        console.error(context.overrides.parameters);
         const questions = template.questions(
             context.newTemplate,
             new Map([...context.oldTemplate.parameters, ...context.overrides.parameters])
@@ -704,7 +703,7 @@ function changesetParameters(
     newParameters: Map<string, string>,
     isCreate: boolean
 ): Parameter[]  {
-    return Object.entries(newParameters).map(([key, value]) => {
+    return Array.from(newParameters.keys()).map(([key, value]) => {
         const parameter: Parameter = {
             ParameterKey: key
         };
