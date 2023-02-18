@@ -592,11 +592,6 @@ class Operations {
 
     static async saveConfig(context: CommandContext) {
         const actions = new Actions(context.client);
-        const template = context.newTemplate || new Template();
-
-        Object.keys(template.body.Parameters || {}).forEach((name) => {
-            const parameter = template.body.Parameters[name];
-        });
 
         try {
             await actions.saveConfiguration(
