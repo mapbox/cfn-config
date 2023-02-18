@@ -362,7 +362,7 @@ async function describeChangeset(cfn: CloudFormationClient, name: string, change
         const data: DescribeChangeSetCommandOutput = await cfn.send(new DescribeChangeSetCommand({
             ChangeSetName: changesetId,
             StackName: name,
-            NextToken: nextToken ? nextToken : nextToken
+            NextToken: nextToken ? nextToken : undefined
         }));
 
         changesetDescriptions = data;

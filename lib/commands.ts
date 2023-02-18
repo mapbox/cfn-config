@@ -703,7 +703,7 @@ function changesetParameters(
     newParameters: Map<string, string>,
     isCreate: boolean
 ): Parameter[]  {
-    return Array.from(newParameters.keys()).map(([key, value]) => {
+    return Array.from(newParameters.keys()).map((key) => {
         const parameter: Parameter = {
             ParameterKey: key
         };
@@ -711,11 +711,11 @@ function changesetParameters(
         const unchanged = oldParameters.get(key) === newParameters.get(key);
 
         if (isCreate) {
-            parameter.ParameterValue = value;
+            parameter.ParameterValue = newParameters.get(key);
         } else if (unchanged) {
             parameter.UsePreviousValue = true;
         } else {
-            parameter.ParameterValue = value;
+            parameter.ParameterValue = newParameters.get(key);
         }
 
         return parameter;
