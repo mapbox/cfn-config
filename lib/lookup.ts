@@ -13,6 +13,9 @@ import {
     GetObjectCommand,
     GetBucketLocationCommand
 } from '@aws-sdk/client-s3';
+import {
+    Template
+} from './template.js';
 import type {
     CFNConfigClient
 } from '../index.js';
@@ -146,7 +149,7 @@ export default class Lookup {
      *
      * @param StackName - the full name of the stack
      */
-    async template(StackName: string) {
+    async template(StackName: string): Promise<Template> {
         const cfn = new CloudFormationClient(this.client);
 
         let data;
@@ -166,7 +169,7 @@ export default class Lookup {
 
         try {
             // If this fails the above API probably returned YAML, ask for the processed result
-            return JSON.parse(data.TemplateBody);
+            return new Template(JSON.parse(data.TemplateBody));
         } catch (err) {
             try {
                 data = await cfn.send(new GetTemplateCommand({
@@ -174,7 +177,7 @@ export default class Lookup {
                     TemplateStage: 'Processed'
                 }));
 
-                return JSON.parse(data.TemplateBody);
+                return new Template(JSON.parse(data.TemplateBody));
             } catch (err) {
                 if (err.code === 'ValidationError' && /Stack with id/.test(err.message)) {
                     throw new Lookup.StackNotFoundError(`Stack ${StackName} not found in ${this.client.region}`);
