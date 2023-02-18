@@ -8,8 +8,8 @@ import {
 } from '@aws-sdk/client-s3';
 
 export interface CloudFormationTemplate {
-    Description: string;
-    Parameters: {
+    Description?: string;
+    Parameters?: {
         [x: string]: {
             Type: string;
             Default?: string;
@@ -19,11 +19,11 @@ export interface CloudFormationTemplate {
             [x: string]: unknown;
         };
     };
-    Resources: {
+    Resources?: {
         [x: string]: object;
     };
     Metadata?: object;
-    Outputs: object;
+    Outputs?: object;
     Mappings?: object;
     [x: string]: unknown;
 }
@@ -31,7 +31,7 @@ export interface CloudFormationTemplate {
 export class Template {
     body: CloudFormationTemplate;
     parameters: Map<string, string>
-    constructor(body?: any) {
+    constructor(body?: CloudFormationTemplate) {
         if (!body.Description) body.Description = '';
         if (!body.Parameters) body.Parameters = {};
         if (!body.Resources) body.Resources = {};
@@ -97,7 +97,7 @@ export default class TemplateReader {
             }
 
             if (typeof templateBody === 'function') {
-                return await templateBody(options);
+                return new Template(await templateBody(options));
             } else {
                 return new Template(templateBody);
             }
@@ -138,7 +138,7 @@ export default class TemplateReader {
      * @param {object} templateBody - a parsed CloudFormation template
      */
     questions(template: Template, defaults: Map<string, string> = new Map()) {
-        return Array.from(template.body.Parameters.keys()).map((name: string) => {
+        return Object.keys(template.body.Parameters).map((name: string) => {
             const parameter = template.body.Parameters[name];
 
             const question: any = {};
