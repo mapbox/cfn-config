@@ -227,6 +227,8 @@ class CommandContext {
     stackRegion: string;
     configBucket: string;
     templateBucket: string;
+    oldTemplate: Template;
+    newTemplate: Template;
     overrides: {
         parameters: Map<string, string>;
     };
@@ -243,8 +245,6 @@ class CommandContext {
 
     template?: string;
     templateUrl?: string;
-    oldTemplate?: Template;
-    newTemplate?: Template;
 
     constructor(
         client: CFNConfigClient,
@@ -262,6 +262,9 @@ class CommandContext {
         this.templateBucket = config.templateBucket;
         this.diffs = {};
         this.tags = config.tags || [];
+
+        this.oldTemplate = new Template();
+        this.newTemplate = new Template();
 
         this.overrides = {
             parameters: overrides.parameters || new Map()
@@ -326,12 +329,11 @@ class Operations {
     static async promptParameters(context: CommandContext) {
         const template = new TemplateReader(context.client);
 
-        const parameters = context.oldTemplate
-            ? new Map([...context.oldTemplate.parameters, ...context.overrides.parameters])
-            : new Map([...context.overrides.parameters])
+        const parameters = new Map([...context.oldTemplate.parameters, ...context.overrides.parameters]);
 
         const questions = template.questions(
             context.newTemplate,
+            parameters
         );
 
         const answers = await Prompt.parameters(questions);

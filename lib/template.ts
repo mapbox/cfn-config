@@ -31,7 +31,7 @@ export interface CloudFormationTemplate {
 export class Template {
     body: CloudFormationTemplate;
     parameters: Map<string, string>
-    constructor(body?: CloudFormationTemplate) {
+    constructor(body: CloudFormationTemplate = {}) {
         if (!body.Description) body.Description = '';
         if (!body.Parameters) body.Parameters = {};
         if (!body.Resources) body.Resources = {};
