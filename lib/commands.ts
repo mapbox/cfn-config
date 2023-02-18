@@ -20,10 +20,15 @@ import type {
 import 'colors';
 
 export interface CommandOptions {
+    base?: string;
     name?: string;
     tags?: Tag[];
     configBucket?: string;
     templateBucket?: string;
+}
+
+export interface CommandOverrides {
+    parameters?: Map<string, string>;
 }
 
 /**
@@ -53,20 +58,26 @@ class Commands {
      * @param suffix - the trailing part of the new stack's name
      * @param template - either the template as object or the filesystem path to the template file to load
      */
-    async create(suffix: string, template: string) {
-        const context = new CommandContext(this.client, this.config, suffix, [
-            Operations.createPreamble,
-            Operations.selectConfig,
-            Operations.loadConfig,
-            Operations.promptParameters,
-            Operations.confirmCreate,
-            Operations.saveTemplate,
-            Operations.validateTemplate,
-            Operations.getChangesetCreate,
-            Operations.executeChangeSet,
-            Operations.monitorStack,
-            Operations.saveConfig
-        ]);
+    async create(suffix: string, template: string, overrides: CommandOverrides) {
+        const context = new CommandContext(
+            this.client,
+            this.config,
+            overrides,
+            suffix,
+            [
+                Operations.createPreamble,
+                Operations.selectConfig,
+                Operations.loadConfig,
+                Operations.promptParameters,
+                Operations.confirmCreate,
+                Operations.saveTemplate,
+                Operations.validateTemplate,
+                Operations.getChangesetCreate,
+                Operations.executeChangeSet,
+                Operations.monitorStack,
+                Operations.saveConfig
+            ]
+        );
 
         context.template = template;
 
@@ -86,20 +97,26 @@ class Commands {
      * @param suffix - the trailing part of the new stack's name
      * @param template - either the template as object or the filesystem path to the template file to load
      */
-    async update(suffix: string, template: string) {
-        const context = new CommandContext(this.client, this.config, suffix, [
-            Operations.updatePreamble,
-            Operations.promptParameters,
-            Operations.confirmParameters,
-            Operations.confirmTemplate,
-            Operations.saveTemplate,
-            Operations.validateTemplate,
-            Operations.getChangesetUpdate,
-            Operations.confirmChangeset,
-            Operations.executeChangeSet,
-            Operations.monitorStack,
-            Operations.saveConfig
-        ]);
+    async update(suffix: string, template: string, overrides: CommandOverrides) {
+        const context = new CommandContext(
+            this.client,
+            this.config,
+            overrides,
+            suffix,
+            [
+                Operations.updatePreamble,
+                Operations.promptParameters,
+                Operations.confirmParameters,
+                Operations.confirmTemplate,
+                Operations.saveTemplate,
+                Operations.validateTemplate,
+                Operations.getChangesetUpdate,
+                Operations.confirmChangeset,
+                Operations.executeChangeSet,
+                Operations.monitorStack,
+                Operations.saveConfig
+            ]
+        );
 
         context.template = template;
 
@@ -114,12 +131,18 @@ class Commands {
      *
      * @param suffix - the trailing part of the existing stack's name
      */
-    async delete(suffix: string) {
-        const context = new CommandContext(this.client, this.config, suffix, [
-            Operations.confirmDelete,
-            Operations.deleteStack,
-            Operations.monitorStack
-        ]);
+    async delete(suffix: string, overrides: CommandOverrides) {
+        const context = new CommandContext(
+            this.client,
+            this.config,
+            overrides,
+            suffix,
+            [
+                Operations.confirmDelete,
+                Operations.deleteStack,
+                Operations.monitorStack
+            ]
+        );
 
         if (this.dryrun) return context;
         await context.run();
@@ -130,11 +153,17 @@ class Commands {
      *
      * @param suffix - the trailing part of the stack's name
      */
-    async cancel(suffix: string) {
-        const context = new CommandContext(this.client, this.config, suffix, [
-            Operations.cancelStackDeploy,
-            Operations.monitorStack
-        ]);
+    async cancel(suffix: string, overrides: CommandOverrides) {
+        const context = new CommandContext(
+            this.client,
+            this.config,
+            overrides,
+            suffix,
+            [
+                Operations.cancelStackDeploy,
+                Operations.monitorStack
+            ]
+        );
 
         if (this.dryrun) return context;
         await context.run();
@@ -160,13 +189,19 @@ class Commands {
      *
      * @param {string} suffix - the trailing part of the new stack's name
      */
-    async save(suffix: string) {
-        const context = new CommandContext(this.client, this.config, suffix, [
-            Operations.getOldParameters,
-            Operations.promptSaveConfig,
-            Operations.confirmSaveConfig,
-            Operations.saveConfig
-        ]);
+    async save(suffix: string, overrides: CommandOverrides) {
+        const context = new CommandContext(
+            this.client,
+            this.config,
+            overrides,
+            suffix,
+            [
+                Operations.getOldParameters,
+                Operations.promptSaveConfig,
+                Operations.confirmSaveConfig,
+                Operations.saveConfig
+            ]
+        );
 
         if (this.dryrun) return context;
         await context.run();
@@ -192,6 +227,9 @@ class CommandContext {
     stackRegion: string;
     configBucket: string;
     templateBucket: string;
+    overrides: {
+        parameters: Map<string, string>;
+    };
 
     changeset?: ChangeSetDetail;
     changesetParameters?: Parameter[];
@@ -208,7 +246,13 @@ class CommandContext {
     oldTemplate?: Template;
     newTemplate?: Template;
 
-    constructor(client: CFNConfigClient, config: CommandOptions, suffix: string, operations: Function[])  {
+    constructor(
+        client: CFNConfigClient,
+        config: CommandOptions,
+        overrides: CommandOverrides,
+        suffix: string,
+        operations: Function[])
+    {
         this.client = client;
         this.config = config;
         this.baseName = config.name;
@@ -218,6 +262,10 @@ class CommandContext {
         this.templateBucket = config.templateBucket;
         this.diffs = {};
         this.tags = config.tags || [];
+
+        this.overrides = {
+            parameters: overrides.parameters || new Map()
+        }
 
         this.operations = operations;
     }
@@ -277,7 +325,12 @@ class Operations {
 
     static async promptParameters(context: CommandContext) {
         const template = new TemplateReader(context.client);
-        const questions = template.questions(context.newTemplate, context.oldTemplate.parameters);
+
+        console.error(context.overrides.parameters);
+        const questions = template.questions(
+            context.newTemplate,
+            new Map([...context.oldTemplate.parameters, ...context.overrides.parameters])
+        );
 
         const answers = await Prompt.parameters(questions);
 

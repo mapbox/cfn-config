@@ -64,24 +64,9 @@ export interface ChangeSetDetailChange {
     replacement: boolean;
 }
 
-/**
- * Error representing an unexpected failure in a CloudFormation request
- */
 class CloudFormationError extends Error {}
-
-/**
- * Error representing a bucket that does not exist
- */
 class BucketNotFoundError extends Error {}
-
-/**
- * Error representing an unexpected failure in an S3 request
- */
 class S3Error extends Error {}
-
-/**
- * Error representing an attempt to execute a changeset that is not executable
- */
 class ChangeSetNotExecutableError extends Error {
     status?: string;
     execution?: string;
