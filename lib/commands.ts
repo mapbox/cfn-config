@@ -569,7 +569,6 @@ function compareParameters(existing: Template, desired: Template) {
 }
 
 function compareTemplate(existing: Template, desired: Template) {
-    console.log('I AM COMPARING');
     const existingstr = stableStringify(existing.body, { space: 2 });
     const desiredstr = stableStringify(desired.body, { space: 2 });
 
