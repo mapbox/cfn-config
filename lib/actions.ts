@@ -258,7 +258,7 @@ export default class Actions {
      * @param bucket - the name of the S3 bucket to save the configuration into
      * @param parameters - name/value pairs defining the stack configuration to save
      */
-    async saveConfiguration(baseName: string, stackName: string, bucket: string, parameters: object) {
+    async saveConfiguration(baseName: string, stackName: string, bucket: string, parameters: Map<string, string>) {
         const lookup = new Lookup(this.client);
         const region = await lookup.bucketRegion(bucket);
 
@@ -270,7 +270,7 @@ export default class Actions {
         const params: PutObjectCommandInput = {
             Bucket: bucket,
             Key: lookup.configKey(baseName, stackName),
-            Body: JSON.stringify(parameters),
+            Body: JSON.stringify(Object.fromEntries(parameters)),
         };
 
         try {

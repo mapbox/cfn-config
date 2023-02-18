@@ -222,26 +222,29 @@ export default class Lookup {
     /**
      * Lookup a saved configuration object from S3
      *
-     * @param {string} name - the base name of the stack (no suffix)
-     * @param {string} bucket - the name of the S3 bucket containing saved configurations
-     * @param {string} config - the name of the saved configuration
+     * @param name - the base name of the stack (no suffix)
+     * @param Bucket - the name of the S3 bucket containing saved configurations
+     * @param config - the name of the saved configuration
      */
-    async configuration(name: string, bucket: string, config: string): Promise<Map<string, string>> {
-        const region = await this.bucketRegion(bucket);
+    async configuration(name: string, Bucket: string, config: string): Promise<Map<string, string>> {
+        const region = await this.bucketRegion(Bucket);
 
-        const s3 = new S3Client(this.client);
+        const s3 = new S3Client({
+            region,
+            credentials: this.client.credentials
+        });
 
         let data;
         try {
             data = await s3.send(new GetObjectCommand({
-                Bucket: bucket,
+                Bucket,
                 Key: this.configKey(name, config)
             }));
         } catch (err) {
             if (err.code === 'NoSuchBucket') {
-                throw new Lookup.BucketNotFoundError(`S3 bucket ${bucket} not found in ${region}`);
+                throw new Lookup.BucketNotFoundError(`S3 bucket ${Bucket} not found in ${region}`);
             } else if (err.code === 'NoSuchKey') {
-                throw new Lookup.ConfigurationNotFoundError(`Configuration ${config} not found in ${bucket} in ${region}`);
+                throw new Lookup.ConfigurationNotFoundError(`Configuration ${config} not found in ${Bucket} in ${region}`);
             } else {
                 throw new Lookup.S3Error(err.message);
             }
@@ -256,7 +259,7 @@ export default class Lookup {
 
             return config;
         } catch (err) {
-            throw new Lookup.InvalidConfigurationError('Invalid configuration');
+            throw new Lookup.InvalidConfigurationError(`Invalid configuration: ${err.message}`);
         }
     }
 
@@ -304,7 +307,7 @@ export default class Lookup {
      * @returns an S3 key
      */
     configKey(name: string, config: string): string {
-        return `${name}/${config}-${this.client.region}.cfn.json`;
+        return `${name}/${config}.cfn.json`;
     }
 
     /**

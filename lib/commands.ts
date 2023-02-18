@@ -326,9 +326,12 @@ class Operations {
     static async promptParameters(context: CommandContext) {
         const template = new TemplateReader(context.client);
 
+        const parameters = context.oldTemplate
+            ? new Map([...context.oldTemplate.parameters, ...context.overrides.parameters])
+            : new Map([...context.overrides.parameters])
+
         const questions = template.questions(
             context.newTemplate,
-            new Map([...context.oldTemplate.parameters, ...context.overrides.parameters])
         );
 
         const answers = await Prompt.parameters(questions);
@@ -505,6 +508,8 @@ class Operations {
     }
 
     static async loadConfig(context: CommandContext) {
+        if (!context.configName) return;
+
         const lookup = new Lookup(context.client);
 
         try {
