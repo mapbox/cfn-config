@@ -357,12 +357,12 @@ async function describeChangeset(cfn: CloudFormationClient, name: string, change
     let changesetDescriptions;
     let changes: Change[] = [];
 
-    let nextToken = '';
+    let nextToken: string | boolean = true;
     do {
         const data: DescribeChangeSetCommandOutput = await cfn.send(new DescribeChangeSetCommand({
             ChangeSetName: changesetId,
             StackName: name,
-            NextToken: nextToken ? nextToken : undefined
+            NextToken: typeof nextToken === 'string' ? nextToken : undefined
         }));
 
         changesetDescriptions = data;
@@ -372,7 +372,7 @@ async function describeChangeset(cfn: CloudFormationClient, name: string, change
             if (!data.NextToken) break;
         }
 
-        nextToken = data.NextToken || '';
+        nextToken = data.NextToken || true;
         if (nextToken) await sleep(1000);
     } while (nextToken);
 

@@ -205,6 +205,8 @@ export default class Lookup {
         try {
             const data = await s3.send(new ListObjectsCommand({ Bucket, Prefix: name + '/' }));
 
+            if (!data.Contents) return [];
+
             return data.Contents.filter((obj) => {
                 return obj.Key.split('.').slice(-2).join('.') === 'cfn.json' && obj.Size > 0;
             }).map((obj) => {
