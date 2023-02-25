@@ -292,113 +292,113 @@ test('[actions.diff] changeset failed to create', async(t) => {
 
 test('[actions.diff] success', async(t) => {
     const url = 'https://my-bucket.s3.amazonaws.com/my-template.json';
-    let changesetId;
+    let changesetId: string;
     let polled = 0;
 
-    AWS.stub('CloudFormation', 'createChangeSet', function(params) {
-        t.ok(/^[\w\d-]{1,128}$/.test(params.ChangeSetName), 'createChangeSet valid change set name');
-        t.deepEqual(params, {
-            ChangeSetName: params.ChangeSetName,
-            ChangeSetType: 'UPDATE',
-            StackName: 'my-stack',
-            Capabilities: ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM', 'CAPABILITY_AUTO_EXPAND'],
-            Parameters: [
-                { ParameterKey: 'Name', ParameterValue: 'Chuck' },
-                { ParameterKey: 'Age', ParameterValue: 18 },
-                { ParameterKey: 'Handedness', ParameterValue: 'right' },
-                { ParameterKey: 'Pets', ParameterValue: 'Duck,Wombat' },
-                { ParameterKey: 'LuckyNumbers', ParameterValue: '3,7,42' },
-                { ParameterKey: 'SecretPassword', ParameterValue: 'secret' }
-            ],
-            TemplateURL: url,
-            Tags: [{
-                Key: 'developer',
-                Value: 'ingalls'
-            }]
-        }, 'createChangeSet expected parameters');
-
-        changesetId = params.ChangeSetName;
-        return this.request.promise.returns(Promise.resolve({ Id: 'changeset:arn' }));
-    });
-
-    AWS.stub('CloudFormation', 'describeChangeSet', function(params) {
-        polled++;
-        t.equal(params.ChangeSetName, changesetId, 'describe correct changeset');
-        t.equal(params.StackName, 'my-stack', 'describe correct stackname');
-        if (params.NextToken) t.equal(params.NextToken, 'xxx', 'used next token to paginate');
-
-        if (polled === 1) {
-            return this.request.promise.returns(Promise.resolve({
-                ChangeSetName: changesetId,
-                ChangeSetId: 'changeset:arn1',
-                StackId: 'arn:aws:cloudformation:us-east-1:123456789012:stack/my-stack/be3aa370-5b64-11e6-a232-500c217dbe62',
+    Sinon.stub(CloudFormationClient.prototype, 'send').callsFake((command) => {
+        if (command instanceof CreateChangeSetCommand) {
+            t.ok(/^[\w\d-]{1,128}$/.test(params.ChangeSetName), 'createChangeSet valid change set name');
+            t.deepEqual(params, {
+                ChangeSetName: params.ChangeSetName,
+                ChangeSetType: 'UPDATE',
                 StackName: 'my-stack',
-                ExecutionStatus: 'AVAILABLE',
-                Status: 'CREATE_IN_PROGRESS',
-                Changes: []
-            }));
-        } else if (polled === 2) {
-            return this.request.promise.returns(Promise.resolve({
-                ChangeSetName: changesetId,
-                ChangeSetId: 'changeset:arn1',
-                StackId: 'arn:aws:cloudformation:us-east-1:123456789012:stack/my-stack/be3aa370-5b64-11e6-a232-500c217dbe62',
-                StackName: 'my-stack',
-                ExecutionStatus: 'AVAILABLE',
-                Status: 'CREATE_IN_PROGRESS',
-                Changes: [{
-                    Type: 'Resource',
-                    ResourceChange: {
-                        Action: 'Modify',
-                        LogicalResourceId: 'Topic',
-                        PhysicalResourceId: 'arn:aws:sns:us-east-1:123456789012:another-stack-Topic-ABCDEFGHIJKL',
-                        ResourceType: 'AWS::SNS::Topic',
-                        Replacement: 'False'
-                    }
+                Capabilities: ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM', 'CAPABILITY_AUTO_EXPAND'],
+                Parameters: [
+                    { ParameterKey: 'Name', ParameterValue: 'Chuck' },
+                    { ParameterKey: 'Age', ParameterValue: 18 },
+                    { ParameterKey: 'Handedness', ParameterValue: 'right' },
+                    { ParameterKey: 'Pets', ParameterValue: 'Duck,Wombat' },
+                    { ParameterKey: 'LuckyNumbers', ParameterValue: '3,7,42' },
+                    { ParameterKey: 'SecretPassword', ParameterValue: 'secret' }
+                ],
+                TemplateURL: url,
+                Tags: [{
+                    Key: 'developer',
+                    Value: 'ingalls'
                 }]
-            }));
-        } else if (polled === 3) {
+            }, 'createChangeSet expected parameters');
+
+            changesetId = params.ChangeSetName;
+            return Promise.resolve({ Id: 'changeset:arn' });
+        } else if (command instanceof DescribeChangeSetCommand) {
+            polled++;
+            t.equal(params.ChangeSetName, changesetId, 'describe correct changeset');
+            t.equal(params.StackName, 'my-stack', 'describe correct stackname');
+            if (params.NextToken) t.equal(params.NextToken, 'xxx', 'used next token to paginate');
+
+            if (polled === 1) {
+                return this.request.promise.returns(Promise.resolve({
+                    ChangeSetName: changesetId,
+                    ChangeSetId: 'changeset:arn1',
+                    StackId: 'arn:aws:cloudformation:us-east-1:123456789012:stack/my-stack/be3aa370-5b64-11e6-a232-500c217dbe62',
+                    StackName: 'my-stack',
+                    ExecutionStatus: 'AVAILABLE',
+                    Status: 'CREATE_IN_PROGRESS',
+                    Changes: []
+                }));
+            } else if (polled === 2) {
+                return this.request.promise.returns(Promise.resolve({
+                    ChangeSetName: changesetId,
+                    ChangeSetId: 'changeset:arn1',
+                    StackId: 'arn:aws:cloudformation:us-east-1:123456789012:stack/my-stack/be3aa370-5b64-11e6-a232-500c217dbe62',
+                    StackName: 'my-stack',
+                    ExecutionStatus: 'AVAILABLE',
+                    Status: 'CREATE_IN_PROGRESS',
+                    Changes: [{
+                        Type: 'Resource',
+                        ResourceChange: {
+                            Action: 'Modify',
+                            LogicalResourceId: 'Topic',
+                            PhysicalResourceId: 'arn:aws:sns:us-east-1:123456789012:another-stack-Topic-ABCDEFGHIJKL',
+                            ResourceType: 'AWS::SNS::Topic',
+                            Replacement: 'False'
+                        }
+                    }]
+                }));
+            } else if (polled === 3) {
+                return this.request.promise.returns(Promise.resolve({
+                    ChangeSetName: changesetId,
+                    ChangeSetId: 'changeset:arn1',
+                    StackId: 'arn:aws:cloudformation:us-east-1:123456789012:stack/my-stack/be3aa370-5b64-11e6-a232-500c217dbe62',
+                    StackName: 'my-stack',
+                    ExecutionStatus: 'AVAILABLE',
+                    Status: 'CREATE_COMPLETE',
+                    Changes: [{
+                        Type: 'Resource',
+                        ResourceChange: {
+                            Action: 'Modify',
+                            LogicalResourceId: 'Topic',
+                            PhysicalResourceId: 'arn:aws:sns:us-east-1:123456789012:another-stack-Topic-ABCDEFGHIJKL',
+                            ResourceType: 'AWS::SNS::Topic',
+                            Replacement: 'False'
+                        }
+                    }],
+                    NextToken: 'xxx'
+                }));
+            }
+
+            // This is a partial response object
             return this.request.promise.returns(Promise.resolve({
-                ChangeSetName: changesetId,
-                ChangeSetId: 'changeset:arn1',
+                ChangeSetName: 'aa507e2bdfc55947035a07271e75384efe',
+                ChangeSetId: 'changeset:arn',
                 StackId: 'arn:aws:cloudformation:us-east-1:123456789012:stack/my-stack/be3aa370-5b64-11e6-a232-500c217dbe62',
                 StackName: 'my-stack',
                 ExecutionStatus: 'AVAILABLE',
                 Status: 'CREATE_COMPLETE',
-                Changes: [{
-                    Type: 'Resource',
-                    ResourceChange: {
-                        Action: 'Modify',
-                        LogicalResourceId: 'Topic',
-                        PhysicalResourceId: 'arn:aws:sns:us-east-1:123456789012:another-stack-Topic-ABCDEFGHIJKL',
-                        ResourceType: 'AWS::SNS::Topic',
-                        Replacement: 'False'
+                Changes: [
+                    {
+                        Type: 'Resource',
+                        ResourceChange: {
+                            Action: 'Modify',
+                            LogicalResourceId: 'Topic',
+                            PhysicalResourceId: 'arn:aws:sns:us-east-1:123456789012:my-stack-Topic-DQ8MBRPFONMK',
+                            ResourceType: 'AWS::SNS::Topic',
+                            Replacement: 'False'
+                        }
                     }
-                }],
-                NextToken: 'xxx'
+                ]
             }));
         }
-
-        // This is a partial response object
-        return this.request.promise.returns(Promise.resolve({
-            ChangeSetName: 'aa507e2bdfc55947035a07271e75384efe',
-            ChangeSetId: 'changeset:arn',
-            StackId: 'arn:aws:cloudformation:us-east-1:123456789012:stack/my-stack/be3aa370-5b64-11e6-a232-500c217dbe62',
-            StackName: 'my-stack',
-            ExecutionStatus: 'AVAILABLE',
-            Status: 'CREATE_COMPLETE',
-            Changes: [
-                {
-                    Type: 'Resource',
-                    ResourceChange: {
-                        Action: 'Modify',
-                        LogicalResourceId: 'Topic',
-                        PhysicalResourceId: 'arn:aws:sns:us-east-1:123456789012:my-stack-Topic-DQ8MBRPFONMK',
-                        ResourceType: 'AWS::SNS::Topic',
-                        Replacement: 'False'
-                    }
-                }
-            ]
-        }));
     });
 
     const parameters = [
@@ -419,7 +419,7 @@ test('[actions.diff] success', async(t) => {
     });
 
     try {
-        const data = await Actions.diff('my-stack', 'us-east-1', 'UPDATE', url, parameters, true, [{
+        const data = await actions.diff('my-stack', 'UPDATE', url, parameters, true, [{
             Key: 'developer',
             Value: 'ingalls'
         }]);

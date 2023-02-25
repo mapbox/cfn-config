@@ -266,6 +266,7 @@ class CommandContext {
         this.oldTemplate = new Template();
         this.newTemplate = new Template();
 
+        if (!overrides) overrides = {};
         this.overrides = {
             parameters: overrides.parameters || new Map()
         }
