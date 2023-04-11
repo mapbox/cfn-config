@@ -317,12 +317,12 @@ export default class Lookup {
      *
      * @param Bucket - the name of the bucket
      */
-    async bucketRegion(Bucket: string): Promise<string | undefined> {
+    async bucketRegion(Bucket: string): Promise<string> {
         const s3 = new S3Client(this.client);
 
         try {
             const data = await s3.send(new GetBucketLocationCommand({ Bucket }));
-            return data.LocationConstraint || undefined;
+            return data.LocationConstraint || 'us-east-1';
         } catch (err) {
             if (err.code === 'NoSuchBucket') {
                 throw new Lookup.BucketNotFoundError(`S3 bucket ${Bucket} not found`);
