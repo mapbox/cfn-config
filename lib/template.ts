@@ -158,10 +158,10 @@ export default class TemplateReader {
 
             question.validate = (input: string) => {
                 let valid = true;
-                if ('MinLength' in parameter) valid = valid && input.length >= parameter.MinLength;
-                if ('MaxLength' in parameter) valid = valid && input.length <= parameter.MaxLength;
-                if ('MinValue' in parameter) valid = valid && Number(input) >= parameter.MinValue;
-                if ('MaxValue' in parameter) valid = valid && Number(input) <= parameter.MaxValue;
+                if ('MinLength' in parameter) valid = valid && input.length >= Number(parameter.MinLength);
+                if ('MaxLength' in parameter) valid = valid && input.length <= Number(parameter.MaxLength);
+                if ('MinValue' in parameter) valid = valid && Number(input) >= Number(parameter.MinValue);
+                if ('MaxValue' in parameter) valid = valid && Number(input) <= Number(parameter.MaxValue);
                 if (parameter.AllowedPattern) valid = valid && (new RegExp(parameter.AllowedPattern)).test(input);
                 if (parameter.Type === 'List<Number>') valid = valid && input.split(',').every((num) => {
                     return !isNaN(parseFloat(num));

@@ -1,4 +1,5 @@
 {
+    "Description": "",
     "Parameters": {
         "Name": {
             "Type": "String",

@@ -1,3 +1,3 @@
-export default function(options, callback) {
-    setTimeout(callback, 10, null, options);
+export default async function(options) {
+    return options;
 };
