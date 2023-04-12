@@ -106,7 +106,10 @@ test('[prompt.parameters] success', async(t) => {
 
     try {
         const answers = await prompt.parameters({ questions: 'passed through' });
-        t.deepEqual(answers, { questions: 'answers', needsStringify: '6' }, 'received user responses');
+        const res = new Map();
+        res.set('questions', 'answers')
+        res.set('needsStringify', '6');
+        t.deepEqual(answers, res, 'received user responses');
     } catch (err) {
         t.error(err);
     }

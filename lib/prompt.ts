@@ -33,7 +33,7 @@ export default class Prompt {
      * @param message - the message to prompt
      * @param [def] - a default value
      */
-    static async input(message: string, def: string): Promise<string> {
+    static async input(message: string, def?: string): Promise<string> {
         const answers = await inquirer.prompt({
             type: 'input',
             name: 'data',
