@@ -1,20 +1,20 @@
 import test from 'tape';
-import Template from '../lib/template.js';
+import TemplateReader from '../lib/template.js';
 import fs from 'fs';
-import AWS from '@mapbox/mock-aws-sdk-js';
-import { queue } from 'd3-queue';
+import Sinon from 'sinon';
 
 const expected = JSON.parse(fs.readFileSync(new URL('./fixtures/template.json', import.meta.url)));
 
-process.env.AWS_ACCESS_KEY_ID = '-';
-process.env.AWS_SECRET_ACCESS_KEY = '-';
-
 test('[template.read] local file does not exist', async(t) => {
     try {
-        await Template.read(new URL('./fake', import.meta.url));
+        const tr = new TemplateReader({
+            region: 'us-east-1',
+            credentials: { accessKeyId: '-', secretAccessKey: '-' }
+        })
+        await tr.read(new URL('./fake', import.meta.url));
         t.fail();
     } catch (err) {
-        t.ok(err instanceof Template.NotFoundError, 'returned expected error');
+        t.ok(err instanceof TemplateReader.NotFoundError, 'returned expected error');
     }
 
     t.end();
@@ -22,10 +22,14 @@ test('[template.read] local file does not exist', async(t) => {
 
 test('[template.read] local file cannot be parsed', async(t) => {
     try {
-        await Template.read(new URL('./fixtures/malformed-template.json', import.meta.url));
+        const tr = new TemplateReader({
+            region: 'us-east-1',
+            credentials: { accessKeyId: '-', secretAccessKey: '-' }
+        })
+        await tr.read(new URL('./fixtures/malformed-template.json', import.meta.url));
         t.fail();
     } catch (err) {
-        t.ok(err instanceof Template.InvalidTemplateError, 'returned expected error');
+        t.ok(err instanceof TemplateReader.InvalidTemplateError, 'returned expected error');
         t.ok(/Expected ',' or '}' after property value in JSON at position/.test(err.message), 'passthrough parse error');
     }
 
@@ -34,10 +38,14 @@ test('[template.read] local file cannot be parsed', async(t) => {
 
 test('[template.read] local js file cannot be parsed', async(t) => {
     try {
-        await Template.read(new URL('./fixtures/malformed-template.js', import.meta.url));
+        const tr = new TemplateReader({
+            region: 'us-east-1',
+            credentials: { accessKeyId: '-', secretAccessKey: '-' }
+        })
+        await tr.read(new URL('./fixtures/malformed-template.js', import.meta.url));
         t.fail();
     } catch (err) {
-        t.ok(err instanceof Template.InvalidTemplateError, 'returned expected error');
+        t.ok(err instanceof TemplateReader.InvalidTemplateError, 'returned expected error');
         t.ok(/Failed to parse .*/.test(err.message), 'passthrough parse error');
     }
 
@@ -46,10 +54,14 @@ test('[template.read] local js file cannot be parsed', async(t) => {
 
 test('[template.read] S3 no access', async(t) => {
     try {
-        await Template.read(new URL('s3://mapbox/fake'));
+        const tr = new TemplateReader({
+            region: 'us-east-1',
+            credentials: { accessKeyId: '-', secretAccessKey: '-' }
+        })
+        await tr.read(new URL('s3://mapbox/fake'));
         t.fail();
     } catch (err) {
-        t.ok(err instanceof Template.NotFoundError, 'returned expected error');
+        t.ok(err instanceof TemplateReader.NotFoundError, 'returned expected error');
     }
 
     t.end();
