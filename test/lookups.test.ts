@@ -613,23 +613,23 @@ test('[lookup.configuration] S3 error', async(t) => {
         await lookup.configuration('my-stack', 'my-bucket', 'my-stack-staging-us-east-1');
         t.fail();
     } catch (err) {
-        t.ok(err instanceof Lookup.S3Error, 'expected error returned');
+        t.ok(err instanceof Lookup.BucketNotFoundError, 'expected error returned');
     }
 
     Sinon.restore();
     t.end();
 });
 
-/*
 test('[lookup.configuration] requested configuration does not exist', async(t) => {
-    AWS.stub('S3', 'getBucketLocation').returns({
-        promise: () => Promise.resolve('us-east-1')
-    });
-
-    AWS.stub('S3', 'getObject', () => {
-        const err = new Error('The specified key does not exist.');
-        err.code = 'NoSuchKey';
-        throw err;
+    Sinon.stub(S3.S3Client.prototype, 'send').callsFake((command) => {
+        if (command instanceof S3.GetBucketLocationCommand) {
+            return Promise.resolve('us-east-');
+        } else if (command instanceof S3.GetObjectCommand) {
+            t.equal(command.input.Key, 'my-stack/my-stack-staging-us-east-1.cfn.json', 'getObject called with proper key');
+            const err: any = new Error('The specified key does not exist');
+            err.code = 'NoSuchKey';
+            return Promise.reject(err);
+        }
     });
 
     try {
@@ -648,12 +648,14 @@ test('[lookup.configuration] requested configuration does not exist', async(t) =
 });
 
 test('[lookup.configuration] cannot parse object data', async(t) => {
-    AWS.stub('S3', 'getBucketLocation').returns({
-        promise: () => Promise.resolve('us-east-1')
-    });
-
-    AWS.stub('S3', 'getObject').returns({
-        promise: () => Promise.resolve({ Body: new Buffer.from('invalid') })
+    Sinon.stub(S3.S3Client.prototype, 'send').callsFake((command) => {
+        if (command instanceof S3.GetBucketLocationCommand) {
+            return Promise.resolve('us-east-');
+        } else if (command instanceof S3.GetObjectCommand) {
+            return Promise.resolve({
+                Body: Buffer.from('invalid')
+            });
+        }
     });
 
     try {
@@ -681,17 +683,19 @@ test('[lookup.configuration] success', async(t) => {
         SecretPassword: 'secret'
     };
 
-    AWS.stub('S3', 'getBucketLocation').returns({
-        promise: () => Promise.resolve('us-east-1')
-    });
+    Sinon.stub(S3.S3Client.prototype, 'send').callsFake((command) => {
+        if (command instanceof S3.GetBucketLocationCommand) {
+            return Promise.resolve('us-east-');
+        } else if (command instanceof S3.GetObjectCommand) {
+            t.deepEqual(command.input, {
+                Bucket: 'my-bucket',
+                Key: 'my-stack/my-stack-staging-us-east-1.cfn.json'
+            }, 'requested expected configuration');
 
-    AWS.stub('S3', 'getObject', function(params) {
-        t.deepEqual(params, {
-            Bucket: 'my-bucket',
-            Key: 'my-stack/my-stack-staging-us-east-1.cfn.json'
-        }, 'requested expected configuration');
-
-        return this.request.promise.returns(Promise.resolve({ Body: new Buffer.from(JSON.stringify(info)) }));
+            return Promise.resolve({
+                Body: Buffer.from(JSON.stringify(info))
+            });
+        }
     });
 
     try {
@@ -700,7 +704,7 @@ test('[lookup.configuration] success', async(t) => {
             credentials: { accessKeyId: '-', secretAccessKey: '-' }
         })
         const configuration = await lookup.configuration('my-stack', 'my-bucket', 'my-stack-staging-us-east-1');
-        t.deepEqual(configuration, info, 'returned expected stack info');
+        t.deepEqual(configuration, new Map(Object.entries(info)), 'returned expected stack info');
     } catch (err) {
         t.error(err);
     }
@@ -710,7 +714,11 @@ test('[lookup.configuration] success', async(t) => {
 });
 
 test('[lookup.defaultConfiguration] bucket location error', async(t) => {
-    AWS.stub('S3', 'getBucketLocation').yields(new Error('failure'));
+    Sinon.stub(S3.S3Client.prototype, 'send').callsFake((command) => {
+        if (command instanceof S3.GetBucketLocationCommand) {
+            return Promise.reject(new Error('failure'));
+        }
+    });
 
     try {
         const lookup = new Lookup({
@@ -728,14 +736,14 @@ test('[lookup.defaultConfiguration] bucket location error', async(t) => {
 });
 
 test('[lookup.defaultConfiguration] requested configuration does not exist', async(t) => {
-    AWS.stub('S3', 'getBucketLocation').returns({
-        promise: () => Promise.resolve('us-east-1')
-    });
-
-    AWS.stub('S3', 'getObject', () =>  {
-        const err = new Error('The specified key does not exist.');
-        err.code = 'NoSuchKey';
-        throw err;
+    Sinon.stub(S3.S3Client.prototype, 'send').callsFake((command) => {
+        if (command instanceof S3.GetBucketLocationCommand) {
+            return Promise.resolve('us-east-')
+        } else if (command instanceof S3.GetObjectCommand) {
+            const err: any = new Error('The specified key does not exist.');
+            err.code = 'NoSuchKey';
+            return Promise.reject(err);
+        }
     });
 
     try {
@@ -754,12 +762,14 @@ test('[lookup.defaultConfiguration] requested configuration does not exist', asy
 });
 
 test('[lookup.defaultConfiguration] cannot parse object data', async(t) => {
-    AWS.stub('S3', 'getBucketLocation').returns({
-        promise: () => Promise.resolve('us-east-1')
-    });
-
-    AWS.stub('S3', 'getObject').returns({
-        promise: () => Promise.resolve({ Body: new Buffer.from('invalid') })
+    Sinon.stub(S3.S3Client.prototype, 'send').callsFake((command) => {
+        if (command instanceof S3.GetBucketLocationCommand) {
+            return Promise.resolve('us-east-')
+        } else if (command instanceof S3.GetObjectCommand) {
+            return Promise.resolve({
+                Body: Buffer.from('invalid')
+            });
+        }
     });
 
     try {
@@ -787,17 +797,19 @@ test('[lookup.defaultConfiguration] success', async(t) => {
         SecretPassword: 'secret'
     };
 
-    AWS.stub('S3', 'getBucketLocation').returns({
-        promise: () => Promise.resolve('us-east-1')
-    });
+    Sinon.stub(S3.S3Client.prototype, 'send').callsFake((command) => {
+        if (command instanceof S3.GetBucketLocationCommand) {
+            return Promise.resolve('us-east-')
+        } else if (command instanceof S3.GetObjectCommand) {
+            t.deepEqual(command.input, {
+                Bucket: 'my-bucket',
+                Key: 'my-config.cfn.json'
+            }, 'requested expected default configuration');
 
-    AWS.stub('S3', 'getObject', function(params) {
-        t.deepEqual(params, {
-            Bucket: 'my-bucket',
-            Key: 'my-config.cfn.json'
-        }, 'requested expected default configuration');
-
-        return this.request.promise.returns(Promise.resolve({ Body: new Buffer.from(JSON.stringify(info)) }));
+            return Promise.resolve({
+                Body: Buffer.from(JSON.stringify(info))
+            });
+        }
     });
 
     try {
@@ -816,10 +828,12 @@ test('[lookup.defaultConfiguration] success', async(t) => {
 });
 
 test('[lookup.bucketRegion] no bucket', async(t) => {
-    AWS.stub('S3', 'getBucketLocation', () => {
-        const err = new Error('failure');
-        err.code = 'NoSuchBucket';
-        throw err;
+    Sinon.stub(S3.S3Client.prototype, 'send').callsFake((command) => {
+        if (command instanceof S3.GetBucketLocationCommand) {
+            const err: any = new Error('failure');
+            err.code = 'NoSuchBucket';
+            return Promise.reject(err);
+        }
     });
 
     try {
@@ -838,7 +852,11 @@ test('[lookup.bucketRegion] no bucket', async(t) => {
 });
 
 test('[lookup.bucketRegion] failure', async(t) => {
-    AWS.stub('S3', 'getBucketLocation').yields(new Error('failure'));
+    Sinon.stub(S3.S3Client.prototype, 'send').callsFake((command) => {
+        if (command instanceof S3.GetBucketLocationCommand) {
+            return Promise.reject(new Error('failure'));
+        }
+    });
 
     try {
         const lookup = new Lookup({
@@ -856,10 +874,12 @@ test('[lookup.bucketRegion] failure', async(t) => {
 });
 
 test('[lookup.bucketRegion] no bucket', async(t) => {
-    AWS.stub('S3', 'getBucketLocation', () => {
-        const err = new Error('failure');
-        err.code = 'NoSuchBucket';
-        throw err;
+    Sinon.stub(S3.S3Client.prototype, 'send').callsFake((command) => {
+        if (command instanceof S3.GetBucketLocationCommand) {
+            const err: any = new Error('failure');
+            err.code = 'NoSuchBucket';
+            return Promise.reject(err);
+        }
     });
 
     try {
@@ -876,30 +896,3 @@ test('[lookup.bucketRegion] no bucket', async(t) => {
     Sinon.restore();
     t.end();
 });
-
-test('[lookup.bucketRegion] region specified', async(t) => {
-    AWS.stub('S3', 'getBucketLocation', () => {
-        const err = new Error('failure');
-        err.code = 'NoSuchBucket';
-        throw err;
-    });
-
-    try {
-        const lookup = new Lookup({
-            region: 'us-east-1',
-            credentials: { accessKeyId: '-', secretAccessKey: '-' }
-        })
-        await lookup.bucketRegion('my-bucket', 'cn-north-1');
-
-        t.ok(AWS.S3.calledWith({
-            signatureVersion: 'v4',
-            region: 'cn-north-1'
-        }), 'used region in S3 client configuration');
-    } catch (err) {
-        t.error();
-    }
-
-    Sinon.restore();
-    t.end();
-});
-*/
