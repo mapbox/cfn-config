@@ -432,19 +432,22 @@ test('[lookup.configurations] bucket does not exist', async(t) => {
     t.end();
 });
 
-/*
 test('[lookup.configurations] S3 error', async(t) => {
-    AWS.stub('S3', 'getBucketLocation').returns({
-        promise: () => Promise.resolve('us-east-1')
-    });
-
-    AWS.stub('S3', 'listObjects', (params) => {
-        t.equal(params.Prefix, 'my-stack/', 'listObjects called with proper prefix');
-        throw new Error('something unexpected');
+    Sinon.stub(S3.S3Client.prototype, 'send').callsFake((command) => {
+        if (command instanceof S3.GetBucketLocationCommand) {
+            return Promise.resolve('us-east-1')
+        } else if (command instanceof S3.ListObjectsCommand) {
+            t.equal(command.input.Prefix, 'my-stack/', 'listObjects called with proper prefix');
+            return Promise.reject(new Error('something unexpected'));
+        }
     });
 
     try {
-        await Lookup.configurations('my-stack', 'my-bucket');
+        const lookup = new Lookup({
+            region: 'us-east-1',
+            credentials: { accessKeyId: '-', secretAccessKey: '-' }
+        })
+        await lookup.configurations('my-stack', 'my-bucket');
         t.fail();
     } catch (err) {
         t.ok(err instanceof Lookup.S3Error, 'expected error returned');
@@ -464,7 +467,11 @@ test('[lookup.configurations] no saved configs found', async(t) => {
     });
 
     try {
-        const configs = await Lookup.configurations('my-stack', 'my-bucket');
+        const lookup = new Lookup({
+            region: 'us-east-1',
+            credentials: { accessKeyId: '-', secretAccessKey: '-' }
+        })
+        const configs = await lookup.configurations('my-stack', 'my-bucket');
         t.deepEqual(configs, [], 'expected empty array of configs');
     } catch (err) {
         t.error(err);
@@ -474,6 +481,7 @@ test('[lookup.configurations] no saved configs found', async(t) => {
     t.end();
 });
 
+/*
 test('[lookup.configurations] found multiple saved configs', async(t) => {
     AWS.stub('S3', 'getBucketLocation').returns({
         promise: () => Promise.resolve('us-east-1')
@@ -491,7 +499,11 @@ test('[lookup.configurations] found multiple saved configs', async(t) => {
     });
 
     try {
-        const configs = await Lookup.configurations('my-stack', 'my-bucket');
+        const lookup = new Lookup({
+            region: 'us-east-1',
+            credentials: { accessKeyId: '-', secretAccessKey: '-' }
+        })
+        const configs = await lookup.configurations('my-stack', 'my-bucket');
         t.deepEqual(configs, [
             'staging',
             'production'
@@ -514,7 +526,11 @@ test('[lookup.configurations] region specified', async(t) => {
     });
 
     try {
-        await Lookup.configurations('my-stack', 'my-bucket', 'cn-north-1');
+        const lookup = new Lookup({
+            region: 'us-east-1',
+            credentials: { accessKeyId: '-', secretAccessKey: '-' }
+        })
+        await lookup.configurations('my-stack', 'my-bucket', 'cn-north-1');
 
         t.ok(AWS.S3.calledWith({
             signatureVersion: 'v4',
@@ -532,7 +548,11 @@ test('[lookup.configuration] bucket location error', async(t) => {
     AWS.stub('S3', 'getBucketLocation').yields(new Error('failure'));
 
     try {
-        await Lookup.configuration('my-stack', 'my-bucket', 'my-stack-staging-us-east-1');
+        const lookup = new Lookup({
+            region: 'us-east-1',
+            credentials: { accessKeyId: '-', secretAccessKey: '-' }
+        })
+        await lookup.configuration('my-stack', 'my-bucket', 'my-stack-staging-us-east-1');
         t.fail();
     } catch (err) {
         t.ok(err instanceof Lookup.S3Error, 'expected error returned');
@@ -554,7 +574,11 @@ test('[lookup.configuration] bucket does not exist', async(t) => {
     });
 
     try {
-        await Lookup.configuration('my-stack', 'my-bucket', 'my-stack-staging-us-east-1');
+        const lookup = new Lookup({
+            region: 'us-east-1',
+            credentials: { accessKeyId: '-', secretAccessKey: '-' }
+        })
+        await lookup.configuration('my-stack', 'my-bucket', 'my-stack-staging-us-east-1');
         t.fail();
     } catch (err) {
         t.ok(err instanceof Lookup.BucketNotFoundError, 'expected error returned');
@@ -575,7 +599,11 @@ test('[lookup.configuration] S3 error', async(t) => {
     });
 
     try {
-        await Lookup.configuration('my-stack', 'my-bucket', 'my-stack-staging-us-east-1');
+        const lookup = new Lookup({
+            region: 'us-east-1',
+            credentials: { accessKeyId: '-', secretAccessKey: '-' }
+        })
+        await lookup.configuration('my-stack', 'my-bucket', 'my-stack-staging-us-east-1');
         t.fail();
     } catch (err) {
         t.ok(err instanceof Lookup.S3Error, 'expected error returned');
@@ -597,7 +625,11 @@ test('[lookup.configuration] requested configuration does not exist', async(t) =
     });
 
     try {
-        await Lookup.configuration('my-stack', 'my-bucket', 'my-stack-staging-us-east-1');
+        const lookup = new Lookup({
+            region: 'us-east-1',
+            credentials: { accessKeyId: '-', secretAccessKey: '-' }
+        })
+        await lookup.configuration('my-stack', 'my-bucket', 'my-stack-staging-us-east-1');
         t.fail();
     } catch (err) {
         t.ok(err instanceof Lookup.ConfigurationNotFoundError, 'expected error returned');
@@ -617,7 +649,11 @@ test('[lookup.configuration] cannot parse object data', async(t) => {
     });
 
     try {
-        await Lookup.configuration('my-stack', 'my-bucket', 'my-stack-staging-us-east-1');
+        const lookup = new Lookup({
+            region: 'us-east-1',
+            credentials: { accessKeyId: '-', secretAccessKey: '-' }
+        })
+        await lookup.configuration('my-stack', 'my-bucket', 'my-stack-staging-us-east-1');
         t.fail();
     } catch (err) {
         t.ok(err instanceof Lookup.InvalidConfigurationError, 'expected error returned');
@@ -651,7 +687,11 @@ test('[lookup.configuration] success', async(t) => {
     });
 
     try {
-        const configuration = await Lookup.configuration('my-stack', 'my-bucket', 'my-stack-staging-us-east-1');
+        const lookup = new Lookup({
+            region: 'us-east-1',
+            credentials: { accessKeyId: '-', secretAccessKey: '-' }
+        })
+        const configuration = await lookup.configuration('my-stack', 'my-bucket', 'my-stack-staging-us-east-1');
         t.deepEqual(configuration, info, 'returned expected stack info');
     } catch (err) {
         t.error(err);
@@ -665,7 +705,11 @@ test('[lookup.defaultConfiguration] bucket location error', async(t) => {
     AWS.stub('S3', 'getBucketLocation').yields(new Error('failure'));
 
     try {
-        const info = await Lookup.defaultConfiguration('s3://my-bucket/my-config.cfn.json');
+        const lookup = new Lookup({
+            region: 'us-east-1',
+            credentials: { accessKeyId: '-', secretAccessKey: '-' }
+        })
+        const info = await lookup.defaultConfiguration('s3://my-bucket/my-config.cfn.json');
         t.deepEqual(info, {}, 'provided blank info');
     } catch (err) {
         t.error(err);
@@ -687,7 +731,11 @@ test('[lookup.defaultConfiguration] requested configuration does not exist', asy
     });
 
     try {
-        const info = await Lookup.defaultConfiguration('s3://my-bucket/my-config.cfn.json');
+        const lookup = new Lookup({
+            region: 'us-east-1',
+            credentials: { accessKeyId: '-', secretAccessKey: '-' }
+        })
+        const info = await lookup.defaultConfiguration('s3://my-bucket/my-config.cfn.json');
         t.deepEqual(info, {}, 'provided blank info');
     } catch (err) {
         t.error(err);
@@ -707,7 +755,11 @@ test('[lookup.defaultConfiguration] cannot parse object data', async(t) => {
     });
 
     try {
-        const info = await Lookup.defaultConfiguration('s3://my-bucket/my-config.cfn.json');
+        const lookup = new Lookup({
+            region: 'us-east-1',
+            credentials: { accessKeyId: '-', secretAccessKey: '-' }
+        })
+        const info = await lookup.defaultConfiguration('s3://my-bucket/my-config.cfn.json');
         t.deepEqual(info, {}, 'provided blank info');
     } catch (err) {
         t.error(err);
@@ -741,7 +793,11 @@ test('[lookup.defaultConfiguration] success', async(t) => {
     });
 
     try {
-        const configuration = await Lookup.defaultConfiguration('s3://my-bucket/my-config.cfn.json');
+        const lookup = new Lookup({
+            region: 'us-east-1',
+            credentials: { accessKeyId: '-', secretAccessKey: '-' }
+        })
+        const configuration = await lookup.defaultConfiguration('s3://my-bucket/my-config.cfn.json');
         t.deepEqual(configuration, info, 'returned expected stack info');
     } catch (err) {
         t.error(err);
@@ -759,7 +815,11 @@ test('[lookup.bucketRegion] no bucket', async(t) => {
     });
 
     try {
-        await Lookup.bucketRegion('my-bucket');
+        const lookup = new Lookup({
+            region: 'us-east-1',
+            credentials: { accessKeyId: '-', secretAccessKey: '-' }
+        })
+        await lookup.bucketRegion('my-bucket');
         t.fail();
     } catch (err) {
         t.ok(err instanceof Lookup.BucketNotFoundError, 'expected error type');
@@ -773,7 +833,11 @@ test('[lookup.bucketRegion] failure', async(t) => {
     AWS.stub('S3', 'getBucketLocation').yields(new Error('failure'));
 
     try {
-        await Lookup.bucketRegion('my-bucket');
+        const lookup = new Lookup({
+            region: 'us-east-1',
+            credentials: { accessKeyId: '-', secretAccessKey: '-' }
+        })
+        await lookup.bucketRegion('my-bucket');
         t.fail();
     } catch (err) {
         t.ok(err instanceof Lookup.S3Error, 'expected error type');
@@ -791,7 +855,11 @@ test('[lookup.bucketRegion] no bucket', async(t) => {
     });
 
     try {
-        await Lookup.bucketRegion('my-bucket');
+        const lookup = new Lookup({
+            region: 'us-east-1',
+            credentials: { accessKeyId: '-', secretAccessKey: '-' }
+        })
+        await lookup.bucketRegion('my-bucket');
         t.fail();
     } catch (err) {
         t.ok(err instanceof Lookup.BucketNotFoundError, 'expected error type');
@@ -809,7 +877,11 @@ test('[lookup.bucketRegion] region specified', async(t) => {
     });
 
     try {
-        await Lookup.bucketRegion('my-bucket', 'cn-north-1');
+        const lookup = new Lookup({
+            region: 'us-east-1',
+            credentials: { accessKeyId: '-', secretAccessKey: '-' }
+        })
+        await lookup.bucketRegion('my-bucket', 'cn-north-1');
 
         t.ok(AWS.S3.calledWith({
             signatureVersion: 'v4',
