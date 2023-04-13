@@ -25,8 +25,10 @@ export default class CFNConfig {
     template: TemplateReader;
     client: CFNConfigClient;
 
-    constructor(client: CFNConfigClient, options: CommandOptions) {
+    constructor(client: CFNConfigClient, options: CommandOptions = {}) {
         this.client = client;
+ 
+        if (!options) options = {};
 
         this.actions = new Actions(this.client);
         this.commands = new Commands(this.client, options);

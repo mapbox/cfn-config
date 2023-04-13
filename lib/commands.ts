@@ -241,7 +241,7 @@ class CommandContext {
     configName?: string;
     create?: boolean;
     tags: Tag[];
-    operations: function[];
+    operations: Function[];
 
     template?: string;
     templateUrl?: string;
@@ -251,7 +251,7 @@ class CommandContext {
         config: CommandOptions,
         overrides: CommandOverrides,
         suffix: string,
-        operations: function[])
+        operations: Function[])
     {
         this.client = client;
         this.config = config;
