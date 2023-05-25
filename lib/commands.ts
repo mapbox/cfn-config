@@ -212,10 +212,12 @@ class Commands {
  *
  * @class
  * @private
- * @param {object} config - configurations options provided to the commands factory
- * @param {string} suffix - the trailing part of a stack's name
- * @param {array} operations - and array of operation functions that will be
- * called in order to build the desired deployment flow.
+
+ * @param client - CFNConfigClient,
+ * @param config - configurations options provided to the commands factory
+ * @param overrides - change default behavior or settings
+ * @param suffix - the trailing part of a stack's name
+ * @param operations - and array of operation functions that will be called in order to build the desired deployment flow.
  */
 class CommandContext {
     client: CFNConfigClient;
@@ -240,7 +242,7 @@ class CommandContext {
     configName?: string;
     create?: boolean;
     tags: Tag[];
-    operations: function[];
+    operations: ((context: CommandContext) => Promise<void>)[];
 
     template?: string | object;
     templateUrl?: string;
@@ -250,8 +252,8 @@ class CommandContext {
         config: CommandOptions,
         overrides: CommandOverrides,
         suffix: string,
-        operations: function[])
-    {
+        operations: ((context: CommandContext) => Promise<void>)[]
+    ) {
         this.client = client;
         this.config = config;
         this.baseName = config.name;

@@ -18,11 +18,10 @@
         "cfn-config": "bin/cfn-config.js"
     },
     "scripts": {
-        "test": "nyc tape test/*.test.js",
+        "test": "ts-node-test test/**.test.ts",
         "lint": "eslint index.ts bin/*.ts lib/*.ts test/*.ts",
         "build": "tsc --build",
-        "pretest": "npm run lint",
-        "coverage": "nyc --reporter html tape test/*.test.js && opener coverage/index.html"
+        "pretest": "npm run lint"
     },
     "dependencies": {
         "@aws-sdk/client-cloudformation": "^3.272.0",
@@ -48,11 +47,11 @@
         "@typescript-eslint/eslint-plugin": "^5.52.0",
         "@typescript-eslint/parser": "^5.52.0",
         "eslint": "^8.34.0",
-        "nyc": "^15.0.0",
         "opener": "^1.4.1",
         "sinon": "^15.0.0",
         "tape": "^5.4.0",
         "ts-node": "^10.9.1",
+        "ts-node-test": "^0.4.1",
         "typescript": "^5.0.0"
     }
 }
