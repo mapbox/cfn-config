@@ -14,12 +14,9 @@
         "url": "https://github.com/openaddresses/cfn-config.git",
         "type": "git"
     },
-    "bin": {
-        "cfn-config": "bin/cfn-config.js"
-    },
     "scripts": {
         "test": "ts-node-test test/**.test.ts",
-        "lint": "eslint index.ts bin/*.ts lib/*.ts test/*.ts",
+        "lint": "eslint index.ts lib/*.ts test/*.ts",
         "build": "tsc --build",
         "pretest": "npm run lint"
     },
@@ -33,8 +30,7 @@
         "easy-table": "^1.0.0",
         "inquirer": "^9.0.0",
         "json-diff": "^1.0.0",
-        "json-stable-stringify": "^1.0.2",
-        "meow": "^11.0.0"
+        "json-stable-stringify": "^1.0.2"
     },
     "devDependencies": {
         "@types/diff": "^5.0.2",
