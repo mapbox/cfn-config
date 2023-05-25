@@ -6,9 +6,13 @@ import Actions from '../lib/actions.js';
 import {
     CloudFormationClient,
     DescribeChangeSetCommand,
-    CreateChangeSetCommand
+    CreateChangeSetCommand,
+    DeleteStackCommand,
+    ValidateTemplateCommand,
+    ExecuteChangeSetCommand
 
 } from '@aws-sdk/client-cloudformation';
+import S3 from '@aws-sdk/client-s3';
 
 test('[actions.cancel] stack does not exist', async (t) => {
     Sinon.stub(CloudFormationClient.prototype, 'send').callsFake(() => {
@@ -297,15 +301,15 @@ test('[actions.diff] success', async(t) => {
 
     Sinon.stub(CloudFormationClient.prototype, 'send').callsFake((command) => {
         if (command instanceof CreateChangeSetCommand) {
-            t.ok(/^[\w\d-]{1,128}$/.test(params.ChangeSetName), 'createChangeSet valid change set name');
-            t.deepEqual(params, {
-                ChangeSetName: params.ChangeSetName,
+            t.ok(/^[\w\d-]{1,128}$/.test(command.input.ChangeSetName), 'createChangeSet valid change set name');
+            t.deepEqual(command.input, {
+                ChangeSetName: command.input.ChangeSetName,
                 ChangeSetType: 'UPDATE',
                 StackName: 'my-stack',
                 Capabilities: ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM', 'CAPABILITY_AUTO_EXPAND'],
                 Parameters: [
                     { ParameterKey: 'Name', ParameterValue: 'Chuck' },
-                    { ParameterKey: 'Age', ParameterValue: 18 },
+                    { ParameterKey: 'Age', ParameterValue: '18' },
                     { ParameterKey: 'Handedness', ParameterValue: 'right' },
                     { ParameterKey: 'Pets', ParameterValue: 'Duck,Wombat' },
                     { ParameterKey: 'LuckyNumbers', ParameterValue: '3,7,42' },
@@ -318,16 +322,16 @@ test('[actions.diff] success', async(t) => {
                 }]
             }, 'createChangeSet expected parameters');
 
-            changesetId = params.ChangeSetName;
+            changesetId = command.input.ChangeSetName;
             return Promise.resolve({ Id: 'changeset:arn' });
         } else if (command instanceof DescribeChangeSetCommand) {
             polled++;
-            t.equal(params.ChangeSetName, changesetId, 'describe correct changeset');
-            t.equal(params.StackName, 'my-stack', 'describe correct stackname');
-            if (params.NextToken) t.equal(params.NextToken, 'xxx', 'used next token to paginate');
+            t.equal(command.input.ChangeSetName, changesetId, 'describe correct changeset');
+            t.equal(command.input.StackName, 'my-stack', 'describe correct stackname');
+            if (command.input.NextToken) t.equal(command.input.NextToken, 'xxx', 'used next token to paginate');
 
             if (polled === 1) {
-                return this.request.promise.returns(Promise.resolve({
+                return Promise.resolve({
                     ChangeSetName: changesetId,
                     ChangeSetId: 'changeset:arn1',
                     StackId: 'arn:aws:cloudformation:us-east-1:123456789012:stack/my-stack/be3aa370-5b64-11e6-a232-500c217dbe62',
@@ -335,9 +339,9 @@ test('[actions.diff] success', async(t) => {
                     ExecutionStatus: 'AVAILABLE',
                     Status: 'CREATE_IN_PROGRESS',
                     Changes: []
-                }));
+                });
             } else if (polled === 2) {
-                return this.request.promise.returns(Promise.resolve({
+                return Promise.resolve({
                     ChangeSetName: changesetId,
                     ChangeSetId: 'changeset:arn1',
                     StackId: 'arn:aws:cloudformation:us-east-1:123456789012:stack/my-stack/be3aa370-5b64-11e6-a232-500c217dbe62',
@@ -354,9 +358,9 @@ test('[actions.diff] success', async(t) => {
                             Replacement: 'False'
                         }
                     }]
-                }));
+                });
             } else if (polled === 3) {
-                return this.request.promise.returns(Promise.resolve({
+                return Promise.resolve({
                     ChangeSetName: changesetId,
                     ChangeSetId: 'changeset:arn1',
                     StackId: 'arn:aws:cloudformation:us-east-1:123456789012:stack/my-stack/be3aa370-5b64-11e6-a232-500c217dbe62',
@@ -374,36 +378,34 @@ test('[actions.diff] success', async(t) => {
                         }
                     }],
                     NextToken: 'xxx'
-                }));
+                });
             }
 
             // This is a partial response object
-            return this.request.promise.returns(Promise.resolve({
+            return Promise.resolve({
                 ChangeSetName: 'aa507e2bdfc55947035a07271e75384efe',
                 ChangeSetId: 'changeset:arn',
                 StackId: 'arn:aws:cloudformation:us-east-1:123456789012:stack/my-stack/be3aa370-5b64-11e6-a232-500c217dbe62',
                 StackName: 'my-stack',
                 ExecutionStatus: 'AVAILABLE',
                 Status: 'CREATE_COMPLETE',
-                Changes: [
-                    {
-                        Type: 'Resource',
-                        ResourceChange: {
-                            Action: 'Modify',
-                            LogicalResourceId: 'Topic',
-                            PhysicalResourceId: 'arn:aws:sns:us-east-1:123456789012:my-stack-Topic-DQ8MBRPFONMK',
-                            ResourceType: 'AWS::SNS::Topic',
-                            Replacement: 'False'
-                        }
+                Changes: [{
+                    Type: 'Resource',
+                    ResourceChange: {
+                        Action: 'Modify',
+                        LogicalResourceId: 'Topic',
+                        PhysicalResourceId: 'arn:aws:sns:us-east-1:123456789012:my-stack-Topic-DQ8MBRPFONMK',
+                        ResourceType: 'AWS::SNS::Topic',
+                        Replacement: 'False'
                     }
-                ]
-            }));
+                }]
+            });
         }
     });
 
     const parameters = [
         { ParameterKey: 'Name', ParameterValue: 'Chuck' },
-        { ParameterKey: 'Age', ParameterValue: 18 },
+        { ParameterKey: 'Age', ParameterValue: '18' },
         { ParameterKey: 'Handedness', ParameterValue: 'right' },
         { ParameterKey: 'Pets', ParameterValue: 'Duck,Wombat' },
         { ParameterKey: 'LuckyNumbers', ParameterValue: '3,7,42' },
@@ -419,10 +421,10 @@ test('[actions.diff] success', async(t) => {
     });
 
     try {
-        const data = await actions.diff('my-stack', 'UPDATE', url, parameters, true, [{
+        const data = await actions.diff('my-stack', 'UPDATE', url, parameters, [{
             Key: 'developer',
             Value: 'ingalls'
-        }]);
+        }], true);
 
         t.deepEqual(data, {
             id: 'aa507e2bdfc55947035a07271e75384efe',
@@ -453,10 +455,11 @@ test('[actions.diff] success', async(t) => {
     t.end();
 });
 
-/**
 test('[actions.executeChangeSet] describeChangeSet error', async(t) => {
-    AWS.stub('CloudFormation', 'describeChangeSet', () => {
-        throw new Error('unexpected');
+    Sinon.stub(CloudFormationClient.prototype, 'send').callsFake((command) => {
+        if (command instanceof DescribeChangeSetCommand) {
+            return Promise.reject(new Error('unexpected'));
+        }
     });
 
     const actions = new Actions({
@@ -468,7 +471,7 @@ test('[actions.executeChangeSet] describeChangeSet error', async(t) => {
     });
 
     try {
-        await Actions.executeChangeSet('my-stack', 'us-east-1', 'changeset-id');
+        await actions.executeChangeSet('my-stack', 'changeset-id');
         t.fail();
     } catch (err) {
         t.ok(err instanceof Actions.CloudFormationError, 'expected error');
@@ -479,12 +482,14 @@ test('[actions.executeChangeSet] describeChangeSet error', async(t) => {
 });
 
 test('[actions.executeChangeSet] changeset not executable', async(t) => {
-    AWS.stub('CloudFormation', 'describeChangeSet').returns({
-        promise: () => Promise.resolve({
-            ExecutionStatus: 'UNAVAILABLE',
-            Status: 'CREATE_COMPLETE',
-            StatusReason: 'because I said so'
-        })
+    Sinon.stub(CloudFormationClient.prototype, 'send').callsFake((command) => {
+        if (command instanceof DescribeChangeSetCommand) {
+            return Promise.resolve({
+                ExecutionStatus: 'UNAVAILABLE',
+                Status: 'CREATE_COMPLETE',
+                StatusReason: 'because I said so'
+            })
+        }
     });
 
     const actions = new Actions({
@@ -496,7 +501,7 @@ test('[actions.executeChangeSet] changeset not executable', async(t) => {
     });
 
     try {
-        await Actions.executeChangeSet('my-stack', 'us-east-1', 'changeset-id');
+        await actions.executeChangeSet('my-stack', 'changeset-id');
         t.fail();
     } catch (err) {
         t.ok(err instanceof Actions.ChangeSetNotExecutableError, 'expected error');
@@ -510,11 +515,15 @@ test('[actions.executeChangeSet] changeset not executable', async(t) => {
 });
 
 test('[actions.executeChangeSet] executeChangeSet error', async(t) => {
-    AWS.stub('CloudFormation', 'describeChangeSet').returns({
-        promise: () => Promise.resolve({
-            ExecutionStatus: 'AVAILABLE',
-            Status: 'CREATE_COMPLETE'
-        })
+    Sinon.stub(CloudFormationClient.prototype, 'send').callsFake((command) => {
+        if (command instanceof DescribeChangeSetCommand) {
+            return Promise.resolve({
+                ExecutionStatus: 'AVAILABLE',
+                Status: 'CREATE_COMPLETE'
+            })
+        } else if (command instanceof ExecuteChangeSetCommand) {
+            return Promise.reject(new Error('unexpected'));
+        }
     });
 
     const actions = new Actions({
@@ -525,12 +534,8 @@ test('[actions.executeChangeSet] executeChangeSet error', async(t) => {
         }
     });
 
-    AWS.stub('CloudFormation', 'executeChangeSet', () => {
-        throw new Error('unexpected');
-    });
-
     try {
-        await Actions.executeChangeSet('my-stack', 'us-east-1', 'changeset-id');
+        await actions.executeChangeSet('my-stack', 'changeset-id');
         t.fail();
     } catch(err) {
         t.ok(err instanceof Actions.CloudFormationError, 'expected error');
@@ -541,26 +546,26 @@ test('[actions.executeChangeSet] executeChangeSet error', async(t) => {
 });
 
 test('[actions.executeChangeSet] success', async(t) => {
-    AWS.stub('CloudFormation', 'describeChangeSet', function(params) {
-        t.deepEqual(params, {
-            ChangeSetName: 'changeset-id',
-            StackName: 'my-stack',
-            NextToken: undefined
-        }, 'expected params provided to describeChangeSet');
+    Sinon.stub(CloudFormationClient.prototype, 'send').callsFake((command) => {
+        if (command instanceof DescribeChangeSetCommand) {
+            t.deepEqual(command.input, {
+                ChangeSetName: 'changeset-id',
+                StackName: 'my-stack',
+                NextToken: undefined
+            }, 'expected params provided to describeChangeSet');
 
-        return this.request.promise.returns(Promise.resolve({
-            ExecutionStatus: 'AVAILABLE',
-            Status: 'CREATE_COMPLETE'
-        }));
-    });
+            return Promise.resolve({
+                ExecutionStatus: 'AVAILABLE',
+                Status: 'CREATE_COMPLETE'
+            })
+        } else if (command instanceof ExecuteChangeSetCommand) {
+            t.deepEqual(command.input, {
+                ChangeSetName: 'changeset-id',
+                StackName: 'my-stack'
+            }, 'expected params provided to executeChangeSet');
 
-    AWS.stub('CloudFormation', 'executeChangeSet', function(params) {
-        t.deepEqual(params, {
-            ChangeSetName: 'changeset-id',
-            StackName: 'my-stack'
-        }, 'expected params provided to executeChangeSet');
-
-        return this.request.promise.returns(Promise.resolve());
+            return Promise.resolve();
+        }
     });
 
     const actions = new Actions({
@@ -572,7 +577,7 @@ test('[actions.executeChangeSet] success', async(t) => {
     });
 
     try {
-        await Actions.executeChangeSet('my-stack', 'us-east-1', 'changeset-id');
+        await actions.executeChangeSet('my-stack', 'changeset-id');
     } catch (err) {
         t.error(err);
     }
@@ -582,10 +587,13 @@ test('[actions.executeChangeSet] success', async(t) => {
 });
 
 test('[actions.delete] stack does not exist', async(t) => {
-    AWS.stub('CloudFormation', 'deleteStack', () => {
-        const err = new Error('Stack [my-stack] does not exist');
-        err.code = 'ValidationError';
-        throw err;
+    Sinon.stub(CloudFormationClient.prototype, 'send').callsFake((command) => {
+        if (command instanceof DeleteStackCommand) {
+            const err: any = new Error('Stack [my-stack] does not exist');
+            err.code = 'ValidationError';
+            throw err;
+            return Promise.reject(err);
+        }
     });
 
     const actions = new Actions({
@@ -597,7 +605,7 @@ test('[actions.delete] stack does not exist', async(t) => {
     });
 
     try {
-        await Actions.delete('my-stack', 'us-east-1');
+        await actions.delete('my-stack');
         t.fail();
     } catch (err) {
         t.ok(err instanceof Actions.CloudFormationError, 'expected error returned');
@@ -606,10 +614,13 @@ test('[actions.delete] stack does not exist', async(t) => {
     Sinon.restore();
     t.end();
 });
+
 
 test('[actions.delete] unexpected cloudformation error', async(t) => {
-    AWS.stub('CloudFormation', 'deleteStack', () => {
-        throw new Error('unexpected');
+    Sinon.stub(CloudFormationClient.prototype, 'send').callsFake((command) => {
+        if (command instanceof DeleteStackCommand) {
+            return Promise.reject(new Error('unexpected'));
+        }
     });
 
     const actions = new Actions({
@@ -621,7 +632,7 @@ test('[actions.delete] unexpected cloudformation error', async(t) => {
     });
 
     try {
-        await Actions.delete('my-stack', 'us-east-1');
+        await actions.delete('my-stack');
         t.fail();
     } catch (err) {
         t.ok(err instanceof Actions.CloudFormationError, 'expected error returned');
@@ -631,10 +642,12 @@ test('[actions.delete] unexpected cloudformation error', async(t) => {
     t.end();
 });
 
-test('[actions.delete] success', async(t) => {
-    AWS.stub('CloudFormation', 'deleteStack', function(params) {
-        t.deepEqual(params, { StackName: 'my-stack' }, 'deleteStack with expected params');
-        return this.request.promise.returns(Promise.resolve());
+test('[actions.delete] success', async (t) => {
+    Sinon.stub(CloudFormationClient.prototype, 'send').callsFake((command) => {
+        if (command instanceof DeleteStackCommand) {
+            t.deepEqual(command.input, { StackName: 'my-stack' }, 'deleteStack with expected params');
+            return Promise.resolve();
+        }
     });
 
     const actions = new Actions({
@@ -646,7 +659,7 @@ test('[actions.delete] success', async(t) => {
     });
 
     try {
-        await Actions.delete('my-stack', 'us-east-1');
+        await actions.delete('my-stack');
     } catch (err) {
         t.error(err);
     }
@@ -658,9 +671,11 @@ test('[actions.delete] success', async(t) => {
 test('[actions.validate] unexpected validateTemplate error', async(t) => {
     const url = 'https://my-bucket.s3.amazonaws.com/my-template.json';
 
-    AWS.stub('CloudFormation', 'validateTemplate', (params) => {
-        t.deepEqual(params, { TemplateURL: url }, 'validateTemplate with expected params');
-        throw new Error('unexpected');
+    Sinon.stub(CloudFormationClient.prototype, 'send').callsFake((command) => {
+        if (command instanceof ValidateTemplateCommand) {
+            t.deepEqual(command.input, { TemplateURL: url }, 'validateTemplate with expected params');
+            return Promise.reject(new Error('unexpected'));
+        }
     });
 
     const actions = new Actions({
@@ -672,7 +687,7 @@ test('[actions.validate] unexpected validateTemplate error', async(t) => {
     });
 
     try {
-        await Actions.validate('us-east-1', url);
+        await actions.validate(url);
         t.fail();
     } catch (err) {
         t.ok(err instanceof Actions.CloudFormationError, 'expected error returned');
@@ -683,10 +698,12 @@ test('[actions.validate] unexpected validateTemplate error', async(t) => {
 });
 
 test('[actions.validate] invalid template', async(t) => {
-    AWS.stub('CloudFormation', 'validateTemplate', () => {
-        const err = new Error('Unresolved resource dependencies [Name] in the Outputs block of the template');
-        err.code = 'ValidationError';
-        throw err;
+    Sinon.stub(CloudFormationClient.prototype, 'send').callsFake((command) => {
+        if (command instanceof ValidateTemplateCommand) {
+            const err: any = new Error('Unresolved resource dependencies [Name] in the Outputs block of the template');
+            err.code = 'ValidationError';
+            return Promise.reject(err);
+        }
     });
 
     const actions = new Actions({
@@ -698,7 +715,7 @@ test('[actions.validate] invalid template', async(t) => {
     });
 
     try {
-        await Actions.validate('us-east-1', 'https://my-bucket.s3.amazonaws.com/my-template.json');
+        await actions.validate('https://my-bucket.s3.amazonaws.com/my-template.json');
         t.fail();
     } catch (err) {
         t.ok(err instanceof Actions.CloudFormationError, 'expected error type');
@@ -709,12 +726,14 @@ test('[actions.validate] invalid template', async(t) => {
 });
 
 test('[actions.validate] valid template', async(t) => {
-    AWS.stub('CloudFormation', 'validateTemplate', function(params) {
-        t.deepEqual(params, {
-            TemplateURL: 'https://my-bucket.s3.amazonaws.com/my-template.json'
-        }, 'expected params passed to validateTemplate');
+    Sinon.stub(CloudFormationClient.prototype, 'send').callsFake((command) => {
+        if (command instanceof ValidateTemplateCommand) {
+            t.deepEqual(command.input, {
+                TemplateURL: 'https://my-bucket.s3.amazonaws.com/my-template.json'
+            }, 'expected params passed to validateTemplate');
 
-        return this.request.promise.returns(Promise.resolve());
+            return Promise.resolve();
+        }
     });
 
     const actions = new Actions({
@@ -726,7 +745,7 @@ test('[actions.validate] valid template', async(t) => {
     });
 
     try {
-        await Actions.validate('us-east-1', 'https://my-bucket.s3.amazonaws.com/my-template.json');
+        await actions.validate('https://my-bucket.s3.amazonaws.com/my-template.json');
     } catch (err) {
         t.error(err);
     }
@@ -736,23 +755,23 @@ test('[actions.validate] valid template', async(t) => {
 });
 
 test('[actions.saveConfiguration] bucket does not exist', async(t) => {
-    const parameters = {
-        Name: 'Chuck',
-        Age: 18,
-        Handedness: 'left',
-        Pets: 'Duck,Wombat',
-        LuckyNumbers: '3,7,42',
-        SecretPassword: 'secret'
-    };
+    const parameters: Map<string, string> = new Map([
+        ['Name', 'Chuck'],
+        ['Age', '18'],
+        ['Handedness', 'left'],
+        ['Pets', 'Duck,Wombat'],
+        ['LuckyNumbers', '3,7,42'],
+        ['SecretPassword', 'secret']
+    ]);
 
-    AWS.stub('S3', 'getBucketLocation').returns({
-        promise: () => Promise.resolve('us-east-1')
-    });
-
-    AWS.stub('S3', 'putObject', () => {
-        const err = new Error('The specified bucket does not exist');
-        err.code = 'NoSuchBucket';
-        throw err;
+    Sinon.stub(S3.S3Client.prototype, 'send').callsFake((command) => {
+        if (command instanceof S3.GetBucketLocationCommand) {
+            return Promise.resolve('us-east-1')
+        } else if (command instanceof S3.PutObjectCommand) {
+            const err: any = new Error('The specified bucket does not exist');
+            err.code = 'NoSuchBucket';
+            return Promise.reject(err);
+        }
     });
 
     const actions = new Actions({
@@ -764,32 +783,32 @@ test('[actions.saveConfiguration] bucket does not exist', async(t) => {
     });
 
     try {
-        await Actions.saveConfiguration('my-stack', 'my-stack-staging', 'us-east-1', 'my-bucket', parameters);
+        await actions.saveConfiguration('my-stack', 'my-stack-staging', 'my-bucket', parameters);
         t.fail();
     } catch (err) {
         t.ok(err instanceof Actions.BucketNotFoundError, 'expected error returned');
     }
 
-    AWS.S3.restore();
+    Sinon.restore();
     t.end();
 });
 
 test('[actions.saveConfiguration] unexpected putObject error', async(t) => {
-    const parameters = {
-        Name: 'Chuck',
-        Age: 18,
-        Handedness: 'left',
-        Pets: 'Duck,Wombat',
-        LuckyNumbers: '3,7,42',
-        SecretPassword: 'secret'
-    };
+    const parameters: Map<string, string> = new Map([
+        ['Name', 'Chuck'],
+        ['Age', '18'],
+        ['Handedness', 'left'],
+        ['Pets', 'Duck,Wombat'],
+        ['LuckyNumbers', '3,7,42'],
+        ['SecretPassword', 'secret']
+    ]);
 
-    AWS.stub('S3', 'getBucketLocation').returns({
-        promise: () => Promise.resolve('us-east-1')
-    });
-
-    AWS.stub('S3', 'putObject', () => {
-        throw new Error('unexpected');
+    Sinon.stub(S3.S3Client.prototype, 'send').callsFake((command) => {
+        if (command instanceof S3.GetBucketLocationCommand) {
+            return Promise.resolve('us-east-1')
+        } else if (command instanceof S3.PutObjectCommand) {
+            return Promise.reject(new Error('unexpected'));
+        }
     });
 
     const actions = new Actions({
@@ -801,40 +820,38 @@ test('[actions.saveConfiguration] unexpected putObject error', async(t) => {
     });
 
     try {
-        await Actions.saveConfiguration('my-stack', 'my-stack-staging', 'us-east-1', 'my-bucket', parameters);
+        await actions.saveConfiguration('my-stack', 'my-stack-staging', 'my-bucket', parameters);
         t.fail();
     } catch (err) {
         t.ok(err instanceof Actions.S3Error, 'expected error returned');
     }
 
-    AWS.S3.restore();
+    Sinon.restore();
     t.end();
 });
 
-test('[actions.saveConfiguration] success with encryption', async(t) => {
-    const parameters = {
-        Name: 'Chuck',
-        Age: 18,
-        Handedness: 'left',
-        Pets: 'Duck,Wombat',
-        LuckyNumbers: '3,7,42',
-        SecretPassword: 'secret'
-    };
+test('[actions.saveConfiguration] success', async(t) => {
+    const parameters: Map<string, string> = new Map([
+        ['Name', 'Chuck'],
+        ['Age', '18'],
+        ['Handedness', 'left'],
+        ['Pets', 'Duck,Wombat'],
+        ['LuckyNumbers', '3,7,42'],
+        ['SecretPassword', 'secret']
+    ]);
 
-    AWS.stub('S3', 'getBucketLocation').returns({
-        promise: () => Promise.resolve('us-east-1')
-    });
+    Sinon.stub(S3.S3Client.prototype, 'send').callsFake((command) => {
+        if (command instanceof S3.GetBucketLocationCommand) {
+            return Promise.resolve('us-east-1')
+        } else if (command instanceof S3.PutObjectCommand) {
+            t.deepEqual(command.input, {
+                Bucket: 'my-bucket',
+                Key: 'my-stack/my-stack-staging-us-east-1.cfn.json',
+                Body: JSON.stringify(Object.fromEntries(parameters)),
+            }, 'expected putObject parameters');
 
-    AWS.stub('S3', 'putObject', function(params) {
-        t.deepEqual(params, {
-            Bucket: 'my-bucket',
-            Key: 'my-stack/my-stack-staging-us-east-1.cfn.json',
-            Body: JSON.stringify(parameters),
-            ServerSideEncryption: 'aws:kms',
-            SSEKMSKeyId: 'my-key'
-        }, 'expected putObject parameters');
-
-        return this.request.promise.returns(Promise.resolve());
+            return Promise.resolve();
+        }
     });
 
     const actions = new Actions({
@@ -846,37 +863,37 @@ test('[actions.saveConfiguration] success with encryption', async(t) => {
     });
 
     try {
-        await Actions.saveConfiguration('my-stack', 'my-stack-staging', 'us-east-1', 'my-bucket', parameters, 'my-key');
+        await actions.saveConfiguration('my-stack', 'my-stack-staging', 'my-bucket', parameters);
     } catch (err) {
         t.error(err);
     }
 
-    AWS.S3.restore();
+    Sinon.restore();
     t.end();
 });
 
 test('[actions.saveConfiguration] success without encryption', async(t) => {
-    const parameters = {
-        Name: 'Chuck',
-        Age: 18,
-        Handedness: 'left',
-        Pets: 'Duck,Wombat',
-        LuckyNumbers: '3,7,42',
-        SecretPassword: 'secret'
-    };
+    const parameters: Map<string, string> = new Map([
+        ['Name', 'Chuck'],
+        ['Age', '18'],
+        ['Handedness', 'left'],
+        ['Pets', 'Duck,Wombat'],
+        ['LuckyNumbers', '3,7,42'],
+        ['SecretPassword', 'secret']
+    ]);
 
-    AWS.stub('S3', 'getBucketLocation').returns({
-        promise: () => Promise.resolve('us-east-1')
-    });
+    Sinon.stub(S3.S3Client.prototype, 'send').callsFake((command) => {
+        if (command instanceof S3.GetBucketLocationCommand) {
+            return Promise.resolve('us-east-1')
+        } else if (command instanceof S3.PutObjectCommand) {
+            t.deepEqual(command.input, {
+                Bucket: 'my-bucket',
+                Key: 'my-stack/my-stack-staging-us-east-1.cfn.json',
+                Body: JSON.stringify(Object.fromEntries(parameters))
+            }, 'expected putObject parameters');
 
-    AWS.stub('S3', 'putObject', function(params) {
-        t.deepEqual(params, {
-            Bucket: 'my-bucket',
-            Key: 'my-stack/my-stack-staging-us-east-1.cfn.json',
-            Body: JSON.stringify(parameters)
-        }, 'expected putObject parameters');
-
-        return this.request.promise.returns(Promise.resolve());
+            return Promise.resolve();
+        }
     });
 
     const actions = new Actions({
@@ -888,37 +905,62 @@ test('[actions.saveConfiguration] success without encryption', async(t) => {
     });
 
     try {
-        await Actions.saveConfiguration('my-stack', 'my-stack-staging', 'us-east-1', 'my-bucket', parameters);
+        await actions.saveConfiguration('my-stack', 'my-stack-staging', 'my-bucket', parameters);
     } catch (err) {
         t.error(err);
     }
 
-    AWS.S3.restore();
+    Sinon.restore();
     t.end();
 });
 
 test('[actions.saveConfiguration] config bucket in a different region', async(t) => {
-    const parameters = {
-        Name: 'Chuck',
-        Age: 18,
-        Handedness: 'left',
-        Pets: 'Duck,Wombat',
-        LuckyNumbers: '3,7,42',
-        SecretPassword: 'secret'
-    };
+    const parameters: Map<string, string> = new Map([
+        ['Name', 'Chuck'],
+        ['Age', '18'],
+        ['Handedness', 'left'],
+        ['Pets', 'Duck,Wombat'],
+        ['LuckyNumbers', '3,7,42'],
+        ['SecretPassword', 'secret']
+    ]);
 
-    AWS.stub('S3', 'getBucketLocation').returns({
-        promise: () => Promise.resolve({ LocationConstraint: 'us-east-2' })
+    Sinon.stub(S3.S3Client.prototype, 'send').callsFake((command) => {
+        if (command instanceof S3.GetBucketLocationCommand) {
+            return Promise.resolve('us-east-2')
+        } else if (command instanceof S3.PutObjectCommand) {
+            t.deepEqual(command.input, {
+                Bucket: 'my-bucket',
+                Key: 'my-stack/my-stack-staging-eu-west-1.cfn.json',
+                Body: JSON.stringify(Object.fromEntries(parameters))
+            }, 'expected putObject parameters');
+
+            return Promise.resolve();
+        }
     });
 
-    AWS.stub('S3', 'putObject', function(params) {
-        t.deepEqual(params, {
-            Bucket: 'my-bucket',
-            Key: 'my-stack/my-stack-staging-eu-west-1.cfn.json',
-            Body: JSON.stringify(parameters)
-        }, 'expected putObject parameters');
+    const actions = new Actions({
+        region: 'eu-west-1',
+        credentials: {
+            accessKeyId: '123',
+            secretAccessKey: '321'
+        }
+    });
 
-        return this.request.promise.returns(Promise.resolve());
+    try {
+        await actions.saveConfiguration('my-stack', 'my-stack-staging', 'my-bucket', parameters);
+    } catch (err) {
+        t.error(err);
+    }
+
+    Sinon.restore();
+    t.end();
+});
+
+test('[actions.templateUrl] us-east-1', async (t) => {
+    Sinon.stub(S3.S3Client.prototype, 'send').callsFake((command) => {
+        if (command instanceof S3.GetBucketLocationCommand) {
+            return Promise.resolve('us-east-2')
+        }
     });
 
     const actions = new Actions({
@@ -928,39 +970,59 @@ test('[actions.saveConfiguration] config bucket in a different region', async(t)
             secretAccessKey: '321'
         }
     });
-
-    try {
-        await Actions.saveConfiguration('my-stack', 'my-stack-staging', 'eu-west-1', 'my-bucket', parameters);
-
-        t.true(AWS.S3.calledTwice, 's3 client setup called twice');
-        t.ok(AWS.S3.firstCall.calledWithExactly({ signatureVersion: 'v4', region: 'eu-west-1' }), 'first s3 client created correctly');
-        t.ok(AWS.S3.secondCall.calledWithExactly({ region: 'us-east-2', signatureVersion: 'v4' }), 'second s3 client created correctly');
-    } catch (err) {
-        t.error(err);
-    }
-
-    AWS.S3.restore();
-    t.end();
-});
-
-test('[actions.templateUrl] us-east-1', (t) => {
-    const url = Actions.templateUrl('my-bucket', 'us-east-1', 'my-stack');
+    const url = await actions.templateUrl('my-bucket', 'my-stack');
     const re = /https:\/\/s3.amazonaws.com\/my-bucket\/.*-my-stack.template.json/;
     t.ok(re.test(url), 'expected url');
+
+    Sinon.restore();
     t.end();
 });
 
-test('[actions.templateUrl] cn-north-1', (t) => {
-    const url = Actions.templateUrl('my-bucket', 'cn-north-1', 'my-stack');
+test('[actions.templateUrl] cn-north-1', async (t) => {
+    Sinon.stub(S3.S3Client.prototype, 'send').callsFake((command) => {
+        if (command instanceof S3.GetBucketLocationCommand) {
+            return Promise.resolve({
+                LocationConstraint: 'cn-north-1'
+            })
+        }
+    });
+
+    const actions = new Actions({
+        region: 'cn-north-1',
+        credentials: {
+            accessKeyId: '123',
+            secretAccessKey: '321'
+        }
+    });
+    const url = await actions.templateUrl('my-bucket', 'my-stack');
     const re = /https:\/\/s3.cn-north-1.amazonaws.com.cn\/my-bucket\/.*-my-stack.template.json/;
     t.ok(re.test(url), 'expected url');
+
+    Sinon.restore()
     t.end();
 });
 
-test('[actions.templateUrl] eu-central-1', (t) => {
-    const url = Actions.templateUrl('my-bucket', 'eu-central-1', 'my-stack');
+test('[actions.templateUrl] eu-central-1', async (t) => {
+    Sinon.stub(S3.S3Client.prototype, 'send').callsFake((command) => {
+        if (command instanceof S3.GetBucketLocationCommand) {
+            return Promise.resolve({
+                LocationConstraint: 'eu-central-1'
+            })
+        }
+    });
+    const actions = new Actions({
+        region: 'eu-central-1',
+        credentials: {
+            accessKeyId: '123',
+            secretAccessKey: '321'
+        }
+    });
+
+    const url = await actions.templateUrl('my-bucket', 'my-stack');
     const re = /https:\/\/s3-eu-central-1.amazonaws.com\/my-bucket\/.*-my-stack.template.json/;
     t.ok(re.test(url), 'expected url');
+
+    Sinon.restore();
     t.end();
 });
 
@@ -991,6 +1053,7 @@ test('[actions.saveTemplate] bucket does not exist', async(t) => {
     t.end();
 });
 
+/**
 test('[actions.saveTemplate] s3 error', async(t) => {
     const url = 'https://s3.amazonaws.com/my-bucket/cirjpj94c0000s5nzc1j452o7-my-stack.template.json';
     const template = fs.readFileSync(new URL('./fixtures/template.json', import.meta.url));
@@ -1005,7 +1068,7 @@ test('[actions.saveTemplate] s3 error', async(t) => {
         t.ok(err instanceof Actions.S3Error, 'expected error returned');
     }
 
-    AWS.S3.restore();
+    Sinon.restore();
     t.end();
 });
 
@@ -1031,7 +1094,7 @@ test('[actions.saveTemplate] us-east-1', async(t) => {
         t.error(err);
     }
 
-    AWS.S3.restore();
+    Sinon.restore();
     t.end();
 });
 
@@ -1055,7 +1118,7 @@ test('[actions.saveTemplate] needs whitespace removal', async(t) => {
         t.error(err);
     }
 
-    AWS.S3.restore();
+    Sinon.restore();
     t.end();
 });
 
