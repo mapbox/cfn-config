@@ -1,6 +1,11 @@
 # Change Log
 All notable changes to this project will be documented in this file. For change log formatting, see http://keepachangelog.com/
 
+## 7.0.0 - 2023-05-25
+- Update all AWS library usage to use the V3 API
+- Rewrite entire library in TypeScript
+- Drop CLI support because I don't use it and only have so many hours in a day - use @openaddresses/deploy for the same thing but bettetw
+
 ## 6.5.0 - 2023-02-16
 - Include CFN Streams in this repo and migrate it to the AWS-SDK@3
 - Remove CUID in favour of node:crypto.randomUUID
