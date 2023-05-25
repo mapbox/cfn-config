@@ -20,10 +20,9 @@ export default function(stackName: string, options?: CFStreamInput) {
     if (!options) options = {};
     const cfn = new CloudFormationClient(options);
 
-    const stream = new Readable({ objectMode: true }),
-        pollInterval = options.pollInterval || 10000,
-        seen = new Map(),
-        push = stream.push.bind(stream);
+    const stream = new Readable({ objectMode: true });
+    const pollInterval = options.pollInterval || 10000;
+    const seen = new Map();
 
     let describing = false,
         complete = false,
@@ -58,6 +57,7 @@ export default function(stackName: string, options?: CFStreamInput) {
 
                 // Assuming StackEvents are in strictly reverse chronological order,
                 // stop reading events once we reach one we've seen already.
+
                 if (seen.has(event.EventId))
                     break;
 
@@ -82,8 +82,8 @@ export default function(stackName: string, options?: CFStreamInput) {
             // We know that the update is complete, whatever we have in the events
             // array represents the last few events to stream.
             else if (complete) {
-                events.reverse().forEach(push);
-                push(null);
+                events.reverse().forEach((ev) => stream.push(ev));
+                stream.push(null);
             }
 
             // The update is not complete, and there aren't any new events or more
@@ -91,7 +91,7 @@ export default function(stackName: string, options?: CFStreamInput) {
             // update has completed.
             else {
                 setTimeout(describeStack, pollInterval);
-                events.reverse().forEach(push);
+                events.reverse().forEach((ev) => stream.push(ev));
                 events = [];
             }
         } catch (err) {

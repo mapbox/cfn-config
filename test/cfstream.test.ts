@@ -91,7 +91,7 @@ test('streams events until stack is complete', { timeout: 120000 }, (t) => {
         }
 
         it++;
-        return Promise.resolve({ StackEvents });
+        return Promise.resolve({ StackEvents: JSON.parse(JSON.stringify(StackEvents)).reverse() });
     });
 
     const stackName = 'cfn-stack-event-stream-test-create';
