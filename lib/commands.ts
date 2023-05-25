@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import type { CFNConfigClient } from '../index.js';
 import assert from 'assert';
 import path from 'path';
@@ -11,7 +10,7 @@ import type { ChangeSetDetail, ChangeSetDetailChange } from './actions.js';
 import Lookup from './lookup.js';
 import Prompt from './prompt.js';
 import TemplateReader from './template.js';
-import { Template } from './template.js';
+import { Template, CloudFormationTemplate } from './template.js';
 import type {
     Tag,
     Parameter
@@ -58,7 +57,7 @@ class Commands {
      * @param suffix - the trailing part of the new stack's name
      * @param template - either the template as object or the filesystem path to the template file to load
      */
-    async create(suffix: string, template: string, overrides: CommandOverrides) {
+    async create(suffix: string, template: string | object, overrides: CommandOverrides = {}) {
         const context = new CommandContext(
             this.client,
             this.config,
@@ -97,7 +96,7 @@ class Commands {
      * @param suffix - the trailing part of the new stack's name
      * @param template - either the template as object or the filesystem path to the template file to load
      */
-    async update(suffix: string, template: string, overrides: CommandOverrides) {
+    async update(suffix: string, template: string | object, overrides: CommandOverrides = {}) {
         const context = new CommandContext(
             this.client,
             this.config,
@@ -131,7 +130,7 @@ class Commands {
      *
      * @param suffix - the trailing part of the existing stack's name
      */
-    async delete(suffix: string, overrides: CommandOverrides) {
+    async delete(suffix: string, overrides: CommandOverrides = {}) {
         const context = new CommandContext(
             this.client,
             this.config,
@@ -153,7 +152,7 @@ class Commands {
      *
      * @param suffix - the trailing part of the stack's name
      */
-    async cancel(suffix: string, overrides: CommandOverrides) {
+    async cancel(suffix: string, overrides: CommandOverrides = {}) {
         const context = new CommandContext(
             this.client,
             this.config,
@@ -243,7 +242,7 @@ class CommandContext {
     tags: Tag[];
     operations: Function[];
 
-    template?: string;
+    template?: string | object;
     templateUrl?: string;
 
     constructor(
@@ -309,7 +308,7 @@ class Operations {
                 );
             } else {
                 // we assume if template is not string, it's a pre-loaded template body object
-                context.newTemplate = context.template;
+                context.newTemplate = new Template(context.template as CloudFormationTemplate);
             }
 
             const lookup = new Lookup(context.client);
@@ -484,7 +483,7 @@ class Operations {
                 );
             } else {
                 // we assume if template is not string, it's a pre-loaded template body object
-                context.newTemplate = context.template;
+                context.newTemplate = new Template(context.template as CloudFormationTemplate);
             }
 
             const lookup = new Lookup(context.client);
