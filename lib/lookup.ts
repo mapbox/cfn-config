@@ -309,7 +309,7 @@ export default class Lookup {
      * @returns an S3 key
      */
     configKey(name: string, config: string): string {
-        return `${name}/${config}-${this.client.region}.cfn.json`;
+        return `${name}/${config}.cfn.json`;
     }
 
     /**

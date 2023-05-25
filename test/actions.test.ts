@@ -864,7 +864,7 @@ test('[actions.saveConfiguration] success', async(t) => {
     });
 
     try {
-        await actions.saveConfiguration('my-stack', 'my-stack-staging', 'my-bucket', parameters);
+        await actions.saveConfiguration('my-stack', 'my-stack-staging-us-east-1', 'my-bucket', parameters);
     } catch (err) {
         t.error(err);
     }
@@ -906,7 +906,7 @@ test('[actions.saveConfiguration] success without encryption', async(t) => {
     });
 
     try {
-        await actions.saveConfiguration('my-stack', 'my-stack-staging', 'my-bucket', parameters);
+        await actions.saveConfiguration('my-stack', 'my-stack-staging-us-east-1', 'my-bucket', parameters);
     } catch (err) {
         t.error(err);
     }
@@ -948,7 +948,7 @@ test('[actions.saveConfiguration] config bucket in a different region', async(t)
     });
 
     try {
-        await actions.saveConfiguration('my-stack', 'my-stack-staging', 'my-bucket', parameters);
+        await actions.saveConfiguration('my-stack', 'my-stack-staging-eu-west-1', 'my-bucket', parameters);
     } catch (err) {
         t.error(err);
     }
