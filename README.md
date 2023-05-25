@@ -32,49 +32,6 @@ cfn-config includes a CLI tool for working with CloudFormation stacks. Install g
 $ npm install -g @mapbox/cfn-config
 ```
 
-## CLI Usage
-
-```
-$ cfn-config --help
-
-Quickly configure and start AWS CloudFormation stacks
-
-  USAGE: cfn-config <command> <environment> [templatePath] [options]
-
-  command:
-    - create                create a new stack
-    - update                update an existing stack
-    - delete                delete an existing stack
-    - info                  fetch information about an existing stack
-    - save                  save an existing stack's configuration
-
-  environment:
-    Any string. A stack's name is constructed as name-environment
-
-  templatePath:
-    The relative path to the CloudFormation template in JSON format, required
-    for create and update commands.
-
-  options:
-    -n, --name              the stack's base name (default: current dir name)
-    -r, --region            the stack's region (default: us-east-1)
-    -c, --config-bucket     an S3 bucket for storing stack configurations.
-                            Required for the create, update, and save commands.
-    -t, --template-bucket   an S3 bucket for storing templates
-                            (default: cfn-config-templates-$AWS_ACCOUNT_ID-region)
-    -k, --kms               a KMS key ID for parameter encryption or
-                            configuration encryption at rest on S3. If not
-                            provided, no encryption will be performed. If
-                            provided as a flag without a value, the default
-                            key id alias/cloudformation will be used.
-    -f, --force             perform a create/update/delete command without any
-                            prompting, accepting all defaults
-    -e, --extended          display resource details with the info command
-    -x, --expand            Add CAPABILITY_AUTO_EXPAND to the changeset capabilities.
-                            This allows transformation macros to be expanded on stack
-                            creation or update.
-```
-
 ## JavaScript Installation
 
 Include cfn-config into your project to incorporate/extend its functionality. Add to your project's package.json by running the following from your project's directory:

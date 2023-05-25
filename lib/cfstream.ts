@@ -4,28 +4,34 @@ import {
     DescribeStackEventsCommand,
     DescribeStacksCommand
 } from '@aws-sdk/client-cloudformation';
+import type {
+    AwsCredentialIdentity,
+    Provider,
+} from '@aws-sdk/types';
 
-export default function(stackName, options) {
-    options = options || {};
+export interface CFStreamInput {
+    region?: string;
+    credentials?: AwsCredentialIdentity | Provider<AwsCredentialIdentity>;
+    pollInterval?: number;
+    lastEventId?: string;
+}
 
-    const cfn = new CloudFormationClient({
-        credentials: options.credentials,
-        region: options.region
-    });
+export default function(stackName: string, options?: CFStreamInput) {
+    if (!options) options = {};
+    const cfn = new CloudFormationClient(options);
 
-    const stream = new Readable({ objectMode: true }),
-        pollInterval = options.pollInterval || 10000,
-        seen = {},
-        push = stream.push.bind(stream);
+    const stream = new Readable({ objectMode: true });
+    const pollInterval = options.pollInterval || 10000;
+    const seen = new Map();
 
     let describing = false,
         complete = false,
         stackId = stackName,
-        events = [];
+        events: object[] = [];
 
 
     if (options.lastEventId) {
-        seen[options.lastEventId] = true;
+        seen.set(options.lastEventId, true);
     }
 
     stream._read = function() {
@@ -33,7 +39,7 @@ export default function(stackName, options) {
         describeStack();
     };
 
-    async function describeEvents(nextToken) {
+    async function describeEvents(nextToken?: string) {
         if (describing) return;
         describing = true;
         // Describe stacks using stackId (ARN) as CF stacks are actually
@@ -51,12 +57,13 @@ export default function(stackName, options) {
 
                 // Assuming StackEvents are in strictly reverse chronological order,
                 // stop reading events once we reach one we've seen already.
-                if (seen[event.EventId])
+
+                if (seen.has(event.EventId))
                     break;
 
                 // Collect new events in an array and mark them as "seen".
                 events.push(event);
-                seen[event.EventId] = true;
+                seen.set(event.EventId, true);
 
                 // If we reach a user initiated event assume this event is the
                 // initiating event the caller intends to monitor.
@@ -75,8 +82,8 @@ export default function(stackName, options) {
             // We know that the update is complete, whatever we have in the events
             // array represents the last few events to stream.
             else if (complete) {
-                events.reverse().forEach(push);
-                push(null);
+                events.reverse().forEach((ev) => stream.push(ev));
+                stream.push(null);
             }
 
             // The update is not complete, and there aren't any new events or more
@@ -84,7 +91,7 @@ export default function(stackName, options) {
             // update has completed.
             else {
                 setTimeout(describeStack, pollInterval);
-                events.reverse().forEach(push);
+                events.reverse().forEach((ev) => stream.push(ev));
                 events = [];
             }
         } catch (err) {
