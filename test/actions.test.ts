@@ -9,7 +9,8 @@ import {
     CreateChangeSetCommand,
     DeleteStackCommand,
     ValidateTemplateCommand,
-    ExecuteChangeSetCommand
+    ExecuteChangeSetCommand,
+    DescribeStackEventsCommand
 
 } from '@aws-sdk/client-cloudformation';
 import S3 from '@aws-sdk/client-s3';
@@ -1028,41 +1029,53 @@ test('[actions.templateUrl] eu-central-1', async (t) => {
 
 test('[actions.saveTemplate] bucket does not exist', async(t) => {
     const url = 'https://s3.amazonaws.com/my-bucket/cirjpj94c0000s5nzc1j452o7-my-stack.template.json';
-    const template = fs.readFileSync(new URL('./fixtures/template.json', import.meta.url));
-    const AWS = (await import('aws-sdk')).default;
-    const S3 = AWS.S3;
+    const template = String(fs.readFileSync(new URL('./fixtures/template.json', import.meta.url)));
 
-    AWS.S3 = function(params) {
-        t.deepEqual(params, { region: 'us-east-1', signatureVersion: 'v4' });
-    };
-
-    AWS.S3.prototype.putObject = () => {
-        const err = new Error('The specified bucket does not exist');
-        err.code = 'NoSuchBucket';
-        throw err;
-    };
+    Sinon.stub(S3.S3Client.prototype, 'send').callsFake((command) => {
+        if (command instanceof S3.PutObjectCommand) {
+            const err: any = new Error('The specified bucket does not exist');
+            err.code = 'NoSuchBucket';
+            return Promise.reject(err);
+        }
+    });
+    const actions = new Actions({
+        region: 'eu-central-1',
+        credentials: {
+            accessKeyId: '123',
+            secretAccessKey: '321'
+        }
+    });
 
     try {
-        await Actions.saveTemplate(url, template);
+        await actions.saveTemplate(url, template);
         t.fail();
     } catch (err) {
         t.ok(err instanceof Actions.BucketNotFoundError, 'expected error returned');
     }
 
-    AWS.S3 = S3;
+    Sinon.restore();
     t.end();
 });
 
-/**
 test('[actions.saveTemplate] s3 error', async(t) => {
     const url = 'https://s3.amazonaws.com/my-bucket/cirjpj94c0000s5nzc1j452o7-my-stack.template.json';
-    const template = fs.readFileSync(new URL('./fixtures/template.json', import.meta.url));
-    AWS.stub('S3', 'putObject', () => {
-        throw new Error('unexpected');
+    const template = String(fs.readFileSync(new URL('./fixtures/template.json', import.meta.url)));
+
+    Sinon.stub(S3.S3Client.prototype, 'send').callsFake((command) => {
+        if (command instanceof S3.PutObjectCommand) {
+            return Promise.reject(new Error('unexpected'));
+        }
+    });
+    const actions = new Actions({
+        region: 'eu-central-1',
+        credentials: {
+            accessKeyId: '123',
+            secretAccessKey: '321'
+        }
     });
 
     try {
-        await Actions.saveTemplate(url, template);
+        await actions.saveTemplate(url, template);
         t.fail();
     } catch (err) {
         t.ok(err instanceof Actions.S3Error, 'expected error returned');
@@ -1074,22 +1087,30 @@ test('[actions.saveTemplate] s3 error', async(t) => {
 
 test('[actions.saveTemplate] us-east-1', async(t) => {
     const url = 'https://s3.amazonaws.com/my-bucket/cirjpj94c0000s5nzc1j452o7-my-stack.template.json';
-    const template = fs.readFileSync(new URL('./fixtures/template.json', import.meta.url));
+    const template = String(fs.readFileSync(new URL('./fixtures/template.json', import.meta.url)));
 
-    // really need a way to stub the client constructor
+    Sinon.stub(S3.S3Client.prototype, 'send').callsFake((command) => {
+        if (command instanceof S3.PutObjectCommand) {
+            t.deepEqual(command.input, {
+                Bucket: 'my-bucket',
+                Key: 'cirjpj94c0000s5nzc1j452o7-my-stack.template.json',
+                Body: template
+            }, 'template put to expected s3 destination');
 
-    AWS.stub('S3', 'putObject', function(params) {
-        t.deepEqual(params, {
-            Bucket: 'my-bucket',
-            Key: 'cirjpj94c0000s5nzc1j452o7-my-stack.template.json',
-            Body: template
-        }, 'template put to expected s3 destination');
+            return Promise.resolve();
+        }
+    });
 
-        return this.request.promise.returns(Promise.resolve());
+    const actions = new Actions({
+        region: 'eu-central-1',
+        credentials: {
+            accessKeyId: '123',
+            secretAccessKey: '321'
+        }
     });
 
     try {
-        await Actions.saveTemplate(url, template);
+        await actions.saveTemplate(url, template);
     } catch (err) {
         t.error(err);
     }
@@ -1100,20 +1121,31 @@ test('[actions.saveTemplate] us-east-1', async(t) => {
 
 test('[actions.saveTemplate] needs whitespace removal', async(t) => {
     const url = 'https://s3.amazonaws.com/my-bucket/cirjpj94c0000s5nzc1j452o7-my-stack.template.json';
+    // @ts-ignore
     const template = (await import('./fixtures/huge-template.js')).default;
 
-    AWS.stub('S3', 'putObject', function(params) {
-        t.deepEqual(params, {
-            Bucket: 'my-bucket',
-            Key: 'cirjpj94c0000s5nzc1j452o7-my-stack.template.json',
-            Body: JSON.stringify(template)
-        }, 'template put to expected s3 destination, and whitespace was removed');
+    Sinon.stub(S3.S3Client.prototype, 'send').callsFake((command) => {
+        if (command instanceof S3.PutObjectCommand) {
+            t.deepEqual(command.input, {
+                Bucket: 'my-bucket',
+                Key: 'cirjpj94c0000s5nzc1j452o7-my-stack.template.json',
+                Body: JSON.stringify(template)
+            }, 'template put to expected s3 destination, and whitespace was removed');
 
-        return this.request.promise.returns(Promise.resolve());
+            return Promise.resolve();
+        }
+    });
+
+    const actions = new Actions({
+        region: 'eu-central-1',
+        credentials: {
+            accessKeyId: '123',
+            secretAccessKey: '321'
+        }
     });
 
     try {
-        await Actions.saveTemplate(url, JSON.stringify(template, null, 2));
+        await actions.saveTemplate(url, JSON.stringify(template, null, 2));
     } catch (err) {
         t.error(err);
     }
@@ -1124,74 +1156,89 @@ test('[actions.saveTemplate] needs whitespace removal', async(t) => {
 
 test('[actions.saveTemplate] cn-north-1', async(t) => {
     const url = 'https://s3-cn-north-1.amazonaws.com.cn/my-bucket/cirjpj94c0000s5nzc1j452o7-my-stack.template.json';
-    const template = fs.readFileSync(new URL('./fixtures/template.json', import.meta.url));
-    const AWS = (await import('aws-sdk')).default;
-    const S3 = AWS.S3;
+    const template = String(fs.readFileSync(new URL('./fixtures/template.json', import.meta.url)));
 
-    AWS.S3 = function(params) {
-        t.deepEqual(params, { region: 'cn-north-1', signatureVersion: 'v4' }, 'parses cn-north-1 from s3 url');
-    };
+    Sinon.stub(S3.S3Client.prototype, 'send').callsFake((command) => {
+        if (command instanceof S3.PutObjectCommand) {
+            t.deepEqual(command.input, {
+                Bucket: 'my-bucket',
+                Key: 'cirjpj94c0000s5nzc1j452o7-my-stack.template.json',
+                Body: template
+            }, 'template put to expected s3 destination');
 
-    AWS.S3.prototype.putObject = function(params) {
-        t.deepEqual(params, {
-            Bucket: 'my-bucket',
-            Key: 'cirjpj94c0000s5nzc1j452o7-my-stack.template.json',
-            Body: template
-        }, 'template put to expected s3 destination');
+            return Promise.resolve();
+        }
+    });
 
-        return {
-            promise: () => Promise.resolve()
-        };
-    };
+    const actions = new Actions({
+        region: 'cn-north-1',
+        credentials: {
+            accessKeyId: '123',
+            secretAccessKey: '321'
+        }
+    });
 
     try {
-        await Actions.saveTemplate(url, template);
+        await actions.saveTemplate(url, template);
     } catch (err) {
         t.error(err);
     }
 
-    AWS.S3 = S3;
+    Sinon.restore();
     t.end();
 });
 
 test('[actions.saveTemplate] eu-central-1', async(t) => {
     const url = 'https://s3-eu-central-1.amazonaws.com/my-bucket/cirjpj94c0000s5nzc1j452o7-my-stack.template.json';
-    const template = fs.readFileSync(new URL('./fixtures/template.json', import.meta.url));
-    const AWS = (await import('aws-sdk')).default;
+    const template = String(fs.readFileSync(new URL('./fixtures/template.json', import.meta.url)));
 
-    const S3 = AWS.S3;
+    Sinon.stub(S3.S3Client.prototype, 'send').callsFake((command) => {
+        if (command instanceof S3.PutObjectCommand) {
+            t.deepEqual(command.input, {
+                Bucket: 'my-bucket',
+                Key: 'cirjpj94c0000s5nzc1j452o7-my-stack.template.json',
+                Body: template
+            }, 'template put to expected s3 destination');
 
-    AWS.S3 = function(params) {
-        t.deepEqual(params, { region: 'eu-central-1', signatureVersion: 'v4' }, 'parses eu-central-1 from s3 url');
-    };
-    AWS.S3.prototype.putObject = function(params) {
-        t.deepEqual(params, {
-            Bucket: 'my-bucket',
-            Key: 'cirjpj94c0000s5nzc1j452o7-my-stack.template.json',
-            Body: template
-        }, 'template put to expected s3 destination');
-        return {
-            promise: () => Promise.resolve()
-        };
-    };
+            return Promise.resolve();
+        }
+    });
+
+    const actions = new Actions({
+        region: 'eu-central-1',
+        credentials: {
+            accessKeyId: '123',
+            secretAccessKey: '321'
+        }
+    });
 
     try {
-        await Actions.saveTemplate(url, template);
+        await actions.saveTemplate(url, template);
     } catch (err) {
         t.error(err);
     }
 
-    AWS.S3 = S3;
+    Sinon.restore();
     t.end();
 });
 
 test('[actions.monitor] error', async(t) => {
-    AWS.stub('CloudFormation', 'describeStackEvents', () => {
-        throw new Error('failure');
+    Sinon.stub(CloudFormationClient.prototype, 'send').callsFake((command) => {
+        if (command instanceof DescribeStackEventsCommand) {
+            return Promise.reject(new Error('failure'));
+        }
     });
 
     try {
-        await Actions.monitor('my-stack', 'us-east-1');
+        const actions = new Actions({
+            region: 'us-east-1',
+            credentials: {
+                accessKeyId: '123',
+                secretAccessKey: '321'
+            }
+        });
+
+        await actions.monitor('my-stack');
         t.fail();
     } catch (err) {
         t.ok(err instanceof Actions.CloudFormationError, 'expected error type');
@@ -1200,69 +1247,3 @@ test('[actions.monitor] error', async(t) => {
     Sinon.restore();
     t.end();
 });
-
-test('[actions.monitor] success', async(t) => {
-    let once = true;
-
-    AWS.stub('CloudFormation', 'describeStacks', function(params, callback) {
-        setTimeout(callback, 1000, null, {
-            Stacks: [
-                { StackStatus: 'CREATE_COMPLETE' }
-            ]
-        });
-
-        return new events.EventEmitter();
-    });
-
-    AWS.stub('CloudFormation', 'describeStackEvents', function(params, callback) {
-        if (!once) {
-            callback(null, { StackEvents: [] });
-        } else {
-            callback(null, {
-                StackEvents: [
-                    {
-                        EventId: 'done',
-                        LogicalResourceId: 'my-stack',
-                        ResourceType: 'AWS::CloudFormation::Stack',
-                        ResourceStatus: 'CREATE_COMPLETE'
-                    },
-                    {
-                        EventId: 'built',
-                        LogicalResourceId: 'Topic',
-                        ResourceStatus: 'CREATE_COMPLETE'
-                    },
-                    {
-                        EventId: 'continue',
-                        LogicalResourceId: 'Topic',
-                        ResourceStatus: 'CREATE_IN_PROGRESS',
-                        ResourceStatusReason: 'Creation has begun'
-                    },
-                    {
-                        EventId: 'start',
-                        LogicalResourceId: 'Topic',
-                        ResourceStatus: 'CREATE_IN_PROGRESS'
-                    },
-                    {
-                        EventId: 'create',
-                        LogicalResourceId: 'my-stack',
-                        ResourceType: 'AWS::CloudFormation::Stack',
-                        ResourceStatus: 'CREATE_IN_PROGRESS',
-                        ResourceStatusReason: 'User Initiated'
-                    }
-                ]
-            });
-        }
-        once = false;
-        return new events.EventEmitter();
-    });
-
-    try {
-        await Actions.monitor('my-stack', 'us-east-1');
-    } catch (err) {
-        t.error(err);
-    }
-
-    Sinon.restore();
-    t.end();
-});
-*/
