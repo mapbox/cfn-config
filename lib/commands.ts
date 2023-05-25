@@ -240,7 +240,7 @@ class CommandContext {
     configName?: string;
     create?: boolean;
     tags: Tag[];
-    operations: Function[];
+    operations: function[];
 
     template?: string | object;
     templateUrl?: string;
@@ -250,7 +250,7 @@ class CommandContext {
         config: CommandOptions,
         overrides: CommandOverrides,
         suffix: string,
-        operations: Function[])
+        operations: function[])
     {
         this.client = client;
         this.config = config;

@@ -8,7 +8,6 @@ import type {
 } from './lib/commands.js'
 import type {
     AwsCredentialIdentity,
-    AwsCredentialIdentityProvider,
     Provider,
 } from '@aws-sdk/types';
 
