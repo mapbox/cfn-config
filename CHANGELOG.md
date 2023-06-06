@@ -1,6 +1,9 @@
 # Change Log
 All notable changes to this project will be documented in this file. For change log formatting, see http://keepachangelog.com/
 
+## 7.0.1 - 2023-06-06
+- :bug: Fix TS build to JS
+
 ## 7.0.1 - 2023-05-25
 - :bug: Fix TS build to JS
 

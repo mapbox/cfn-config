@@ -35,7 +35,7 @@
     "devDependencies": {
         "@types/diff": "^5.0.2",
         "@types/inquirer": "^9.0.3",
-        "@types/json-diff": "^0.9.1",
+        "@types/json-diff": "^1.0.0",
         "@types/json-stable-stringify": "^1.0.34",
         "@types/node": "^20.0.0",
         "@types/sinon": "^10.0.13",

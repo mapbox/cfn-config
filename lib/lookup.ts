@@ -7,18 +7,10 @@ import {
     ListStackResourcesCommand,
     GetTemplateCommand
 } from '@aws-sdk/client-cloudformation';
-import {
-    S3Client,
-    ListObjectsCommand,
-    GetObjectCommand,
-    GetBucketLocationCommand
-} from '@aws-sdk/client-s3';
-import {
-    Template
-} from './template.js';
-import type {
-    CFNConfigClient
-} from '../index.js';
+import { Readable } from 'stream';
+import S3 from '@aws-sdk/client-s3';
+import { Template } from './template.js';
+import type { CFNConfigClient } from '../index.js';
 import path from 'path';
 import s3urls from '@openaddresses/s3urls';
 
@@ -197,13 +189,13 @@ export default class Lookup {
     async configurations(name: string, Bucket: string): Promise<string[]> {
         const region = await this.bucketRegion(Bucket);
 
-        const s3 = new S3Client({
+        const s3 = new S3.S3Client({
             region,
             credentials: this.client.credentials
         });
 
         try {
-            const data = await s3.send(new ListObjectsCommand({ Bucket, Prefix: name + '/' }));
+            const data = await s3.send(new S3.ListObjectsCommand({ Bucket, Prefix: name + '/' }));
 
             if (!data.Contents) return [];
 
@@ -231,14 +223,14 @@ export default class Lookup {
     async configuration(name: string, Bucket: string, config: string): Promise<Map<string, string>> {
         const region = await this.bucketRegion(Bucket);
 
-        const s3 = new S3Client({
+        const s3 = new S3.S3Client({
             region,
             credentials: this.client.credentials
         });
 
         let data;
         try {
-            data = await s3.send(new GetObjectCommand({
+            data = await s3.send(new S3.GetObjectCommand({
                 Bucket,
                 Key: this.configKey(name, config)
             }));
@@ -253,7 +245,7 @@ export default class Lookup {
         }
 
         try {
-            const params = JSON.parse(data.Body.toString());
+            const params = JSON.parse(await streamToString(data.Body as Readable));
             const config: Map<string, string> = new Map();
             for (const key of Object.keys(params)) {
                 config.set(key, params[key]);
@@ -281,14 +273,14 @@ export default class Lookup {
             return {};
         }
 
-        const s3 = new S3Client({
+        const s3 = new S3.S3Client({
             region,
             credentials: this.client.credentials
         });
 
         let data;
         try {
-            data = await s3.send(new GetObjectCommand(params));
+            data = await s3.send(new S3.GetObjectCommand(params));
         } catch (err) {
             return {};
         }
@@ -318,10 +310,10 @@ export default class Lookup {
      * @param Bucket - the name of the bucket
      */
     async bucketRegion(Bucket: string): Promise<string> {
-        const s3 = new S3Client(this.client);
+        const s3 = new S3.S3Client(this.client);
 
         try {
-            const data = await s3.send(new GetBucketLocationCommand({ Bucket }));
+            const data = await s3.send(new S3.GetBucketLocationCommand({ Bucket }));
             return data.LocationConstraint || 'us-east-1';
         } catch (err) {
             if (err.code === 'NoSuchBucket') {
@@ -331,4 +323,13 @@ export default class Lookup {
             }
         }
     }
+}
+
+async function streamToString (stream: Readable): Promise<string> {
+    return await new Promise((resolve, reject) => {
+        const chunks: Uint8Array[] = [];
+        stream.on('data', (chunk) => chunks.push(chunk));
+        stream.on('error', reject);
+        stream.on('end', () => resolve(Buffer.concat(chunks).toString('utf-8')));
+    });
 }

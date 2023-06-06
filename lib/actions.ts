@@ -21,12 +21,7 @@ import {
     CancelUpdateStackCommand
 } from '@aws-sdk/client-cloudformation';
 
-import {
-    S3Client,
-    PutObjectCommand,
-    PutObjectCommandInput
-} from '@aws-sdk/client-s3';
-
+import S3 from '@aws-sdk/client-s3';
 import 'colors';
 
 const colors = new Map();
@@ -262,19 +257,19 @@ export default class Actions {
         const lookup = new Lookup(this.client);
         const region = await lookup.bucketRegion(bucket);
 
-        const s3 = new S3Client({
+        const s3 = new S3.S3Client({
             region,
             credentials: this.client.credentials
         });
 
-        const params: PutObjectCommandInput = {
+        const params: S3.PutObjectCommandInput = {
             Bucket: bucket,
             Key: lookup.configKey(baseName, stackName),
             Body: JSON.stringify(Object.fromEntries(parameters)),
         };
 
         try {
-            await s3.send(new PutObjectCommand(params));
+            await s3.send(new S3.PutObjectCommand(params));
         } catch (err) {
             if (err.code === 'NoSuchBucket') {
                 throw new Actions.BucketNotFoundError(`S3 bucket ${bucket} not found in ${region}`);
@@ -302,14 +297,14 @@ export default class Actions {
             templateBody = JSON.stringify(JSON.parse(templateBody));
         }
 
-        const s3 = new S3Client(this.client);
+        const s3 = new S3.S3Client(this.client);
 
         const params = Object.assign({
             Body: templateBody
         }, s3urls.fromUrl(templateUrl));
 
         try {
-            await s3.send(new PutObjectCommand(params));
+            await s3.send(new S3.PutObjectCommand(params));
         } catch (err) {
             if (err.code === 'NoSuchBucket') {
                 throw new Actions.BucketNotFoundError(`S3 bucket ${params.Bucket} not found in ${region}`);
