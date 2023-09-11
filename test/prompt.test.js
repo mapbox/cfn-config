@@ -64,6 +64,49 @@ test('[prompt.confirm] multi-line, reject', function(assert) {
   });
 });
 
+test('[prompt.yesOrNo] single-line, confirm', function(assert) {
+  sinon.stub(inquirer, 'prompt').callsFake(function(questions) {
+    assert.equal(questions.type, 'input', 'called with correct prompt type');
+    assert.equal(questions.name, 'confirmation', 'called with correct capture name');
+    assert.equal(questions.message, 'confirm? (y/n)', 'called with correct message');
+
+    return Promise.resolve({ confirmation: 'y' });
+  });
+  prompt.yesOrNo('confirm?', function(err, confirmed) {
+    assert.ifError(err, 'success');
+    assert.ok(confirmed, 'received user confirmation');
+    inquirer.prompt.restore();
+    assert.end();
+  });
+});
+
+test('[prompt.yesOrNo] single-line, reject', function(assert) {
+  sinon.stub(inquirer, 'prompt').callsFake(function(questions) {
+    assert.equal(questions.type, 'input', 'called with correct prompt type');
+    assert.equal(questions.name, 'confirmation', 'called with correct capture name');
+    assert.equal(questions.message, 'confirm? (y/n)', 'called with correct message');
+
+    return Promise.resolve({ confirmation: 'n' });
+    
+  });
+  prompt.yesOrNo('confirm?', function(err, confirmed) {
+    assert.ifError(err, 'success');
+    assert.notOk(confirmed, 'received user rejection');
+    inquirer.prompt.restore();
+    assert.end();
+  });
+});
+
+test('[prompt.yesOrNo] single-line, invalid-input-then-valid', (assert) => {
+  prompt.yesOrNo('confirm?', function(err, confirmed) {
+    assert.ifError(err, 'success');
+    assert.ok(confirmed, 'received user confirmation');
+    assert.end();
+  });
+  process.stdin.emit('keypress', 'foo\r');
+  process.stdin.emit('keypress', 'y\r');
+});
+
 test('[prompt.configuration] success', function(assert) {
   sinon.stub(inquirer, 'prompt').callsFake(function(questions) {
     assert.deepEqual(questions, {

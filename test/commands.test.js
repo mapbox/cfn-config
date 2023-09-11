@@ -1801,8 +1801,7 @@ test('[commands.operations.confirmChangeset] skipConfirmParams && skipConfirmTem
 });
 
 test('[commands.operations.confirmChangeset] rejected', function(assert) {
-  sinon.stub(prompt, 'confirm').callsFake(function(message, defaultValue, callback) {
-    assert.equal(defaultValue, false);
+  sinon.stub(prompt, 'yesOrNo').callsFake(function(message, callback) {
     callback(null, false);
   });
 
@@ -1810,7 +1809,7 @@ test('[commands.operations.confirmChangeset] rejected', function(assert) {
     changeset: { changes: [] },
     abort: function(err) {
       assert.ifError(err, 'aborted');
-      prompt.confirm.restore();
+      prompt.yesOrNo.restore();
       assert.end();
     }
   });
@@ -1818,12 +1817,11 @@ test('[commands.operations.confirmChangeset] rejected', function(assert) {
   commands.operations.confirmChangeset(context);
 });
 
-test('[commands.operations.confirmChangeset] acccepted', function(assert) {
-  assert.plan(3);
+test('[commands.operations.confirmChangeset] accepted', function(assert) {
+  assert.plan(2);
 
-  sinon.stub(prompt, 'confirm').callsFake(function(message, defaultValue, callback) {
+  sinon.stub(prompt, 'yesOrNo').callsFake(function(message, callback) {
     assert.equal(message, '\n\n\nAccept changes and update the stack?', 'expected message');
-    assert.equal(defaultValue, false);
     callback(null, true);
   });
 
@@ -1834,7 +1832,8 @@ test('[commands.operations.confirmChangeset] acccepted', function(assert) {
     },
     next: function() {
       assert.pass('success');
-      prompt.confirm.restore();
+      prompt.yesOrNo.restore();
+      assert.end();
     }
   });
 
@@ -1842,9 +1841,8 @@ test('[commands.operations.confirmChangeset] acccepted', function(assert) {
 });
 
 test('[commands.operations.confirmChangeset] changeset formatting', function(assert) {
-  sinon.stub(prompt, 'confirm').callsFake(function(message, defaultValue, callback) {
+  sinon.stub(prompt, 'yesOrNo').callsFake(function(message, callback) {
     assert.equal(message, 'Action  Name  Type  Replace\n------  ----  ----  -------\n\x1b[33mModify\x1b[39m  name  type  \x1b[31mtrue\x1b[39m   \n\x1b[32mAdd\x1b[39m     name  type  \x1b[32mfalse\x1b[39m  \n\x1b[31mRemove\x1b[39m  name  type  \x1b[32mfalse\x1b[39m  \n\nAccept changes and update the stack?', 'expected message (with colors)');
-    assert.equal(defaultValue, false);
     callback(null, true);
   });
 
@@ -1861,7 +1859,7 @@ test('[commands.operations.confirmChangeset] changeset formatting', function(ass
     },
     next: function() {
       assert.pass('success');
-      prompt.confirm.restore();
+      prompt.yesOrNo.restore();
       assert.end();
     }
   });
