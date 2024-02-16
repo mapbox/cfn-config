@@ -9,7 +9,7 @@
     "type": "git"
   },
   "author": "Mapbox",
-  "version": "3.3.0",
+  "version": "3.3.1",
   "dependencies": {
     "aws-sdk": "^2.720.0",
     "cfn-stack-event-stream": "^1.0.1",
@@ -20,6 +20,7 @@
     "easy-table": "^1.0.0",
     "fasterror": "^1.0.0",
     "inquirer": "^8.2.0",
+    "inquirer-search-list": "^1.2.6",
     "json-diff": "^0.7.1",
     "json-stable-stringify": "1.0.1",
     "meow": "^7.1.1",
