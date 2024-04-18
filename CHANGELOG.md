@@ -1,6 +1,9 @@
 # Change Log
 All notable changes to this project will be documented in this file. For change log formatting, see http://keepachangelog.com/
 
+# 3.3.1 - 2024-04-18
+- Update `diff` to v5.2.0
+
 ## 3.3 - 2023-09-12
 - Change default when confirming template changes from "No" to keep prompting the user until a valid choice is provided
 
