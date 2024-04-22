@@ -16,7 +16,7 @@
     "colors": "1.4.0",
     "cuid": "^2.1.1",
     "d3-queue": "^3.0.2",
-    "diff": "^3.5.0",
+    "diff": "^5.2.0",
     "easy-table": "^1.0.0",
     "fasterror": "^1.0.0",
     "inquirer": "^8.2.0",
