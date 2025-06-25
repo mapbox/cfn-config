@@ -1,0 +1,27 @@
+name: NPM release
+
+on:
+  pull_request:
+    branches: [ master ]
+    types:
+      - opened
+      - synchronize
+      - reopened
+      # Triggers the workflow when labels change in the PR
+      - labeled
+      - unlabeled
+    # paths:
+    #   - package*.json
+    #   - lib/**
+  push:
+    branches:
+      - master
+    # paths:
+    #   - package*.json
+    #   - lib/**
+jobs:
+  npm-release:
+    uses: mapbox/gha/.github/workflows/workflow-release-npm-package.yml@workflow-release-npm-package-v1
+    secrets: inherit
+    with:
+      changelog-file: NO_CHANGELOG
