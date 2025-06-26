@@ -1,6 +1,9 @@
 # Change Log
 All notable changes to this project will be documented in this file. For change log formatting, see http://keepachangelog.com/
 
+# 3.3.2 - 2024-06-25
+- Fix vulnerabilities
+
 # 3.3.1 - 2024-04-18
 - Update `diff` to v5.2.0
 

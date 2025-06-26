@@ -28,7 +28,8 @@
   "scripts": {
     "test": "nyc tape test/*.test.js",
     "pretest": "eslint index.js bin lib test/*.js",
-    "coverage": "nyc --reporter html tape test/*.test.js && opener coverage/index.html"
+    "coverage": "nyc --reporter html tape test/*.test.js && opener coverage/index.html",
+    "build": "echo NOOP"
   },
   "devDependencies": {
     "@mapbox/mock-aws-sdk-js": "^1.0.0",
