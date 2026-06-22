@@ -9,7 +9,7 @@
     "type": "git"
   },
   "author": "Mapbox",
-  "version": "3.3.2",
+  "version": "3.3.3",
   "dependencies": {
     "aws-sdk": "^2.720.0",
     "cfn-stack-event-stream": "^1.0.1",
@@ -41,5 +41,8 @@
     "tape": "^5.4.0"
   },
   "main": "index.js",
-  "description": "Quickly configure and start AWS CloudFormation stacks"
+  "description": "Quickly configure and start AWS CloudFormation stacks",
+  "publishConfig": {
+    "access": "public"
+  }
 }
